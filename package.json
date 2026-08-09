@@ -8,7 +8,9 @@
     "build": "vite build && node -e \"require('fs').copyFileSync('dist/index.html','dist/404.html')\" && node scripts/assert-theme.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
-    "validate": "node scripts/validate-data.mjs"
+    "validate": "node scripts/validate-data.mjs",
+    "test:engine": "vitest run src/engine",
+    "test:engine:verbose": "node --experimental-strip-types --no-warnings=ExperimentalWarning scripts/print-engine-cases.mts"
   },
   "dependencies": {
     "react": "^19.2.8",
@@ -29,6 +31,7 @@
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.65.0",
-    "vite": "^8.2.0"
+    "vite": "^8.2.0",
+    "vitest": "^4.1.10"
   }
 }

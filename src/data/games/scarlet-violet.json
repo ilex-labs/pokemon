@@ -8,6 +8,10 @@
   },
   "species": {
     "Charmander": {
+      "abilities": {
+        "standard": ["Blaze"],
+        "hidden": "Solar Power"
+      },
       "genderRatio": { "malePercent": 87.5 },
       "hatchesInto": "Charmander",
       "eggCycles": 20
@@ -25,6 +29,10 @@
         "parentSpecies": ["Salamence", "Dragapult", "Gyarados"]
       }
     ]
+  },
+  "eggMoveAlternative": {
+    "name": "Mirror Herb",
+    "howItWorks": "Held during a picnic, it copies egg moves from a partner that already knows them."
   },
   "moveDescriptions": {
     "Dragon Dance": "Raises the user's Attack and Speed by one stage each."
@@ -49,19 +57,22 @@
       "availability": "Cook at a picnic. Lv. 2 is reachable with common shop ingredients (for example a Great Peanut Butter Sandwich). Lv. 3 needs Herba Mystica from 5★+ Tera Raids."
     }
   ],
+  "shinyEggModifiers": {
+    "masudaMethodAvailable": true,
+    "shinyCharmAvailable": true,
+    "shinyCharmStacksWithMasuda": true
+  },
   "postgame": [],
-  "uniqueMechanics": [
-    "Mirror Herb: held during a picnic, copies egg moves from a partner that knows them — SV's non-egg path for teaching egg moves."
-  ],
   "provenance": {
     "eggGroups": ["pokeapi", "bulbapedia"],
     "species": ["pokeapi", "bulbapedia"],
     "dittoAvailability": ["bulbapedia", "serebii"],
     "eggMoves": ["bulbapedia", "serebii"],
+    "eggMoveAlternative": ["bulbapedia", "serebii"],
     "moveDescriptions": ["pokeapi", "bulbapedia"],
     "abilityDescriptions": ["pokeapi", "bulbapedia"],
     "hatchRoutes": ["bulbapedia", "serebii"],
     "hatchModifiers": ["bulbapedia", "serebii"],
-    "uniqueMechanics": ["bulbapedia", "serebii"]
+    "shinyEggModifiers": ["bulbapedia", "serebii"]
   }
 }

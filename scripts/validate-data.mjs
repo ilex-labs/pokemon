@@ -155,13 +155,24 @@ function validateGame(filePath, game, natures) {
     }
   }
 
-  // Abilities the form can offer for this game's curated species must be described.
-  // Until SpeciesEggData gains ability slots, abilityDescriptions keys are the offered set —
-  // every key must resolve, and the map must be present whenever species are curated.
-  if (Object.keys(game.species ?? {}).length > 0) {
-    if (Object.keys(abilityDescriptions).length === 0) {
+  const referencedAbilities = new Set()
+  for (const [speciesName, species] of Object.entries(game.species ?? {})) {
+    if (!species?.abilities || !Array.isArray(species.abilities.standard)) {
+      fail(`${label}: species.${speciesName}.abilities.standard is required`)
+      continue
+    }
+    for (const ability of species.abilities.standard) {
+      referencedAbilities.add(ability)
+    }
+    if (species.abilities.hidden) {
+      referencedAbilities.add(species.abilities.hidden)
+    }
+  }
+
+  for (const ability of referencedAbilities) {
+    if (!isNonEmptyString(abilityDescriptions[ability])) {
       fail(
-        `${label}: species are present but abilityDescriptions is missing/empty (standard and hidden abilities need descriptions)`,
+        `${label}: ability "${ability}" is referenced on a species (standard or hidden) but has no abilityDescriptions entry`,
       )
     }
   }
@@ -175,23 +186,10 @@ function validateGame(filePath, game, natures) {
   }
 
   // Natures: shared catalog is what the form offers when naturesExist.
-  // Every nature in the catalog must already have been validated; also fail if the
-  // game names a nature that is not in the catalog (e.g. future target-spread samples).
   const natureNames = new Set(Object.keys(natures ?? {}))
-  const maybeNatureFields = [
-    ...Object.values(moveDescriptions),
-    ...Object.values(abilityDescriptions),
-    ...(game.uniqueMechanics ?? []),
-    game.hatchMechanicExplainer,
-  ].filter(isNonEmptyString)
-
-  // Explicit nature references: scan postgame titles/descriptions only if they look like picks — skip.
-  // Require the shared catalog to exist whenever we have game data (gen 3+ games use it).
   if (natureNames.size === 0) {
     fail(`${label}: natures catalog is empty — every offered nature must resolve to a description`)
   }
-
-  void maybeNatureFields
 }
 
 function main() {

@@ -76,6 +76,10 @@ export interface ShinyEggModifiers {
 }
 
 export interface SpeciesEggData {
+  abilities: {
+    standard: string[]
+    hidden?: string
+  }
   genderRatio:
     | 'genderless'
     | 'male-only'
@@ -170,6 +174,11 @@ export interface GameData {
   }
   eggRateModifiers?: EggRateModifier[]
   eggMoves: Record<string, EggMoveEntry[]>
+  /** Present iff the ruleset's eggMoveMethod is "eggs-or-alternative". */
+  eggMoveAlternative?: {
+    name: string
+    howItWorks: string
+  }
   moveDescriptions?: Record<string, string>
   abilityDescriptions?: Record<string, string>
   ivPresets?: IvPreset[]
