@@ -1,0 +1,59 @@
+[
+  {
+    "id": "all-max",
+    "label": "All max",
+    "values": {
+      "hp": "max",
+      "atk": "max",
+      "def": "max",
+      "spa": "max",
+      "spd": "max",
+      "spe": "max"
+    },
+    "rationale": "Every stat at the generation's IV ceiling — the usual starting point when you want full inheritance flexibility."
+  },
+  {
+    "id": "physical-attacker",
+    "label": "Physical attacker",
+    "values": {
+      "hp": "max",
+      "atk": "max",
+      "def": "max",
+      "spa": "any",
+      "spd": "max",
+      "spe": "max"
+    },
+    "rationale": "Max physical bulk and Attack; Special Attack left untargeted because this role does not rely on it."
+  },
+  {
+    "id": "special-attacker",
+    "label": "Special attacker",
+    "values": {
+      "hp": "max",
+      "atk": 0,
+      "def": "max",
+      "spa": "max",
+      "spd": "max",
+      "spe": "max"
+    },
+    "rationale": "Zero Attack limits Foul Play and confusion self-damage while keeping special offenses and bulk maxed.",
+    "rationaleByGeneration": {
+      "3": "Zero Attack limits confusion self-damage while keeping special offenses and bulk maxed.",
+      "4": "Zero Attack limits confusion self-damage while keeping special offenses and bulk maxed."
+    }
+  },
+  {
+    "id": "all-0",
+    "label": "All 0",
+    "values": {
+      "hp": 0,
+      "atk": 0,
+      "def": 0,
+      "spa": 0,
+      "spd": 0,
+      "spe": 0
+    },
+    "rationale": "Minimum IVs in every stat — used when a move or strategy wants the lowest possible Speed or offenses (for example Gyro Ball).",
+    "availableFrom": 4
+  }
+]

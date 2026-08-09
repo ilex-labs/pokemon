@@ -1,0 +1,67 @@
+{
+  "id": "scarlet-violet",
+  "displayName": "Pokémon Scarlet / Violet",
+  "generation": 9,
+  "eggGroups": {
+    "monster": ["Charmander"],
+    "dragon": ["Charmander"]
+  },
+  "species": {
+    "Charmander": {
+      "genderRatio": { "malePercent": 87.5 },
+      "hatchesInto": "Charmander",
+      "eggCycles": 20
+    }
+  },
+  "ditto": {
+    "available": true,
+    "obtainedAt": "Wild encounters across Paldea (including outbreaks); also available via picnic eggs from a Ditto parent pair.",
+    "universalParent": true
+  },
+  "eggMoves": {
+    "Charmander": [
+      {
+        "move": "Dragon Dance",
+        "parentSpecies": ["Salamence", "Dragapult", "Gyarados"]
+      }
+    ]
+  },
+  "moveDescriptions": {
+    "Dragon Dance": "Raises the user's Attack and Speed by one stage each."
+  },
+  "abilityDescriptions": {
+    "Blaze": "When this Pokémon's HP is at or below one-third, the power of its Fire-type moves is boosted.",
+    "Solar Power": "In harsh sunlight, Special Attack rises, but the Pokémon loses some HP at the end of each turn."
+  },
+  "hatchRoutes": [
+    {
+      "routeName": "Open world (Let's Go)",
+      "cycleCount": "fast",
+      "method": "Let's Go mode while traveling — eggs hatch from steps taken in the overworld with a Pokémon out of its ball.",
+      "notes": "Pair with Egg Power from a picnic sandwich to find eggs faster and hatch them faster."
+    }
+  ],
+  "hatchModifiers": [
+    {
+      "name": "Egg Power Sandwich",
+      "type": "sandwich",
+      "effect": "Raises the chance of an egg appearing in the picnic basket and reduces hatch time. Lv. 3 is about 10× egg-find chance; exact Lv. 1/2 multipliers are not yet verified here.",
+      "availability": "Cook at a picnic. Lv. 2 is reachable with common shop ingredients (for example a Great Peanut Butter Sandwich). Lv. 3 needs Herba Mystica from 5★+ Tera Raids."
+    }
+  ],
+  "postgame": [],
+  "uniqueMechanics": [
+    "Mirror Herb: held during a picnic, copies egg moves from a partner that knows them — SV's non-egg path for teaching egg moves."
+  ],
+  "provenance": {
+    "eggGroups": ["pokeapi", "bulbapedia"],
+    "species": ["pokeapi", "bulbapedia"],
+    "dittoAvailability": ["bulbapedia", "serebii"],
+    "eggMoves": ["bulbapedia", "serebii"],
+    "moveDescriptions": ["pokeapi", "bulbapedia"],
+    "abilityDescriptions": ["pokeapi", "bulbapedia"],
+    "hatchRoutes": ["bulbapedia", "serebii"],
+    "hatchModifiers": ["bulbapedia", "serebii"],
+    "uniqueMechanics": ["bulbapedia", "serebii"]
+  }
+}

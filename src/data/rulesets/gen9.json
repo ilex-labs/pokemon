@@ -1,0 +1,33 @@
+{
+  "generation": 9,
+  "daycareAvailable": true,
+  "gendersExist": true,
+  "naturesExist": true,
+  "abilitiesExist": true,
+  "hiddenAbilitiesExist": true,
+  "eggMovesExist": true,
+  "eggMoveEligibleParents": "either-parent",
+  "natureLock": {
+    "method": "everstone-guaranteed",
+    "holder": "either-parent"
+  },
+  "abilityInheritance": {
+    "inheritanceExists": true,
+    "hiddenAbilityViaEggs": true,
+    "abilityCapsuleAvailable": true,
+    "abilityPatchAvailable": true,
+    "inheritanceOdds": "TODO"
+  },
+  "ivInheritance": {
+    "maxIv": 31,
+    "baseCountInherited": 3,
+    "destinyKnotBoostedCount": 5,
+    "destinyKnotAvailable": true,
+    "powerItemsAvailable": true
+  },
+  "hyperTraining": {
+    "available": true,
+    "levelRequired": 50
+  },
+  "eggMoveMethod": "eggs-or-alternative"
+}
