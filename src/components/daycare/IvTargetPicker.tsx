@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { IV_STAT_LABELS, type IvStat } from '../../data/loadGame'
 
 type IvMode = 'any' | '0' | 'max' | 'exact'
@@ -33,8 +32,8 @@ function SegmentedButton({
       onClick={onClick}
       className={
         active
-          ? `${numeric ? 'num ' : ''}rounded border border-bright bg-raised px-2 py-1 text-caption font-medium text-bright`
-          : `${numeric ? 'num ' : ''}rounded border border-transparent px-2 py-1 text-caption text-body hover:text-bright`
+          ? `${numeric ? 'num ' : ''}rounded border border-bright bg-raised px-2 py-1 text-meta font-medium text-bright`
+          : `${numeric ? 'num ' : ''}rounded border border-transparent px-2 py-1 text-meta text-body hover:text-bright`
       }
     >
       {label}
@@ -42,17 +41,15 @@ function SegmentedButton({
   )
 }
 
+/**
+ * Per-stat IV rows + exact inputs. Only mounted when the Custom preset is
+ * selected — "Set exact values" lives here, not as a separate link.
+ */
 export default function IvTargetPicker({
   values,
   maxIv,
   onChange,
 }: IvTargetPickerProps) {
-  const [showExact, setShowExact] = useState(() =>
-    Object.values(values).some(
-      (value) => typeof value === 'number' && value !== 0 && value !== maxIv,
-    ),
-  )
-
   function setStat(stat: IvStat, next: 'any' | number) {
     onChange({ ...values, [stat]: next })
   }
@@ -61,16 +58,19 @@ export default function IvTargetPicker({
 
   return (
     <fieldset>
-      <legend className="mb-2 text-sm text-bright">IV targets</legend>
+      <legend className="label-caps mb-2">IV targets</legend>
 
-      <div className="divide-y divide-edge border-y border-edge">
+      <div className="grid grid-cols-1 gap-0 divide-y divide-edge border-y border-edge sm:grid-cols-2 sm:gap-x-6 sm:divide-y-0 sm:border-y-0">
         {stats.map((stat) => {
           const value = values[stat] ?? 'any'
           const mode = modeFor(value, maxIv)
           const exactValue = typeof value === 'number' ? value : maxIv
 
           return (
-            <div key={stat} className="py-2.5">
+            <div
+              key={stat}
+              className="border-edge py-3.5 sm:border-b sm:py-3"
+            >
               <div className="flex items-center justify-between gap-2">
                 <span className="text-sm font-medium text-bright">
                   {IV_STAT_LABELS[stat]}
@@ -96,40 +96,30 @@ export default function IvTargetPicker({
                 </div>
               </div>
 
-              {showExact ? (
-                <label className="mt-2 flex items-center gap-2 text-sm text-muted">
-                  <span>Exact</span>
-                  <input
-                    type="number"
-                    min={0}
-                    max={maxIv}
-                    value={mode === 'exact' ? exactValue : ''}
-                    placeholder={`${0}–${maxIv}`}
-                    className="num w-20 rounded border border-edge bg-raised px-2 py-1 text-bright"
-                    onChange={(event) => {
-                      const parsed = Number(event.target.value)
-                      if (Number.isNaN(parsed)) return
-                      const clamped = Math.min(
-                        maxIv,
-                        Math.max(0, Math.trunc(parsed)),
-                      )
-                      setStat(stat, clamped)
-                    }}
-                  />
-                </label>
-              ) : null}
+              <label className="mt-2 flex items-center gap-2 text-meta text-muted">
+                <span>Exact</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={maxIv}
+                  value={mode === 'exact' ? exactValue : ''}
+                  placeholder={`0–${maxIv}`}
+                  className="num w-20 rounded border border-edge bg-raised px-2 py-1 text-bright"
+                  onChange={(event) => {
+                    const parsed = Number(event.target.value)
+                    if (Number.isNaN(parsed)) return
+                    const clamped = Math.min(
+                      maxIv,
+                      Math.max(0, Math.trunc(parsed)),
+                    )
+                    setStat(stat, clamped)
+                  }}
+                />
+              </label>
             </div>
           )
         })}
       </div>
-
-      <button
-        type="button"
-        className="mt-3 text-sm text-bright hover:text-body"
-        onClick={() => setShowExact((current) => !current)}
-      >
-        {showExact ? 'Hide exact values' : 'Set exact values'}
-      </button>
     </fieldset>
   )
 }

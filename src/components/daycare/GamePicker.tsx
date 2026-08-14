@@ -12,10 +12,10 @@ export default function GamePicker({
   onChange,
 }: GamePickerProps) {
   return (
-    <label className="block">
-      <span className="mb-1 block text-sm text-bright">Game</span>
+    <label className="block min-w-0">
+      <span className="label-caps mb-1.5 block">Game</span>
       <select
-        className="w-full rounded border border-edge bg-raised px-3 py-2 text-bright"
+        className="w-full max-w-full rounded border border-edge bg-raised px-3 py-2 text-sm text-bright"
         value={value}
         onChange={(event) => onChange(event.target.value)}
       >

@@ -4,6 +4,7 @@ import {
   type PairingStrategy,
   type ParentRequirement,
 } from '../../engine/daycareEngine'
+import { withNums } from '../../lib/withNums'
 import RuleFlag from './RuleFlag'
 
 type ParentPairCardProps = {
@@ -34,18 +35,18 @@ function ParentBlock({
     <div className="min-w-0">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h4 className="text-sm font-medium text-bright">
-            Parent {parent.role}
-          </h4>
-          <p className="mt-1 text-sm text-body">
+          <h4 className="label-caps">Parent {parent.role}</h4>
+          <p className="mt-1.5 text-item font-medium text-bright">
             {parent.gender ? `${parent.gender} ` : null}
             {parent.species.join(' / ')}
           </p>
           {parent.genderReason ? (
-            <p className="mt-1 text-caption text-muted">{parent.genderReason}</p>
+            <p className="mt-1 text-meta text-muted">
+              {withNums(parent.genderReason)}
+            </p>
           ) : null}
         </div>
-        <label className="flex shrink-0 cursor-pointer items-center gap-2 text-caption text-body">
+        <label className="flex shrink-0 cursor-pointer items-center gap-2 text-meta text-body">
           <input
             type="checkbox"
             checked={owned}
@@ -56,10 +57,8 @@ function ParentBlock({
       </div>
 
       {!owned && acquisition.length > 0 ? (
-        <div className="mt-3 space-y-2">
-          <p className="text-caption font-medium uppercase tracking-wide text-muted">
-            Get this parent first
-          </p>
+        <div className="mt-[var(--spacing-within)] space-y-2">
+          <p className="label-caps">Get this parent first</p>
           {acquisition.map((flag, index) => (
             <RuleFlag
               key={`${parent.role}-acq-${flag.severity}-${index}`}
@@ -69,7 +68,7 @@ function ParentBlock({
         </div>
       ) : null}
 
-      <ul className="mt-3 list-none space-y-1 p-0 text-sm text-body">
+      <ul className="mt-[var(--spacing-within)] list-none space-y-1 p-0 text-sm text-body">
         {parent.mustHaveNature ? (
           <li>Nature: {parent.mustHaveNature}</li>
         ) : null}
@@ -82,7 +81,7 @@ function ParentBlock({
       </ul>
 
       {showHeldItems ? (
-        <div className={owned ? 'mt-3' : 'mt-2'}>
+        <div className="mt-[var(--spacing-within)]">
           {parent.heldItem ? (
             <div className="text-sm">
               <p className="text-bright">
@@ -92,8 +91,8 @@ function ParentBlock({
                 ) : null}
               </p>
               {parent.heldItemReason ? (
-                <p className="mt-1 text-caption text-muted">
-                  {parent.heldItemReason}
+                <p className="mt-1 text-meta text-muted">
+                  {withNums(parent.heldItemReason)}
                 </p>
               ) : null}
             </div>
@@ -124,67 +123,80 @@ export default function ParentPairCard({
   const showHeldItems = eggAffectingHeldItemsExist(ruleset)
 
   return (
-    <section className="space-y-3">
-      <h2 className="text-title font-medium text-bright">What you need</h2>
-      <p className="text-sm text-muted">
-        {showHeldItems
-          ? 'Pick a route by what you have to acquire — held items, pairing, and hatching are the same either way.'
-          : 'Pick a route by what you have to acquire — pairing and hatching are the same either way.'}
-      </p>
-
-      <div
-        className={
-          strategies.length > 1
-            ? 'grid grid-cols-1 gap-2 sm:grid-cols-2'
-            : 'grid grid-cols-1 gap-2'
-        }
-        role="radiogroup"
-        aria-label="Pairing routes"
-      >
-        {strategies.map((strategy) => {
-          const isSelected = strategy.id === selected?.id
-          return (
-            <button
-              key={strategy.id}
-              type="button"
-              role="radio"
-              aria-checked={isSelected}
-              onClick={() => onSelectStrategy(strategy.id)}
-              className={
-                isSelected
-                  ? 'rounded border border-accent bg-page px-3 py-3 text-left'
-                  : 'rounded border border-edge bg-page px-3 py-3 text-left hover:border-bright'
-              }
-            >
-              <p className="text-sm font-medium text-bright">{strategy.label}</p>
-              <p className="mt-1 text-sm text-body">{strategy.acquisitionCost}</p>
-              {strategy.recommended && strategy.recommendReason ? (
-                <p className="mt-2 text-caption text-muted">
-                  Recommended — {strategy.recommendReason.toLowerCase()}
-                </p>
-              ) : null}
-            </button>
-          )
-        })}
-      </div>
-
-      {routesEquivalent && strategies.length > 1 ? (
+    <div className="space-y-[var(--spacing-section)]">
+      <section className="space-y-[var(--spacing-within)]">
+        <div className="border-b border-edge pb-2">
+          <h2 className="text-section font-medium text-bright">Routes</h2>
+        </div>
         <p className="text-sm text-muted">
-          These routes are equivalent — same number of parents to obtain.
+          {showHeldItems
+            ? 'Pick a route by what you have to acquire — held items, pairing, and hatching are the same either way.'
+            : 'Pick a route by what you have to acquire — pairing and hatching are the same either way.'}
         </p>
-      ) : null}
 
-      {excludedStrategies.map((excluded) => (
-        <p key={excluded.id} className="text-sm text-muted">
-          {excluded.label} isn&apos;t available — {excluded.reason}
-        </p>
-      ))}
+        <div
+          className={
+            strategies.length > 1
+              ? 'grid grid-cols-1 gap-2 sm:grid-cols-2'
+              : 'grid grid-cols-1 gap-2'
+          }
+          role="radiogroup"
+          aria-label="Pairing routes"
+        >
+          {strategies.map((strategy) => {
+            const isSelected = strategy.id === selected?.id
+            return (
+              <button
+                key={strategy.id}
+                type="button"
+                role="radio"
+                aria-checked={isSelected}
+                onClick={() => onSelectStrategy(strategy.id)}
+                className={
+                  isSelected
+                    ? 'rounded border border-accent bg-page px-3 py-3 text-left'
+                    : 'rounded border border-edge bg-page px-3 py-3 text-left hover:border-bright'
+                }
+              >
+                <p className="text-item font-medium text-bright">
+                  {strategy.label}
+                </p>
+                <p className="mt-1 text-sm text-body">
+                  {withNums(strategy.acquisitionCost)}
+                </p>
+                {strategy.recommended && strategy.recommendReason ? (
+                  <p className="mt-2 text-meta text-muted">
+                    Recommended — {strategy.recommendReason.toLowerCase()}
+                  </p>
+                ) : null}
+              </button>
+            )
+          })}
+        </div>
+
+        {routesEquivalent && strategies.length > 1 ? (
+          <p className="text-sm text-muted">
+            These routes are equivalent — same number of parents to obtain.
+          </p>
+        ) : null}
+
+        {excludedStrategies.map((excluded) => (
+          <p key={excluded.id} className="text-sm text-muted">
+            {excluded.label} isn&apos;t available — {excluded.reason}
+          </p>
+        ))}
+      </section>
 
       {selected ? (
-        <div className="space-y-3 border-t border-edge pt-4">
-          <h3 className="text-sm font-medium text-bright">
+        <section className="space-y-[var(--spacing-within)]">
+          <div className="border-b border-edge pb-2">
+            <h2 className="text-section font-medium text-bright">
+              What you need
+            </h2>
+          </div>
+          <p className="text-item font-medium text-bright">
             Parents for {selected.label}
-          </h3>
+          </p>
           {!showHeldItems ? (
             <p className="text-sm text-body">
               No held item affects egg outcomes in this game.
@@ -192,7 +204,10 @@ export default function ParentPairCard({
           ) : null}
           <div className="divide-y divide-edge border-t border-edge">
             {selected.parents.map((parent) => (
-              <div key={`${selected.id}-${parent.role}`} className="py-4">
+              <div
+                key={`${selected.id}-${parent.role}`}
+                className="py-[var(--spacing-within)]"
+              >
                 <ParentBlock
                   parent={parent}
                   owned={ownedRoles.has(parent.role)}
@@ -202,8 +217,8 @@ export default function ParentPairCard({
               </div>
             ))}
           </div>
-        </div>
+        </section>
       ) : null}
-    </section>
+    </div>
   )
 }

@@ -16,7 +16,9 @@ import {
   type DaycareTarget,
 } from '../engine/daycareEngine'
 import GamePicker from '../components/daycare/GamePicker'
-import GateBanner from '../components/daycare/GateBanner'
+import GateBanner, {
+  type GateDismissals,
+} from '../components/daycare/GateBanner'
 import DaycarePaneToggle from '../components/daycare/DaycarePaneToggle'
 import HatchRouteCard from '../components/daycare/HatchRouteCard'
 import ParentPairCard from '../components/daycare/ParentPairCard'
@@ -26,6 +28,7 @@ import TargetSpreadForm from '../components/daycare/TargetSpreadForm'
 import { getJson, removeJson, setJson } from '../lib/storage'
 
 const STORAGE_KEY = 'pokemon:daycare:v1'
+const GATES_KEY = 'pokemon:gates:v1'
 
 /** Persisted inputs only — plan output is always recomputed from the target. */
 type StoredDaycare = {
@@ -114,7 +117,7 @@ function createDefaultTarget(option: GameOption): DaycareTarget {
     nature: 'any',
     ability: 'any',
     eggMoves: [],
-    ivs: defaultIvSpread(option.ruleset.ivInheritance.maxIv),
+    ivs: defaultIvSpread(),
     wantsShiny: false,
   }
 }
@@ -144,6 +147,7 @@ export default function Daycare() {
   const [hydrated, setHydrated] = useState(false)
   /** Narrow viewports only — desktop shows both panes and ignores this. */
   const [mobilePane, setMobilePane] = useState<'target' | 'plan'>('target')
+  const [gateDismissals, setGateDismissals] = useState<GateDismissals>({})
 
   const ownedSet = useMemo(() => new Set(ownedParentRoles), [ownedParentRoles])
 
@@ -218,6 +222,7 @@ export default function Daycare() {
         removeJson(STORAGE_KEY)
       }
     }
+    setGateDismissals(getJson<GateDismissals>(GATES_KEY) ?? {})
     setHydrated(true)
   }, [])
 
@@ -240,6 +245,11 @@ export default function Daycare() {
     completedStepIds,
     selectedStrategyId,
   ])
+
+  function updateGateDismissals(next: GateDismissals) {
+    setGateDismissals(next)
+    setJson(GATES_KEY, next)
+  }
 
   function selectGame(nextId: string) {
     const next = getGameOption(nextId)
@@ -276,9 +286,45 @@ export default function Daycare() {
 
   const blockingMessage = blocked ? firstBlockingMessage(steps) : null
 
+  const gameContext = (
+    <>
+      <GamePicker
+        options={gamesCatalog}
+        value={gameId}
+        onChange={selectGame}
+      />
+      <GateBanner
+        gameId={gameId}
+        gates={featureGates}
+        dismissed={gateDismissals}
+        onDismissedChange={updateGateDismissals}
+      />
+    </>
+  )
+
   return (
-    <div className="space-y-6">
-      <div>
+    <div className="space-y-[var(--spacing-section)]">
+      {/*
+        Game selector is page context (spec §10), not a target field.
+        Desktop: title + selector on one row; gate sits under the selector.
+        Mobile: title alone here; selector + gate open the Target pane.
+      */}
+      <div className="hidden lg:block">
+        <div className="flex items-start justify-between gap-6">
+          <div className="min-w-0 flex-1">
+            <PageTitle>Daycare Planner</PageTitle>
+            <p className="mt-2 text-sm text-body">
+              Plan egg pairs, check inheritance rules, and route hatch efficiency
+              for a target spread.
+            </p>
+          </div>
+          <div className="w-[min(100%,18rem)] shrink-0 space-y-[var(--spacing-within)]">
+            {gameContext}
+          </div>
+        </div>
+      </div>
+
+      <div className="lg:hidden">
         <PageTitle className="mb-2">Daycare Planner</PageTitle>
         <p className="text-sm text-body">
           Plan egg pairs, check inheritance rules, and route hatch efficiency for
@@ -286,29 +332,31 @@ export default function Daycare() {
         </p>
       </div>
 
-      <GateBanner gameId={gameId} gates={featureGates} />
-
       <DaycarePaneToggle value={mobilePane} onChange={setMobilePane} />
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:items-start">
+      {/*
+        ≥1024px: form sticky | output (main 1.45fr plan sequence + sidebar hatch).
+        Mobile: Target / Plan panes via segmented control.
+      */}
+      <div className="grid grid-cols-1 gap-[var(--spacing-section)] lg:grid-cols-[minmax(17rem,22rem)_minmax(0,1fr)] lg:items-start">
         <aside
           className={
             mobilePane === 'target'
-              ? 'space-y-4 lg:sticky lg:top-4'
-              : 'hidden space-y-4 lg:sticky lg:top-4 lg:block'
+              ? 'space-y-[var(--spacing-within)] lg:sticky lg:top-4'
+              : 'hidden space-y-[var(--spacing-within)] lg:sticky lg:top-4 lg:block'
           }
           role="tabpanel"
           id="daycare-pane-target-panel"
           aria-labelledby="daycare-pane-target"
         >
-          <GamePicker
-            options={gamesCatalog}
-            value={gameId}
-            onChange={selectGame}
-          />
-          <section className="space-y-4">
+          <div className="space-y-[var(--spacing-within)] lg:hidden">
+            {gameContext}
+          </div>
+          <section className="space-y-[var(--spacing-within)]">
             <div className="border-b border-edge pb-2">
-              <h2 className="text-title font-medium text-bright">Target spread</h2>
+              <h2 className="text-section font-medium text-bright">
+                Target spread
+              </h2>
             </div>
             <TargetSpreadForm
               value={target}
@@ -328,6 +376,9 @@ export default function Daycare() {
                 ruleset.abilityInheritance.inheritanceExists
               }
               hiddenAbilitiesExist={ruleset.hiddenAbilitiesExist}
+              shinyHint={
+                shiny?.tiers.find((tier) => tier.id === 'base') ?? shiny?.tiers[0]
+              }
               onChange={setTarget}
             />
           </section>
@@ -336,63 +387,68 @@ export default function Daycare() {
         <div
           className={
             mobilePane === 'plan'
-              ? 'min-w-0 space-y-6'
-              : 'hidden min-w-0 space-y-6 lg:block'
+              ? 'min-w-0'
+              : 'hidden min-w-0 lg:block'
           }
           role="tabpanel"
           id="daycare-pane-plan-panel"
           aria-labelledby="daycare-pane-plan"
         >
-          <section className="space-y-4">
-            <div className="border-b border-edge pb-2">
-              <h2 className="text-title font-medium text-bright">Plan</h2>
+          <div className="grid grid-cols-1 gap-[var(--spacing-section)] lg:grid-cols-[1.45fr_1fr] lg:items-start">
+            <div className="min-w-0 space-y-[var(--spacing-section)]">
+              {blocked && blockingMessage ? (
+                <div
+                  role="alert"
+                  className="border-l-2 border-oxide bg-page py-3 pl-3"
+                >
+                  <p className="text-sm font-medium text-oxide">Blocked</p>
+                  <p className="mt-1 text-item text-bright">{blockingMessage}</p>
+                  <p className="mt-2 text-sm text-muted">
+                    Nothing can be planned for this target in this game.
+                  </p>
+                </div>
+              ) : null}
+
+              {!blocked ? (
+                <>
+                  <ParentPairCard
+                    strategies={strategies}
+                    selectedStrategyId={activeStrategy?.id ?? ''}
+                    routesEquivalent={plan.routesEquivalent}
+                    excludedStrategies={plan.excludedStrategies}
+                    ruleset={ruleset}
+                    onSelectStrategy={selectStrategy}
+                    ownedRoles={ownedSet}
+                    onToggleOwned={toggleOwned}
+                  />
+
+                  <section className="space-y-[var(--spacing-within)]">
+                    <div className="border-b border-edge pb-2">
+                      <h2 className="text-section font-medium text-bright">
+                        What to do
+                      </h2>
+                    </div>
+                    {steps.length > 0 ? (
+                      <PlanStepList
+                        steps={steps.map((step, index) => ({
+                          ...step,
+                          order: index + 1,
+                        }))}
+                        completedStepIds={completedStepIds}
+                        onToggleStep={toggleStep}
+                      />
+                    ) : null}
+                  </section>
+
+                  {shiny ? <ShinyOddsPanel shiny={shiny} /> : null}
+                </>
+              ) : null}
             </div>
 
-            {blocked && blockingMessage ? (
-              <div
-                role="alert"
-                className="border-l-2 border-oxide bg-page py-3 pl-3"
-              >
-                <p className="text-sm font-medium text-oxide">Blocked</p>
-                <p className="mt-1 text-base text-bright">{blockingMessage}</p>
-                <p className="mt-2 text-sm text-muted">
-                  Nothing can be planned for this target in this game.
-                </p>
-              </div>
-            ) : null}
-
-            {!blocked ? (
-              <>
-                <ParentPairCard
-                  strategies={strategies}
-                  selectedStrategyId={activeStrategy?.id ?? ''}
-                  routesEquivalent={plan.routesEquivalent}
-                  excludedStrategies={plan.excludedStrategies}
-                  ruleset={ruleset}
-                  onSelectStrategy={selectStrategy}
-                  ownedRoles={ownedSet}
-                  onToggleOwned={toggleOwned}
-                />
-
-                <div className="space-y-2 border-t border-edge pt-4">
-                  <h3 className="text-sm font-medium text-bright">What to do</h3>
-                  {steps.length > 0 ? (
-                    <PlanStepList
-                      steps={steps.map((step, index) => ({
-                        ...step,
-                        order: index + 1,
-                      }))}
-                      completedStepIds={completedStepIds}
-                      onToggleStep={toggleStep}
-                    />
-                  ) : null}
-                </div>
-              </>
-            ) : null}
-          </section>
-
-          <HatchRouteCard game={game} />
-          {shiny ? <ShinyOddsPanel shiny={shiny} /> : null}
+            <aside className="min-w-0 space-y-[var(--spacing-section)] lg:sticky lg:top-4">
+              <HatchRouteCard game={game} />
+            </aside>
+          </div>
         </div>
       </div>
     </div>

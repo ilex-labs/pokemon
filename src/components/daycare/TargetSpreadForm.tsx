@@ -1,11 +1,14 @@
+import { useEffect, useState } from 'react'
 import type { NatureLock } from '../../data/schema'
 import {
+  isAllAnyIvs,
   natureDescription,
+  resolvePresetValues,
   speciesAbilityGroups,
 } from '../../data/loadGame'
-import type { DaycareTarget } from '../../engine/daycareEngine'
+import type { DaycareTarget, ShinyOddsTier } from '../../engine/daycareEngine'
 import type { GameData, IvPreset, NaturesCatalog } from '../../data/schema'
-import IvPresetRow from './IvPresetRow'
+import IvPresetRow, { type IvPresetSelection } from './IvPresetRow'
 import IvTargetPicker from './IvTargetPicker'
 import OptionDescription from './OptionDescription'
 import SpeciesPicker from './SpeciesPicker'
@@ -26,6 +29,8 @@ type TargetSpreadFormProps = {
   abilitiesExist: boolean
   abilityInheritanceExists: boolean
   hiddenAbilitiesExist: boolean
+  /** Base-tier shiny figure when the hatch-for-shiny toggle is on. */
+  shinyHint?: ShinyOddsTier
   onChange: (next: DaycareTarget) => void
 }
 
@@ -36,6 +41,22 @@ function ConstraintNote({ text }: { text: string }) {
       {text}
     </p>
   )
+}
+
+function selectionFromIvs(
+  ivs: Record<string, 'any' | number>,
+  presets: IvPreset[],
+  maxIv: number,
+): IvPresetSelection {
+  if (isAllAnyIvs(ivs)) return 'any'
+  for (const preset of presets) {
+    const resolved = resolvePresetValues(preset.values, maxIv)
+    const match = Object.keys(resolved).every(
+      (stat) => resolved[stat] === (ivs[stat] ?? 'any'),
+    )
+    if (match) return preset.id
+  }
+  return 'custom'
 }
 
 export default function TargetSpreadForm({
@@ -54,6 +75,7 @@ export default function TargetSpreadForm({
   abilitiesExist,
   abilityInheritanceExists,
   hiddenAbilitiesExist,
+  shinyHint,
   onChange,
 }: TargetSpreadFormProps) {
   const abilityGroups = speciesAbilityGroups(game, value.species, {
@@ -62,6 +84,22 @@ export default function TargetSpreadForm({
   const natureNames = Object.keys(natures).sort()
   const natureCannotLock = naturesExist && natureLock.method === 'none'
   const abilityCannotInherit = abilitiesExist && !abilityInheritanceExists
+
+  const [ivSelection, setIvSelection] = useState<IvPresetSelection>(() =>
+    selectionFromIvs(value.ivs, ivPresets, maxIv),
+  )
+
+  // Re-derive when IVs change from outside the chip row — but once the user
+  // opens Custom, stay there even if every stat is still Any.
+  useEffect(() => {
+    setIvSelection((current) => {
+      const matched = selectionFromIvs(value.ivs, ivPresets, maxIv)
+      if (current === 'custom') {
+        return matched !== 'any' && matched !== 'custom' ? matched : 'custom'
+      }
+      return matched
+    })
+  }, [value.ivs, ivPresets, maxIv])
 
   function patch(partial: Partial<DaycareTarget>) {
     onChange({ ...value, ...partial })
@@ -74,8 +112,22 @@ export default function TargetSpreadForm({
     patch({ eggMoves: [...selected] })
   }
 
+  function selectIvPreset(
+    selection: IvPresetSelection,
+    values?: Record<string, 'any' | number>,
+  ) {
+    setIvSelection(selection)
+    if (values) patch({ ivs: values })
+  }
+
+  function changeIvs(ivs: Record<string, 'any' | number>) {
+    // Manual edit while a named preset is active → Custom, reveal rows.
+    if (ivSelection !== 'custom') setIvSelection('custom')
+    patch({ ivs })
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-[var(--spacing-within)]">
       <SpeciesPicker
         speciesNames={speciesNames}
         value={value.species}
@@ -89,9 +141,9 @@ export default function TargetSpreadForm({
       />
 
       <label className="block">
-        <span className="mb-1 block text-sm text-bright">Nature</span>
+        <span className="label-caps mb-1.5 block">Nature</span>
         <select
-          className="w-full rounded border border-edge bg-raised px-3 py-2 text-bright"
+          className="w-full rounded border border-edge bg-raised px-3 py-2 text-sm text-bright"
           value={value.nature}
           onChange={(event) => patch({ nature: event.target.value })}
         >
@@ -111,9 +163,9 @@ export default function TargetSpreadForm({
       </label>
 
       <label className="block">
-        <span className="mb-1 block text-sm text-bright">Ability</span>
+        <span className="label-caps mb-1.5 block">Ability</span>
         <select
-          className="w-full rounded border border-edge bg-raised px-3 py-2 text-bright"
+          className="w-full rounded border border-edge bg-raised px-3 py-2 text-sm text-bright"
           value={value.ability}
           onChange={(event) => patch({ ability: event.target.value })}
         >
@@ -146,7 +198,7 @@ export default function TargetSpreadForm({
       </label>
 
       <fieldset>
-        <legend className="mb-2 text-sm text-bright">Egg moves</legend>
+        <legend className="label-caps mb-2">Egg moves</legend>
         {eggMoveOptions.length === 0 ? (
           <p className="text-sm text-muted">No egg moves listed for this species.</p>
         ) : (
@@ -175,23 +227,40 @@ export default function TargetSpreadForm({
         presets={ivPresets}
         maxIv={maxIv}
         generation={generation}
-        onSelect={(ivs) => patch({ ivs })}
+        selection={ivSelection}
+        onSelect={selectIvPreset}
       />
 
-      <IvTargetPicker
-        values={value.ivs}
-        maxIv={maxIv}
-        onChange={(ivs) => patch({ ivs })}
-      />
-
-      <label className="flex items-center gap-2 text-sm text-bright">
-        <input
-          type="checkbox"
-          checked={Boolean(value.wantsShiny)}
-          onChange={(event) => patch({ wantsShiny: event.target.checked })}
+      {ivSelection === 'custom' ? (
+        <IvTargetPicker
+          values={value.ivs}
+          maxIv={maxIv}
+          onChange={changeIvs}
         />
-        Hatch for shiny (show Masuda / Shiny Charm odds)
-      </label>
+      ) : null}
+
+      <div>
+        <label className="flex items-center gap-2 text-sm text-bright">
+          <input
+            type="checkbox"
+            checked={Boolean(value.wantsShiny)}
+            onChange={(event) => patch({ wantsShiny: event.target.checked })}
+          />
+          Hatch for shiny (show Masuda / Shiny Charm odds)
+        </label>
+        {value.wantsShiny && shinyHint ? (
+          <p className="mt-1.5 pl-6 text-meta text-muted">
+            Base egg odds{' '}
+            <span className="num text-bright">{shinyHint.odds}</span>
+            <span>
+              {' '}
+              · ~
+              <span className="num">{shinyHint.approximateEggs.toLocaleString()}</span>{' '}
+              eggs
+            </span>
+          </p>
+        ) : null}
+      </div>
     </div>
   )
 }

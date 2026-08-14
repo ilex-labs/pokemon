@@ -1,14 +1,4 @@
-import { useEffect, useState } from 'react'
 import type { FeatureGate } from '../../data/schema'
-import { getJson, setJson } from '../../lib/storage'
-
-const GATES_KEY = 'pokemon:gates:v1'
-
-type GateDismissals = Record<string, boolean>
-
-function gateKey(gameId: string, feature: string): string {
-  return `${gameId}:${feature}`
-}
 
 /**
  * Enums select which sentence to write — they never appear in the sentence.
@@ -39,41 +29,49 @@ function gateCopy(feature: string): { noun: string; collapsed: string } {
   }
 }
 
+export function gateStorageKey(gameId: string, feature: string): string {
+  return `${gameId}:${feature}`
+}
+
+export type GateDismissals = Record<string, boolean>
+
 type GateBannerProps = {
   gameId: string
   gates: FeatureGate[]
+  dismissed: GateDismissals
+  onDismissedChange: (next: GateDismissals) => void
 }
 
 /**
- * Temporal feature-gate banner. Dismisses to a chip (not a modal); dismissal is
- * remembered per game+gate under the pokemon: localStorage prefix.
+ * Temporal feature-gate banner. Dismisses to a chip (not a modal).
+ * Dismissal state is owned by the parent so desktop/mobile placements stay in sync.
+ * Copy stays in player language — never surface schema names like "feature gate".
  */
-export default function GateBanner({ gameId, gates }: GateBannerProps) {
-  const [dismissed, setDismissed] = useState<GateDismissals>({})
-
-  useEffect(() => {
-    setDismissed(getJson<GateDismissals>(GATES_KEY) ?? {})
-  }, [])
-
+export default function GateBanner({
+  gameId,
+  gates,
+  dismissed,
+  onDismissedChange,
+}: GateBannerProps) {
   if (gates.length === 0) return null
 
   function dismiss(feature: string) {
-    const next = { ...dismissed, [gateKey(gameId, feature)]: true }
-    setDismissed(next)
-    setJson(GATES_KEY, next)
+    onDismissedChange({
+      ...dismissed,
+      [gateStorageKey(gameId, feature)]: true,
+    })
   }
 
   function restore(feature: string) {
     const next = { ...dismissed }
-    delete next[gateKey(gameId, feature)]
-    setDismissed(next)
-    setJson(GATES_KEY, next)
+    delete next[gateStorageKey(gameId, feature)]
+    onDismissedChange(next)
   }
 
   return (
-    <div className="mb-6 space-y-2">
+    <div className="min-w-0 space-y-2">
       {gates.map((gate) => {
-        const key = gateKey(gameId, gate.feature)
+        const key = gateStorageKey(gameId, gate.feature)
         const isDismissed = Boolean(dismissed[key])
         const copy = gateCopy(gate.feature)
 
@@ -83,7 +81,7 @@ export default function GateBanner({ gameId, gates }: GateBannerProps) {
               key={key}
               type="button"
               onClick={() => restore(gate.feature)}
-              className="rounded border border-brass px-2 py-1 text-caption text-brass hover:bg-raised"
+              className="max-w-full rounded border border-brass px-2 py-1 text-left text-meta text-brass hover:bg-raised"
             >
               {copy.collapsed}
             </button>
@@ -94,22 +92,17 @@ export default function GateBanner({ gameId, gates }: GateBannerProps) {
           <div
             key={key}
             role="status"
-            className="rounded border border-brass bg-raised px-4 py-3"
+            className="min-w-0 rounded border border-brass bg-raised px-3 py-3"
           >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-sm font-medium text-brass">
-                  Warning · feature gate
-                </p>
-                <p className="mt-1 text-sm text-bright">
-                  The {copy.noun} in this game unlocks after:{' '}
-                  {gate.unlockedAfter}
-                </p>
-              </div>
+            <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+              <p className="min-w-0 flex-1 break-words text-sm text-bright">
+                The {copy.noun} in this game unlocks after:{' '}
+                {gate.unlockedAfter}
+              </p>
               <button
                 type="button"
                 onClick={() => dismiss(gate.feature)}
-                className="shrink-0 text-sm text-muted hover:text-bright"
+                className="shrink-0 self-start text-sm text-muted hover:text-bright"
               >
                 Dismiss
               </button>

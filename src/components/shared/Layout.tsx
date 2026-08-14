@@ -16,7 +16,7 @@ export default function Layout() {
         <Outlet />
       </main>
 
-      <footer className="border-t border-edge px-4 py-4 text-caption text-muted">
+      <footer className="border-t border-edge px-4 py-4 text-meta text-muted">
         Unofficial and unaffiliated with Nintendo, Creatures Inc., Game Freak, or
         The Pokémon Company. Pokémon and Pokémon character names are trademarks of
         Nintendo, Creatures Inc., and Game Freak.

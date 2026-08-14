@@ -1,4 +1,5 @@
 import type { RuleFlag as RuleFlagData } from '../../data/schema'
+import { withNums } from '../../lib/withNums'
 
 const SEVERITY_LABEL: Record<RuleFlagData['severity'], string> = {
   info: 'Info',
@@ -24,7 +25,7 @@ export default function RuleFlag({ flag }: RuleFlagProps) {
         <span className="mr-2 font-medium text-oxide">
           {SEVERITY_LABEL.blocking}
         </span>
-        {flag.message}
+        {withNums(flag.message)}
       </div>
     )
   }
@@ -38,7 +39,7 @@ export default function RuleFlag({ flag }: RuleFlagProps) {
         <span className="mr-2 font-medium text-brass">
           {SEVERITY_LABEL.warning}
         </span>
-        {flag.message}
+        {withNums(flag.message)}
       </div>
     )
   }
@@ -49,7 +50,7 @@ export default function RuleFlag({ flag }: RuleFlagProps) {
       className="mt-2 border-l-2 border-accent py-1.5 pl-3 text-sm text-body"
     >
       <span className="mr-2 font-medium text-accent">{SEVERITY_LABEL.info}</span>
-      {flag.message}
+      {withNums(flag.message)}
     </div>
   )
 }

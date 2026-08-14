@@ -162,6 +162,15 @@ export function speciesAbilityGroups(
   }
 }
 
-export function defaultIvSpread(maxIv: number): Record<string, 'any' | number> {
-  return Object.fromEntries(IV_STATS.map((stat) => [stat, maxIv]))
+export function defaultIvSpread(
+  _maxIv?: number,
+): Record<string, 'any' | number> {
+  return Object.fromEntries(IV_STATS.map((stat) => [stat, 'any' as const]))
+}
+
+/** True when every tracked IV stat is unconstrained. */
+export function isAllAnyIvs(
+  ivs: Record<string, 'any' | number>,
+): boolean {
+  return IV_STATS.every((stat) => (ivs[stat] ?? 'any') === 'any')
 }

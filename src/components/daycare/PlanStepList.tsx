@@ -1,4 +1,5 @@
 import type { PlanStep } from '../../data/schema'
+import { withNums } from '../../lib/withNums'
 import RuleFlag from './RuleFlag'
 
 type PlanStepListProps = {
@@ -15,13 +16,13 @@ export default function PlanStepList({
   const completed = new Set(completedStepIds)
 
   return (
-    <ol className="list-none divide-y divide-edge border-t border-edge p-0">
+    <ol className="list-none divide-y divide-edge border-y border-edge p-0">
       {steps.map((step) => {
         const done = completed.has(step.id)
         return (
-          <li key={step.id} className="py-3">
-            <label className="grid cursor-pointer grid-cols-[2rem_1.25rem_minmax(0,1fr)] gap-x-2">
-              <span className="num pt-0.5 text-sm text-muted tabular-nums">
+          <li key={step.id} className="py-3.5">
+            <label className="grid cursor-pointer grid-cols-[2.5rem_1.15rem_minmax(0,1fr)] items-start gap-x-2.5">
+              <span className="num pt-0.5 text-right text-sm text-muted">
                 {step.order}.
               </span>
               <input
@@ -38,7 +39,7 @@ export default function PlanStepList({
                       : 'block text-sm text-bright'
                   }
                 >
-                  {step.instruction}
+                  {withNums(step.instruction)}
                 </span>
                 {step.ruleFlags?.map((flag, index) => (
                   <RuleFlag

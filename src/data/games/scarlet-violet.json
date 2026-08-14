@@ -84,12 +84,13 @@
   },
   "hatchRoutes": [
     {
-      "routeName": "Open-world travel with your companion out",
+      "routeName": "Ride Koraidon / Miraidon",
       "cycleCount": "fast",
-      "method": "Keep a Pokémon outside its ball while you travel — eggs hatch from overworld steps as you move."
+      "method": "Eggs hatch from steps taken. Cover ground on your ride legendary — that is the fast path.",
+      "notes": "Hatch progress stops while climbing, gliding, or flying, so stay on the ground. Keep at least one non-egg Pokémon in the party."
     }
   ],
-  "hatchMechanicExplainer": "Eggs show up in the picnic basket while two compatible Pokémon are in your party picnic. Egg Power sandwiches raise how often eggs appear and also shorten hatch time — Lv. 2 from shop ingredients is the everyday target; Lv. 3 needs Herba Mystica from 5★+ Tera Raids and is roughly 10× the base find rate. A party Pokémon with Flame Body, Magma Armor, or Steam Engine halves remaining hatch cycles (abilities do not stack with each other). Keep moving in the open world with a companion out to hatch.",
+  "hatchMechanicExplainer": "Eggs show up in the picnic basket while two compatible Pokémon are in your party picnic. Egg Power sandwiches raise how often eggs appear and also shorten hatch time — Lv. 2 from shop ingredients is the everyday target; Lv. 3 needs Herba Mystica from 5★+ Tera Raids and is roughly 10× the base find rate. A party Pokémon with Flame Body, Magma Armor, or Steam Engine halves remaining hatch cycles (abilities do not stack with each other). Hatch by covering ground on Koraidon or Miraidon — stay on the ground, and keep at least one non-egg Pokémon in the party.",
   "shinyEggModifiers": {
     "masudaMethodAvailable": true,
     "shinyCharmAvailable": true,

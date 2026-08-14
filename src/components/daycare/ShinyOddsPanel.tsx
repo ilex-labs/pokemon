@@ -6,17 +6,17 @@ type ShinyOddsPanelProps = {
 
 export default function ShinyOddsPanel({ shiny }: ShinyOddsPanelProps) {
   return (
-    <section>
+    <section className="space-y-[var(--spacing-within)]">
       <div className="border-b border-edge pb-2">
-        <h2 className="text-title font-medium text-bright">Shiny egg odds</h2>
+        <h2 className="text-section font-medium text-bright">Shiny egg odds</h2>
       </div>
-      <p className="mt-2 text-sm text-muted">
+      <p className="text-sm text-muted">
         Approximate eggs until a shiny at each tier that applies in this game.
       </p>
-      <ul className="mt-4 list-none divide-y divide-edge border-t border-edge p-0">
+      <ul className="list-none divide-y divide-edge border-t border-edge p-0">
         {shiny.tiers.map((tier) => (
           <li key={tier.id} className="py-3 text-sm">
-            <p className="font-medium text-bright">{tier.label}</p>
+            <p className="text-item font-medium text-bright">{tier.label}</p>
             <p className="text-body">
               <span className="num text-bright">{tier.odds}</span>
               <span className="text-muted">

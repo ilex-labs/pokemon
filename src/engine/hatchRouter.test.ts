@@ -38,4 +38,18 @@ describe('hatchRouter', () => {
       true,
     )
   })
+
+  it('SV hatch route is ride-legendary travel, not Lets Go companion mode', () => {
+    const route = scarletViolet.hatchRoutes[0]
+    expect(route?.routeName).toMatch(/Koraidon|Miraidon/)
+    expect(route?.method).toMatch(/ride legendary|steps taken/i)
+    expect(route?.notes).toMatch(/climbing|gliding|flying/i)
+    expect(route?.notes).toMatch(/non-egg/i)
+    expect(JSON.stringify(route)).not.toMatch(/companion|outside its ball|Let.?s Go/i)
+
+    const view = buildHatchEfficiency(scarletViolet)
+    const ride = view.hatchSpeed.find((line) => /Koraidon|Miraidon/.test(line.name))
+    expect(ride?.effect).toMatch(/stay on the ground/i)
+    expect(ride?.effect).not.toMatch(/companion|outside its ball/i)
+  })
 })

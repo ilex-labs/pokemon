@@ -1,5 +1,6 @@
 import type { GameData } from '../../data/schema'
 import { buildHatchEfficiency } from '../../engine/hatchRouter'
+import { withNums } from '../../lib/withNums'
 import HatchModifierExplainer from './HatchModifierExplainer'
 
 type HatchRouteCardProps = {
@@ -14,7 +15,7 @@ function EfficiencyList({
   emptyMessage: string
 }) {
   if (lines.length === 0) {
-    return <p className="mt-2 text-sm text-body">{emptyMessage}</p>
+    return <p className="mt-2 text-sm text-body">{withNums(emptyMessage)}</p>
   }
 
   return (
@@ -24,17 +25,17 @@ function EfficiencyList({
           <div className="flex flex-wrap items-baseline gap-x-2">
             <span className="font-medium text-bright">{line.name}</span>
             {line.paceLabel ? (
-              <span className="text-muted">· {line.paceLabel}</span>
+              <span className="text-meta text-muted">· {line.paceLabel}</span>
             ) : null}
           </div>
-          <p className="text-body">{line.effect}</p>
+          <p className="text-body">{withNums(line.effect)}</p>
           {line.availability ? (
-            <p className="text-muted">{line.availability}</p>
+            <p className="text-meta text-muted">{withNums(line.availability)}</p>
           ) : null}
           {line.exampleHolders && line.exampleHolders.length > 0 ? (
             <ul className="mt-1 list-none space-y-0.5 p-0 text-sm text-body">
               {line.exampleHolders.map((holder) => (
-                <li key={holder}>{holder}</li>
+                <li key={holder}>{withNums(holder)}</li>
               ))}
             </ul>
           ) : null}
@@ -53,16 +54,18 @@ export default function HatchRouteCard({ game }: HatchRouteCardProps) {
     'No hatch-speed shortcuts recorded for this game yet.'
 
   return (
-    <section className="rounded border border-edge bg-surface px-4 py-4">
-      <h2 className="text-title font-medium text-bright">Hatch efficiency</h2>
+    <section className="space-y-[var(--spacing-within)]">
+      <div className="border-b border-edge pb-2">
+        <h2 className="text-section font-medium text-bright">Hatch efficiency</h2>
+      </div>
 
-      <div className="mt-4">
-        <h3 className="text-sm font-medium text-bright">Getting eggs faster</h3>
+      <div>
+        <h3 className="label-caps">Getting eggs faster</h3>
         <EfficiencyList lines={view.eggRate} emptyMessage={eggRateEmpty} />
       </div>
 
-      <div className="mt-5">
-        <h3 className="text-sm font-medium text-bright">Hatching them faster</h3>
+      <div>
+        <h3 className="label-caps">Hatching them faster</h3>
         <EfficiencyList lines={view.hatchSpeed} emptyMessage={hatchSpeedEmpty} />
       </div>
 

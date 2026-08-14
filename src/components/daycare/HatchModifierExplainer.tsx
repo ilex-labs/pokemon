@@ -1,3 +1,5 @@
+import { withNums } from '../../lib/withNums'
+
 type HatchModifierExplainerProps = {
   text: string
 }
@@ -11,9 +13,9 @@ export default function HatchModifierExplainer({
 }: HatchModifierExplainerProps) {
   if (!text) return null
   return (
-    <div className="mt-4 border-t border-edge pt-4">
-      <h3 className="text-sm font-medium text-bright">How hatching works here</h3>
-      <p className="mt-2 text-sm text-body">{text}</p>
+    <div className="border-t border-edge pt-[var(--spacing-within)]">
+      <h3 className="label-caps">How hatching works here</h3>
+      <p className="mt-2 text-sm text-body">{withNums(text)}</p>
     </div>
   )
 }
