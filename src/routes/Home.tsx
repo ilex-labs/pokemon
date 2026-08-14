@@ -1,35 +1,41 @@
 import { Link } from 'react-router-dom'
+import PageTitle from '../components/shared/PageTitle'
 
 const tools = [
   {
     to: '/daycare',
     title: 'Daycare Planner',
-    description: 'Plan egg pairs, inheritance, and hatch routes for a target spread.',
+    description:
+      'Work out which parents you need, how inheritance works in this game, and how to hatch the target faster.',
   },
   {
     to: '/postgame',
     title: 'Postgame Checklist',
-    description: 'Generate a scoped checklist of postgame content for a game.',
+    description:
+      'Cut the postgame down to what still matters for your save — without digging through a wiki checklist.',
   },
 ]
 
 export default function Home() {
   return (
-    <div>
-      <h1 className="mb-2 text-2xl text-bright">Pokémon Tools</h1>
-      <p className="mb-6 text-body">
-        Static planners and checklists for egg daycare and postgame progress.
+    <div className="mx-auto w-full max-w-[65ch] pt-6 sm:pt-10 lg:mx-0 lg:pt-14">
+      <PageTitle className="mb-4">Pokémon Tools</PageTitle>
+      <p className="mb-10 text-base text-body sm:mb-12">
+        The games leave a lot unexplained — inheritance, hatching, what still
+        matters after the credits. These tools spell that out for the game
+        you&apos;re playing.
       </p>
 
-      <ul className="list-none space-y-4 p-0">
+      <ul className="list-none border-t border-edge p-0">
         {tools.map((tool) => (
-          <li key={tool.to}>
-            <Link
-              to={tool.to}
-              className="block rounded border border-edge bg-surface px-4 py-3 text-bright no-underline hover:border-accent"
-            >
-              <span className="block font-medium">{tool.title}</span>
-              <span className="mt-1 block text-sm text-body">{tool.description}</span>
+          <li key={tool.to} className="border-b border-edge">
+            <Link to={tool.to} className="group block py-4 no-underline">
+              <span className="block text-base font-medium text-bright transition-colors group-hover:text-body group-focus-visible:text-body">
+                {tool.title}
+              </span>
+              <span className="mt-1 block text-sm text-body">
+                {tool.description}
+              </span>
             </Link>
           </li>
         ))}

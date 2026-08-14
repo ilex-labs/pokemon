@@ -1,0 +1,35 @@
+{
+  "generation": 3,
+  "daycareAvailable": true,
+  "gendersExist": true,
+  "naturesExist": true,
+  "abilitiesExist": true,
+  "hiddenAbilitiesExist": false,
+  "eggMovesExist": true,
+  "eggMoveEligibleParents": "male-only",
+  "natureLock": {
+    "method": "none"
+  },
+  "abilityInheritance": {
+    "inheritanceExists": false,
+    "hiddenAbilityViaEggs": false,
+    "abilityCapsuleAvailable": false,
+    "abilityPatchAvailable": false,
+    "standardOdds": 0,
+    "hiddenOdds": 0,
+    "maleOrGenderlessNeedsDitto": false
+  },
+  "ivInheritance": {
+    "maxIv": 31,
+    "baseCountInherited": 3,
+    "destinyKnotBoostedCount": 5,
+    "destinyKnotAvailable": false,
+    "powerItemsAvailable": false
+  },
+  "hyperTraining": {
+    "available": false,
+    "levelRequired": 0
+  },
+  "hatchLevel": 5,
+  "eggMoveMethod": "eggs-only"
+}

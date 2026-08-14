@@ -22,6 +22,47 @@
     "obtainedAt": "Wild encounters across Paldea (including outbreaks); also available via picnic eggs from a Ditto parent pair.",
     "universalParent": true
   },
+  "hyperTrainingAccess": {
+    "bottleCap": "Tera Raids and Porto Marinada auctions once you are deep into postgame progression",
+    "goldBottleCap": "Accumulators auction listings and rare special rewards",
+    "effort": "rare"
+  },
+  "natureAcquisition": {
+    "how": "Keep hunting wild encounters, Tera Raids, and outbreaks until the target nature appears — Synchronize no longer forces wild natures in Scarlet/Violet. Once you have one parent with that nature, picnic eggs from it (with an Everstone) are the reliable route."
+  },
+  "mintsAvailable": true,
+  "speciesDetermination": {
+    "femaleDeterminesSpecies": "The female parent determines the offspring's species.",
+    "withDitto": "With a Ditto pair, the non-Ditto parent determines the offspring's species."
+  },
+  "abilityAcquisition": {
+    "hidden": "Catch one with the hidden ability (outbreaks, Tera Raids, or random wild encounters), or apply an Ability Patch to a parent that already has a standard ability."
+  },
+  "eggMoveAcquisition": {
+    "how": "Catch or hatch one that already knows the move, or copy it at a picnic with a Mirror Herb."
+  },
+  "eggEfficiencyModifiers": [
+    {
+      "name": "Egg Power Sandwich",
+      "affects": ["egg-rate", "hatch-speed"],
+      "type": "sandwich",
+      "effect": "Raises how often eggs appear in the picnic basket — Lv. 3 is about 10× egg-find chance; Lv. 2 is the practical everyday target from shop ingredients. · Shortens the steps needed to hatch eggs while active.",
+      "availability": "Cook at a picnic. Lv. 2 recipes use common shop ingredients (for example a Great Peanut Butter Sandwich). Lv. 3 needs Herba Mystica from 5★+ Tera Raids."
+    },
+    {
+      "name": "Flame Body (or Magma Armor / Steam Engine) in party",
+      "affects": ["hatch-speed"],
+      "type": "ability",
+      "effect": "Halves the steps needed to hatch eggs while that Pokémon is in your party.",
+      "availability": "Any party slot. These abilities do not stack with each other — one holder is enough.",
+      "exampleHolders": [
+        "Larvesta — Asado Desert (Flame Body)",
+        "Fletchinder — South Province (Areas One, Three–Five) and West Province Area Three (Flame Body)",
+        "Carkol — East Province Area Three (Steam Engine or Flame Body)",
+        "Camerupt — Area Zero and North Province Area Two (Magma Armor)"
+      ]
+    }
+  ],
   "eggMoves": {
     "Charmander": [
       {
@@ -43,36 +84,42 @@
   },
   "hatchRoutes": [
     {
-      "routeName": "Open world (Let's Go)",
+      "routeName": "Open-world travel with your companion out",
       "cycleCount": "fast",
-      "method": "Let's Go mode while traveling — eggs hatch from steps taken in the overworld with a Pokémon out of its ball.",
-      "notes": "Pair with Egg Power from a picnic sandwich to find eggs faster and hatch them faster."
+      "method": "Keep a Pokémon outside its ball while you travel — eggs hatch from overworld steps as you move."
     }
   ],
-  "hatchModifiers": [
-    {
-      "name": "Egg Power Sandwich",
-      "type": "sandwich",
-      "effect": "Raises the chance of an egg appearing in the picnic basket and reduces hatch time. Lv. 3 is about 10× egg-find chance; exact Lv. 1/2 multipliers are not yet verified here.",
-      "availability": "Cook at a picnic. Lv. 2 is reachable with common shop ingredients (for example a Great Peanut Butter Sandwich). Lv. 3 needs Herba Mystica from 5★+ Tera Raids."
-    }
-  ],
+  "hatchMechanicExplainer": "Eggs show up in the picnic basket while two compatible Pokémon are in your party picnic. Egg Power sandwiches raise how often eggs appear and also shorten hatch time — Lv. 2 from shop ingredients is the everyday target; Lv. 3 needs Herba Mystica from 5★+ Tera Raids and is roughly 10× the base find rate. A party Pokémon with Flame Body, Magma Armor, or Steam Engine halves remaining hatch cycles (abilities do not stack with each other). Keep moving in the open world with a companion out to hatch.",
   "shinyEggModifiers": {
     "masudaMethodAvailable": true,
     "shinyCharmAvailable": true,
-    "shinyCharmStacksWithMasuda": true
+    "shinyCharmStacksWithMasuda": true,
+    "oddsTiers": {
+      "base": { "odds": "1/4096", "approximateEggs": 4096 },
+      "masuda": { "odds": "1/683", "approximateEggs": 683 },
+      "masudaPlusCharm": { "odds": "1/512", "approximateEggs": 512 }
+    }
   },
   "postgame": [],
   "provenance": {
     "eggGroups": ["pokeapi", "bulbapedia"],
     "species": ["pokeapi", "bulbapedia"],
     "dittoAvailability": ["bulbapedia", "serebii"],
+    "hyperTrainingAccess": ["bulbapedia", "serebii"],
+    "natureAcquisition": ["bulbapedia", "serebii"],
+    "natureMints": ["bulbapedia", "serebii"],
+    "speciesDetermination": ["bulbapedia", "serebii"],
+    "abilityAcquisition": ["bulbapedia", "serebii"],
+    "abilityInheritance": ["bulbapedia", "serebii"],
+    "eggMoveAcquisition": ["bulbapedia", "serebii"],
     "eggMoves": ["bulbapedia", "serebii"],
     "eggMoveAlternative": ["bulbapedia", "serebii"],
     "moveDescriptions": ["pokeapi", "bulbapedia"],
     "abilityDescriptions": ["pokeapi", "bulbapedia"],
     "hatchRoutes": ["bulbapedia", "serebii"],
-    "hatchModifiers": ["bulbapedia", "serebii"],
-    "shinyEggModifiers": ["bulbapedia", "serebii"]
+    "eggEfficiencyModifiers": ["bulbapedia", "serebii"],
+    "hatchMechanicExplainer": ["bulbapedia", "serebii", "smogon"],
+    "shinyEggModifiers": ["bulbapedia", "serebii"],
+    "hatchLevel": ["bulbapedia", "serebii"]
   }
 }

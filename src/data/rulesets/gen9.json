@@ -16,7 +16,9 @@
     "hiddenAbilityViaEggs": true,
     "abilityCapsuleAvailable": true,
     "abilityPatchAvailable": true,
-    "inheritanceOdds": "TODO"
+    "standardOdds": 0.8,
+    "hiddenOdds": 0.6,
+    "maleOrGenderlessNeedsDitto": true
   },
   "ivInheritance": {
     "maxIv": 31,
@@ -29,5 +31,6 @@
     "available": true,
     "levelRequired": 50
   },
+  "hatchLevel": 1,
   "eggMoveMethod": "eggs-or-alternative"
 }

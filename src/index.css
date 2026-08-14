@@ -1,5 +1,14 @@
 @import "tailwindcss";
 
+/* Self-hosted — latin subset only. Body weight (400) is preloaded in main.tsx. */
+@import "@fontsource/ibm-plex-sans/latin-400.css";
+@import "@fontsource/ibm-plex-sans/latin-500.css";
+@import "@fontsource/ibm-plex-sans/latin-600.css";
+@import "@fontsource/ibm-plex-mono/latin-400.css";
+@import "@fontsource/ibm-plex-mono/latin-500.css";
+/* Page titles only — do not expose as a general font-* utility. */
+@import "@fontsource/ibm-plex-serif/latin-600.css";
+
 @theme {
   --color-page: #16181A;
   --color-surface: #1F2327;
@@ -15,10 +24,29 @@
   --color-brass: #D9A441;
   --color-oxide: #C05B4D;
   --color-bismuth: #C9A0DC;
+
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /*
+   * Type scale — four sizes. Weight and colour carry hierarchy; avoid inventing
+   * more steps. (text-body is a colour utility, so the reading size stays text-sm.)
+   */
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1.4;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.5;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5;
+  --text-title: 1.125rem;
+  --text-title--line-height: 1.35;
+  --text-display: 1.625rem;
+  --text-display--line-height: 1.2;
 }
 
 /* Force a utility for every palette token so a malformed @theme fails the build assertion. */
 @source inline("text-page text-surface text-raised text-edge text-muted text-body text-bright text-accent text-accent-hover text-on-accent text-verdigris text-brass text-oxide text-bismuth");
+@source inline("font-sans font-mono text-caption text-sm text-base text-title text-display tabular-nums num");
 
 html {
   color-scheme: dark;
@@ -29,9 +57,40 @@ body {
   min-height: 100vh;
   background-color: var(--color-page);
   color: var(--color-body);
-  font-family: system-ui, sans-serif;
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
+  -webkit-font-smoothing: antialiased;
 }
 
 #root {
   min-height: 100vh;
+}
+
+/**
+ * Numeric values — Plex Mono + tabular figures so IV rows and odds tiers align.
+ * Use on discrete numbers / numeric controls, not whole sentences.
+ */
+@utility num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/**
+ * Page titles only. Not a Tailwind font-* utility — import PageTitle and use
+ * this class so the serif cannot leak into header/nav/UI chrome.
+ */
+.page-title {
+  font-family: "IBM Plex Serif", "IBM Plex Sans", ui-serif, Georgia, serif;
+  font-weight: 600;
+  font-size: 2.75rem;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--color-bright);
+}
+
+@media (min-width: 640px) {
+  .page-title {
+    font-size: 3rem; /* 48px */
+  }
 }

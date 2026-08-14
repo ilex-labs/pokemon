@@ -1,0 +1,87 @@
+{
+  "id": "firered-leafgreen",
+  "displayName": "Pokémon FireRed / LeafGreen",
+  "generation": 3,
+  "eggGroups": {
+    "monster": ["Charmander"],
+    "dragon": ["Charmander", "Gyarados"]
+  },
+  "species": {
+    "Charmander": {
+      "abilities": {
+        "standard": ["Blaze"]
+      },
+      "genderRatio": { "malePercent": 87.5 },
+      "hatchesInto": "Charmander",
+      "eggCycles": 20
+    },
+    "Gyarados": {
+      "abilities": {
+        "standard": ["Intimidate"]
+      },
+      "genderRatio": { "malePercent": 50 },
+      "hatchesInto": "Magikarp",
+      "eggCycles": 5
+    }
+  },
+  "ditto": {
+    "available": true,
+    "obtainedAt": "Wild encounters in the Pokémon Mansion on Cinnabar Island.",
+    "universalParent": true
+  },
+  "speciesDetermination": {
+    "femaleDeterminesSpecies": "The female parent determines the offspring's species.",
+    "withDitto": "With a Ditto pair, the non-Ditto parent determines the offspring's species."
+  },
+  "eggMoveAcquisition": {
+    "how": "The father must already know the move — catch or hatch a male that has it, then pair him at the Day Care."
+  },
+  "eggEfficiencyModifiers": [],
+  "noEggRateBoostsReason": "This game has no item or charm that raises how often eggs appear — Day Care compatibility alone sets the rate.",
+  "hatchMechanicExplainer": "Leave two compatible Pokémon at the Four Island Day Care (the Route 5 Day Care only holds one, so it cannot produce eggs). After enough steps the Day-Care Man offers an Egg; how often that happens depends only on whether the parents share a species and Original Trainer — there is no Oval Charm or other rate boost here. Carry the Egg in your party and walk: it hatches at level 5. Flame Body does not shorten hatch steps in FireRed/LeafGreen (that starts in Emerald).",
+  "eggMoves": {
+    "Charmander": [
+      {
+        "move": "Dragon Dance",
+        "parentSpecies": ["Gyarados"]
+      }
+    ]
+  },
+  "moveDescriptions": {
+    "Dragon Dance": "Raises the user's Attack and Speed by one stage each."
+  },
+  "abilityDescriptions": {
+    "Blaze": "When this Pokémon's HP is at or below one-third, the power of its Fire-type moves is boosted.",
+    "Intimidate": "Lowers the Attack of opposing Pokémon when this Pokémon enters battle."
+  },
+  "hatchRoutes": [
+    {
+      "routeName": "Overworld walking",
+      "cycleCount": "medium",
+      "method": "Eggs hatch from steps taken in the overworld."
+    }
+  ],
+  "featureGates": [
+    {
+      "feature": "daycare",
+      "unlockedAfter": "the Elite Four, then Rainbow Pass access to Four Island (deliver the Ruby and Sapphire to Celio on One Island)"
+    }
+  ],
+  "postgame": [],
+  "provenance": {
+    "eggGroups": ["pokeapi", "bulbapedia"],
+    "species": ["pokeapi", "bulbapedia"],
+    "dittoAvailability": ["bulbapedia", "serebii"],
+    "speciesDetermination": ["bulbapedia", "serebii"],
+    "eggMoveAcquisition": ["bulbapedia", "serebii"],
+    "eggMoves": ["bulbapedia", "serebii"],
+    "moveDescriptions": ["pokeapi", "bulbapedia"],
+    "abilityDescriptions": ["pokeapi", "bulbapedia"],
+    "hatchRoutes": ["bulbapedia", "serebii"],
+    "eggEfficiencyModifiers": ["bulbapedia", "serebii"],
+    "hatchMechanicExplainer": ["bulbapedia", "serebii"],
+    "featureGates": ["bulbapedia", "serebii"],
+    "natureLock": ["bulbapedia", "serebii"],
+    "hatchLevel": ["bulbapedia", "serebii"]
+  }
+}

@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom'
+import PageTitle from '../components/shared/PageTitle'
 
 export default function NotFound() {
   return (
     <div>
-      <h1 className="mb-2 text-2xl text-bright">Page not found</h1>
-      <p className="mb-6 text-body">
+      <PageTitle className="mb-2">Page not found</PageTitle>
+      <p className="mb-6 text-sm text-body">
         That path doesn&apos;t match any tool on this site.
       </p>
       <Link

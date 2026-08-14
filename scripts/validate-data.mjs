@@ -88,9 +88,30 @@ function validateRuleset(filePath, ruleset) {
   if (typeof ruleset.generation !== 'number') {
     fail(`${rel}: generation must be a number`)
   }
-  const odds = ruleset.abilityInheritance?.inheritanceOdds
-  if (odds !== 'TODO' && typeof odds !== 'number') {
-    fail(`${rel}: abilityInheritance.inheritanceOdds must be a number or "TODO"`)
+  const ai = ruleset.abilityInheritance
+  if (!ai || typeof ai !== 'object') {
+    fail(`${rel}: abilityInheritance is required`)
+    return
+  }
+  for (const key of ['standardOdds', 'hiddenOdds']) {
+    if (typeof ai[key] !== 'number' || ai[key] < 0 || ai[key] > 1) {
+      fail(`${rel}: abilityInheritance.${key} must be a number between 0 and 1`)
+    }
+  }
+  if (typeof ai.maleOrGenderlessNeedsDitto !== 'boolean') {
+    fail(`${rel}: abilityInheritance.maleOrGenderlessNeedsDitto must be a boolean`)
+  }
+  if ('inheritanceOdds' in ai) {
+    fail(
+      `${rel}: abilityInheritance.inheritanceOdds is removed — use standardOdds and hiddenOdds`,
+    )
+  }
+  if (
+    typeof ruleset.hatchLevel !== 'number' ||
+    !Number.isInteger(ruleset.hatchLevel) ||
+    ruleset.hatchLevel < 1
+  ) {
+    fail(`${rel}: hatchLevel must be an integer >= 1`)
   }
 }
 
@@ -182,6 +203,31 @@ function validateGame(filePath, game, natures) {
       fail(
         `${label}: ability "${ability}" is listed in abilityDescriptions but has no description`,
       )
+    }
+  }
+
+  for (const [index, modifier] of (game.eggEfficiencyModifiers ?? []).entries()) {
+    if (!modifier || typeof modifier !== 'object') {
+      fail(`${label}: eggEfficiencyModifiers[${index}] must be an object`)
+      continue
+    }
+    if (modifier.type === 'ability') {
+      if (
+        !Array.isArray(modifier.exampleHolders) ||
+        modifier.exampleHolders.length === 0
+      ) {
+        fail(
+          `${label}: eggEfficiencyModifiers[${index}] ("${modifier.name ?? 'unnamed'}") has type "ability" but is missing exampleHolders — name obtainable species and where to find them`,
+        )
+      } else {
+        for (const [holderIndex, holder] of modifier.exampleHolders.entries()) {
+          if (!isNonEmptyString(holder)) {
+            fail(
+              `${label}: eggEfficiencyModifiers[${index}].exampleHolders[${holderIndex}] must be a non-empty string`,
+            )
+          }
+        }
+      }
     }
   }
 
