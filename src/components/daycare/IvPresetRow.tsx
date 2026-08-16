@@ -18,7 +18,7 @@ type IvPresetRowProps = {
   ) => void
 }
 
-/** Fixed slot so applying a preset never reflows the chip row. */
+/** Fixed slot so applying a preset never reflows the chip grid. */
 const RATIONALE_SLOT_CLASS = 'mt-2 min-h-[2.75rem] text-meta text-muted'
 
 function presetRationale(preset: IvPreset, generation: number): string {
@@ -45,8 +45,8 @@ function Chip({
       aria-describedby={describedBy}
       className={
         selected
-          ? 'peer rounded border border-bright bg-raised px-3 py-1.5 text-sm text-bright'
-          : 'peer rounded border border-edge bg-raised px-3 py-1.5 text-sm text-bright hover:border-bright'
+          ? 'peer min-w-0 w-full rounded border border-bright bg-raised px-2 py-1.5 text-center text-sm leading-tight text-bright'
+          : 'peer min-w-0 w-full rounded border border-edge bg-raised px-2 py-1.5 text-center text-sm leading-tight text-bright hover:border-bright'
       }
       onClick={onClick}
     >
@@ -79,8 +79,12 @@ export default function IvPresetRow({
   return (
     <div>
       <p className="label-caps mb-2">IV presets</p>
-      <div className="flex flex-wrap gap-2">
-        <span className="relative">
+      <div
+        className="grid grid-cols-3 gap-2"
+        role="group"
+        aria-label="IV presets"
+      >
+        <span className="relative min-w-0">
           <Chip
             selected={selection === 'any'}
             label="Any"
@@ -93,7 +97,7 @@ export default function IvPresetRow({
           const text = presetRationale(preset, generation)
           const tooltipId = `${tooltipIdPrefix}-${preset.id}`
           return (
-            <span key={preset.id} className="relative">
+            <span key={preset.id} className="relative min-w-0">
               <Chip
                 selected={selection === preset.id}
                 label={preset.label}
@@ -117,7 +121,7 @@ export default function IvPresetRow({
           )
         })}
 
-        <span className="relative">
+        <span className="relative min-w-0">
           <Chip
             selected={selection === 'custom'}
             label="Custom"

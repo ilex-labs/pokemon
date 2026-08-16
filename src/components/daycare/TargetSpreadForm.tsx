@@ -29,6 +29,8 @@ type TargetSpreadFormProps = {
   abilitiesExist: boolean
   abilityInheritanceExists: boolean
   hiddenAbilitiesExist: boolean
+  /** True when this ruleset has Masuda (gen 4+). */
+  masudaAvailable: boolean
   /** Base-tier shiny figure when the hatch-for-shiny toggle is on. */
   shinyHint?: ShinyOddsTier
   onChange: (next: DaycareTarget) => void
@@ -75,6 +77,7 @@ export default function TargetSpreadForm({
   abilitiesExist,
   abilityInheritanceExists,
   hiddenAbilitiesExist,
+  masudaAvailable,
   shinyHint,
   onChange,
 }: TargetSpreadFormProps) {
@@ -246,11 +249,17 @@ export default function TargetSpreadForm({
             checked={Boolean(value.wantsShiny)}
             onChange={(event) => patch({ wantsShiny: event.target.checked })}
           />
-          Hatch for shiny (show Masuda / Shiny Charm odds)
+          Hatch for shiny
         </label>
+        {value.wantsShiny && masudaAvailable ? (
+          <ConstraintNote text="Requires a parent originating from a different-language game than its partner — not a specific foreign language. A pair you already have that differs already counts." />
+        ) : null}
+        {value.wantsShiny && !masudaAvailable ? (
+          <ConstraintNote text="Nothing in this game improves egg shiny odds." />
+        ) : null}
         {value.wantsShiny && shinyHint ? (
           <p className="mt-1.5 pl-6 text-meta text-muted">
-            Base egg odds{' '}
+            {shinyHint.label}{' '}
             <span className="num text-bright">{shinyHint.odds}</span>
             <span>
               {' '}

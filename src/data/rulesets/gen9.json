@@ -32,5 +32,7 @@
     "levelRequired": 50
   },
   "hatchLevel": 1,
-  "eggMoveMethod": "eggs-or-alternative"
+  "eggMoveMethod": "eggs-or-alternative",
+  "baseShinyOdds": { "odds": "1/4096", "approximateEggs": 4096 },
+  "masudaMethod": { "odds": "6/4096", "approximateEggs": 683 }
 }

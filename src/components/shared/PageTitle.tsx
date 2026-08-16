@@ -11,7 +11,13 @@ type PageTitleProps = {
  */
 export default function PageTitle({ children, className }: PageTitleProps) {
   return (
-    <h1 className={className ? `page-title ${className}` : 'page-title'}>
+    <h1
+      className={
+        className
+          ? `page-title max-w-full ${className}`
+          : 'page-title max-w-full'
+      }
+    >
       {children}
     </h1>
   )

@@ -31,5 +31,6 @@
     "levelRequired": 0
   },
   "hatchLevel": 5,
-  "eggMoveMethod": "eggs-only"
+  "eggMoveMethod": "eggs-only",
+  "baseShinyOdds": { "odds": "1/8192", "approximateEggs": 8192 }
 }

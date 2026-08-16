@@ -38,6 +38,8 @@ export type ParentRequirement = {
   heldItem?: string
   /** Why this held item is assigned — required whenever heldItem is set. */
   heldItemReason?: string
+  /** Masuda — origin language must differ from the other parent. */
+  mustOriginateFromDifferentLanguage?: boolean
   acquisition?: RuleFlag[]
 }
 
@@ -59,10 +61,19 @@ export type ShinyOddsTier = {
   label: string
   odds: string
   approximateEggs: number
+  /**
+   * Charm tiers only — completing a Pokédex is context, never an instruction
+   * to go get the charm.
+   */
+  context?: string
 }
 
 export type ShinyOdds = {
   tiers: ShinyOddsTier[]
+  /** Present when this game has no egg-shiny boost (no Masuda, no Charm). */
+  noBoostsReason?: string
+  /** Shininess is locked when the egg is received, not when it hatches. */
+  determinedOnReceive: string
 }
 
 export type DaycarePlan = {
@@ -214,11 +225,21 @@ function wantsAbility(
   )
 }
 
+/** Masuda exists on this ruleset (gen 4+, introduced in Diamond/Pearl). */
+function masudaAvailable(ruleset: Ruleset): boolean {
+  return ruleset.masudaMethod != null
+}
+
+/** Shiny is on and this ruleset has a different-language parent boost. */
+function wantsMasuda(target: DaycareTarget, ruleset: Ruleset): boolean {
+  return Boolean(target.wantsShiny) && masudaAvailable(ruleset)
+}
+
 /**
- * No nature lock, ability inheritance, egg moves, or specific IVs — the
- * Masuda-style hatch where the only job is pairing and hatching.
+ * No nature lock, ability inheritance, egg moves, or specific IVs.
+ * Masuda may still add a parent constraint on top of this.
  */
-function isUnconstrainedTarget(
+function isAttributeUnconstrained(
   target: DaycareTarget,
   ruleset: Ruleset,
   species: SpeciesEggData,
@@ -229,6 +250,17 @@ function isUnconstrainedTarget(
     target.eggMoves.length === 0 &&
     !hasSpecificIvTargets(target.ivs) &&
     !Boolean(target.wantsPowerItem)
+  )
+}
+
+function isUnconstrainedTarget(
+  target: DaycareTarget,
+  ruleset: Ruleset,
+  species: SpeciesEggData,
+): boolean {
+  return (
+    isAttributeUnconstrained(target, ruleset, species) &&
+    !wantsMasuda(target, ruleset)
   )
 }
 
@@ -264,6 +296,61 @@ function finalizeSteps(drafts: StepDraft[]): PlanStep[] {
 
 function pushAcquisition(parent: ParentRequirement, flag: RuleFlag) {
   parent.acquisition = [...(parent.acquisition ?? []), flag]
+}
+
+function masudaAcquisitionFlag(game: GameData): RuleFlag {
+  const how =
+    game.masudaAcquisition?.how ??
+    'Relative to the other parent, not a specific foreign language — a pair you already have that differs already counts. Otherwise trade for one, or import from a cartridge saved in another language.'
+  return {
+    severity: 'info',
+    message: `Masuda Method needs a parent from a different-language game than its partner — ${how}`,
+  }
+}
+
+/**
+ * Attach the different-language constraint to one parent: Ditto when the
+ * route has one (reusable across projects), otherwise the target-species parent.
+ */
+function applyMasudaConstraint(
+  parents: ParentRequirement[],
+  game: GameData,
+  target: DaycareTarget,
+  ruleset: Ruleset,
+) {
+  if (!wantsMasuda(target, ruleset)) return
+  const ditto = parents.find((parent) => parent.species.includes('Ditto'))
+  const holder =
+    ditto ??
+    parents.find((parent) => parent.role === 'A') ??
+    parents[0]
+  if (!holder) return
+  holder.mustOriginateFromDifferentLanguage = true
+  pushAcquisition(holder, masudaAcquisitionFlag(game))
+}
+
+function withMasudaAcquisitionCost(
+  cost: string,
+  parents: ParentRequirement[],
+): string {
+  const foreign = parents.find(
+    (parent) => parent.mustOriginateFromDifferentLanguage,
+  )
+  if (!foreign) return cost
+  if (foreign.species.includes('Ditto')) {
+    if (/plus a Ditto$/.test(cost)) {
+      return cost.replace(
+        /plus a Ditto$/,
+        'plus a Ditto whose origin language differs from its partner',
+      )
+    }
+    return `${cost}; Ditto whose origin language differs from its partner`
+  }
+  if (/^two /.test(cost)) {
+    return `${cost}; one whose origin language differs from its partner`
+  }
+  const name = foreign.species[0] ?? 'parent'
+  return `${cost}; the ${name} whose origin language differs from its partner`
 }
 
 function eggMovePasserSpecies(
@@ -587,6 +674,7 @@ function buildSpeciesPairStrategy(
 
   const parents = [parentA, parentB]
   allocateHeldItems(parents, collectHeldItemDemands(ruleset, target), false)
+  applyMasudaConstraint(parents, game, target, ruleset)
 
   let acquisitionCost: string
   if (useExternalCarrier) {
@@ -598,6 +686,7 @@ function buildSpeciesPairStrategy(
       ? `two ${target.species}, one with the target nature`
       : `two ${target.species}`
   }
+  acquisitionCost = withMasudaAcquisitionCost(acquisitionCost, parents)
 
   const tradeoff = useExternalCarrier
     ? 'No consolidation prerequisite, but the egg-move carrier must be male or eggs hatch as that species.'
@@ -666,8 +755,13 @@ function buildDittoPairStrategy(
     species: ['Ditto'],
   }
   // Ditto sourcing is noise on unconstrained / ordinary routes — only when
-  // the player must actually go get one for this plan.
-  if (!unconstrained && game.ditto.obtainedAt) {
+  // the player must actually go get one for this plan. Masuda replaces this
+  // with different-language acquisition (a local Ditto is the wrong parent).
+  if (
+    !unconstrained &&
+    !wantsMasuda(target, ruleset) &&
+    game.ditto.obtainedAt
+  ) {
     pushAcquisition(parentB, {
       severity: 'info',
       message: `Obtain Ditto: ${game.ditto.obtainedAt.replace(/\.+$/, '')}.`,
@@ -676,6 +770,7 @@ function buildDittoPairStrategy(
 
   const parents = [parentA, parentB]
   allocateHeldItems(parents, collectHeldItemDemands(ruleset, target), true)
+  applyMasudaConstraint(parents, game, target, ruleset)
 
   let acquisitionCost: string
   if (target.eggMoves.length > 0) {
@@ -697,6 +792,7 @@ function buildDittoPairStrategy(
       ? `one ${target.species} with the target nature, plus a Ditto`
       : `one ${target.species}, plus a Ditto`
   }
+  acquisitionCost = withMasudaAcquisitionCost(acquisitionCost, parents)
 
   const moveNote =
     target.eggMoves.length === 0
@@ -735,7 +831,7 @@ function buildDittoOnlyStrategy(
     role: 'B',
     species: ['Ditto'],
   }
-  if (game.ditto.obtainedAt) {
+  if (!wantsMasuda(target, ruleset) && game.ditto.obtainedAt) {
     pushAcquisition(parentB, {
       severity: 'info',
       message: `Obtain Ditto: ${game.ditto.obtainedAt.replace(/\.+$/, '')}.`,
@@ -744,10 +840,14 @@ function buildDittoOnlyStrategy(
 
   const parents = [parentA, parentB]
   allocateHeldItems(parents, collectHeldItemDemands(ruleset, target), true)
+  applyMasudaConstraint(parents, game, target, ruleset)
 
-  const acquisitionCost = natureWanted
-    ? `one ${target.species} with the target nature, plus a Ditto`
-    : `one ${target.species}, plus a Ditto`
+  const acquisitionCost = withMasudaAcquisitionCost(
+    natureWanted
+      ? `one ${target.species} with the target nature, plus a Ditto`
+      : `one ${target.species}, plus a Ditto`,
+    parents,
+  )
 
   return {
     id: 'ditto-only',
@@ -763,17 +863,51 @@ function acquisitionParentCount(strategy: PairingStrategy): number {
   return strategy.parents.length
 }
 
+function isDittoRoute(strategy: PairingStrategy): boolean {
+  return strategy.id === 'ditto-pair' || strategy.id === 'ditto-only'
+}
+
 /**
  * Recommend the route with fewest parents to acquire. When tied, recommend
  * neither — a badge without a real edge is just first position.
+ * Masuda flips this: a Ditto whose origin language differs from its partner
+ * pairs with anything and serves every future project, so that route is
+ * strictly better.
  */
-function applyRouteRecommendations(strategies: PairingStrategy[]): {
+function applyRouteRecommendations(
+  strategies: PairingStrategy[],
+  preferForeignDitto = false,
+): {
   strategies: PairingStrategy[]
   routesEquivalent: boolean
 } {
   if (strategies.length === 0) {
     return { strategies, routesEquivalent: false }
   }
+
+  if (preferForeignDitto) {
+    const dittoRoute = strategies.find(isDittoRoute)
+    if (dittoRoute) {
+      return {
+        strategies: strategies.map((strategy) =>
+          strategy.id === dittoRoute.id
+            ? {
+                ...strategy,
+                recommended: true,
+                recommendReason:
+                  'A Ditto whose origin language differs from its partner pairs with anything and serves every future project',
+              }
+            : {
+                ...strategy,
+                recommended: undefined,
+                recommendReason: undefined,
+              },
+        ),
+        routesEquivalent: false,
+      }
+    }
+  }
+
   if (strategies.length === 1) {
     const only = strategies[0]!
     return {
@@ -871,9 +1005,10 @@ function resolveStrategies(
         reason: `${target.species} can only pair with Ditto in this game.`,
       })
     }
-    const recommended = applyRouteRecommendations([
-      buildDittoOnlyStrategy(game, ruleset, target, species),
-    ])
+    const recommended = applyRouteRecommendations(
+      [buildDittoOnlyStrategy(game, ruleset, target, species)],
+      wantsMasuda(target, ruleset),
+    )
     return { ...recommended, excludedStrategies }
   }
 
@@ -899,7 +1034,10 @@ function resolveStrategies(
     // Ability needs Ditto but Ditto isn't obtainable — handled by empty strategies.
   }
 
-  const recommended = applyRouteRecommendations(strategies)
+  const recommended = applyRouteRecommendations(
+    strategies,
+    wantsMasuda(target, ruleset),
+  )
   return { ...recommended, excludedStrategies }
 }
 
@@ -911,6 +1049,9 @@ function describeParentBrief(parent: ParentRequirement): string {
   if (parent.mustHaveAbility) parts.push(parent.mustHaveAbility)
   if (parent.mustKnow?.length) {
     parts.push(`knows ${parent.mustKnow.join(', ')}`)
+  }
+  if (parent.mustOriginateFromDifferentLanguage) {
+    parts.push('origin language differs from its partner')
   }
   if (parent.heldItem) parts.push(`holding ${parent.heldItem}`)
   return parts.join(', ')
@@ -937,7 +1078,12 @@ function buildAssembleStep(
 
   parts.push(`Eggs hatch as ${offspring} at level ${ruleset.hatchLevel}.`)
 
-  if (dittoPair && game.ditto.obtainedAt) {
+  const foreignDitto = parents.some(
+    (parent) =>
+      parent.species.includes('Ditto') &&
+      parent.mustOriginateFromDifferentLanguage,
+  )
+  if (dittoPair && game.ditto.obtainedAt && !foreignDitto) {
     parts.push(
       `Ditto sourcing: ${game.ditto.obtainedAt.replace(/\.+$/, '')}.`,
     )
@@ -1288,6 +1434,23 @@ function buildStepsForStrategy(
 
   const dittoPair =
     strategy.id === 'ditto-pair' || strategy.id === 'ditto-only'
+
+  // Masuda is the only extra constraint — name the pair, don't pad the plan.
+  if (isAttributeUnconstrained(target, ruleset, species)) {
+    const drafts: StepDraft[] = [
+      buildAssembleStep(
+        game,
+        ruleset,
+        target.species,
+        species,
+        strategy.parents,
+        dittoPair,
+      ),
+    ]
+    const incense = buildIncenseStep(species)
+    if (incense) drafts.push(incense)
+    return finalizeSteps(drafts)
+  }
   const drafts: StepDraft[] = []
 
   drafts.push(
@@ -1346,51 +1509,57 @@ function buildStepsForStrategy(
   return finalizeSteps(drafts)
 }
 
-const SHINY_TIER_META: Record<
-  'base' | 'masuda' | 'masudaPlusCharm',
-  { label: string; requiresMasuda: boolean; requiresCharm: boolean }
-> = {
-  base: {
-    label: 'Base egg odds',
-    requiresMasuda: false,
-    requiresCharm: false,
-  },
-  masuda: {
-    label: 'Masuda Method',
-    requiresMasuda: true,
-    requiresCharm: false,
-  },
-  masudaPlusCharm: {
-    label: 'Masuda Method + Shiny Charm',
-    requiresMasuda: true,
-    requiresCharm: true,
-  },
-}
+const SHINY_DETERMINED_ON_RECEIVE =
+  'Shininess is locked when the egg is received, not when it hatches — hatch-speed modifiers do not change the odds, and there is no resetting before the hatch.'
 
-function buildShinyPayload(game: GameData): ShinyOdds | undefined {
+function buildShinyPayload(game: GameData, ruleset: Ruleset): ShinyOdds {
   const modifiers = game.shinyEggModifiers
-  const tiersData = modifiers?.oddsTiers
-  if (!modifiers || !tiersData) return undefined
+  const tiers: ShinyOddsTier[] = [
+    {
+      id: 'base',
+      label: 'Base egg odds',
+      odds: ruleset.baseShinyOdds.odds,
+      approximateEggs: ruleset.baseShinyOdds.approximateEggs,
+    },
+  ]
 
-  const tiers: ShinyOddsTier[] = []
-  for (const id of ['base', 'masuda', 'masudaPlusCharm'] as const) {
-    const meta = SHINY_TIER_META[id]
-    if (meta.requiresMasuda && !modifiers.masudaMethodAvailable) continue
-    if (meta.requiresCharm && !modifiers.shinyCharmAvailable) continue
-    if (id === 'masudaPlusCharm' && !modifiers.shinyCharmStacksWithMasuda) {
-      continue
-    }
-    const tier = tiersData[id]
-    if (!tier) continue
+  if (ruleset.masudaMethod) {
     tiers.push({
-      id,
-      label: meta.label,
-      odds: tier.odds,
-      approximateEggs: tier.approximateEggs,
+      id: 'masuda',
+      label: 'Masuda Method',
+      odds: ruleset.masudaMethod.odds,
+      approximateEggs: ruleset.masudaMethod.approximateEggs,
     })
   }
-  if (tiers.length === 0) return undefined
-  return { tiers }
+
+  if (
+    ruleset.masudaMethod &&
+    modifiers?.shinyCharmAvailable &&
+    modifiers.shinyCharmStacksWithMasuda &&
+    modifiers.masudaPlusCharmOdds
+  ) {
+    const unlock = modifiers.shinyCharmUnlock
+    tiers.push({
+      id: 'masudaPlusCharm',
+      label: 'Masuda Method + Shiny Charm',
+      odds: modifiers.masudaPlusCharmOdds.odds,
+      approximateEggs: modifiers.masudaPlusCharmOdds.approximateEggs,
+      context: unlock
+        ? `Applies if you already have the Shiny Charm — it means ${unlock}. Not a step in this hatch plan.`
+        : 'Applies if you already have the Shiny Charm. Not a step in this hatch plan.',
+    })
+  }
+
+  const noBoostsReason =
+    !ruleset.masudaMethod && !modifiers?.shinyCharmAvailable
+      ? 'Nothing in this game improves egg shiny odds.'
+      : undefined
+
+  return {
+    tiers,
+    noBoostsReason,
+    determinedOnReceive: SHINY_DETERMINED_ON_RECEIVE,
+  }
 }
 
 /** Steps for a chosen strategy — used by the UI when switching routes. */
@@ -1488,6 +1657,6 @@ export function planDaycare(
     steps: recommended
       ? buildStepsForStrategy(game, ruleset, target, species, recommended)
       : [],
-    shiny: target.wantsShiny ? buildShinyPayload(game) : undefined,
+    shiny: target.wantsShiny ? buildShinyPayload(game, ruleset) : undefined,
   }
 }

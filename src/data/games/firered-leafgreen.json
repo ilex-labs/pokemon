@@ -82,6 +82,8 @@
     "hatchMechanicExplainer": ["bulbapedia", "serebii"],
     "featureGates": ["bulbapedia", "serebii"],
     "natureLock": ["bulbapedia", "serebii"],
-    "hatchLevel": ["bulbapedia", "serebii"]
+    "hatchLevel": ["bulbapedia", "serebii"],
+    "baseShinyOdds": ["bulbapedia", "serebii"],
+    "masudaMethod": ["bulbapedia", "serebii"]
   }
 }

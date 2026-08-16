@@ -49,6 +49,16 @@ export interface Ruleset {
   /** Level of the Pokémon when the egg hatches — 5 in gens 2–3, 1 from gen 4 on. */
   hatchLevel: number
   eggMoveMethod: 'eggs-only' | 'eggs-or-alternative'
+  /**
+   * Base egg shiny rate for this generation. Gens 2–5: 1/8192; gen 6+: 1/4096.
+   */
+  baseShinyOdds: ShinyOddsTierData
+  /**
+   * Masuda Method odds — omit when the generation has no language-of-origin
+   * boost (gen 3 and earlier; introduced in Diamond/Pearl).
+   * Gen 4: 5/8192; gen 5: 6/8192; gen 6+: 6/4096.
+   */
+  masudaMethod?: ShinyOddsTierData
 }
 
 export interface FeatureGate {
@@ -87,15 +97,18 @@ export type ShinyOddsTierData = {
 }
 
 export interface ShinyEggModifiers {
-  masudaMethodAvailable: boolean
   shinyCharmAvailable: boolean
   shinyCharmStacksWithMasuda: boolean
-  /** Verified tiers only — omit a tier rather than inventing odds. */
-  oddsTiers?: {
-    base?: ShinyOddsTierData
-    masuda?: ShinyOddsTierData
-    masudaPlusCharm?: ShinyOddsTierData
-  }
+  /**
+   * Masuda + Shiny Charm stacked odds. Omit when the charm is unavailable
+   * or does not stack. Gen 6+: 8/4096; B2W2: 8/8192.
+   */
+  masudaPlusCharmOdds?: ShinyOddsTierData
+  /**
+   * What having the charm means in this game (completing a regional Pokédex).
+   * Context only — never turned into a plan step.
+   */
+  shinyCharmUnlock?: string
   notes?: string
 }
 
@@ -224,6 +237,14 @@ export interface GameData {
   }
   /** How to get egg moves onto a parent in THIS game when they aren't level-up moves. */
   eggMoveAcquisition?: {
+    how: string
+  }
+  /**
+   * How to obtain a parent whose language of origin differs from its partner
+   * (Masuda). Attached as an acquisition flag when wantsShiny is on and the
+   * ruleset has Masuda. Languages are relative to each other, not absolute.
+   */
+  masudaAcquisition?: {
     how: string
   }
   eggEfficiencyModifiers?: EggEfficiencyModifier[]

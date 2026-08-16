@@ -171,4 +171,46 @@ describe('FireRed/LeafGreen — ruleset branches never exercised by gen 9', () =
     expect(prereq?.instruction).toMatch(/species-pair route first/i)
     expect(JSON.stringify(dittoSteps)).not.toMatch(/consolidat|Mirror Herb/i)
   })
+
+  it('wantsShiny adds no Masuda constraint and states that nothing improves egg shiny odds', () => {
+    expect(gen3.masudaMethod).toBeUndefined()
+    expect(gen3.baseShinyOdds.odds).toBe('1/8192')
+    expect(frlg.shinyEggModifiers).toBeUndefined()
+
+    const plan = planDaycare(frlg, gen3, {
+      ...baseTarget,
+      wantsShiny: true,
+    })
+
+    expect(plan.blocked).toBe(false)
+    for (const strategy of plan.strategies) {
+      for (const parent of strategy.parents) {
+        expect(parent.mustOriginateFromDifferentLanguage).toBeUndefined()
+        expect(
+          parent.acquisition?.filter((flag) =>
+            /Masuda|different-language/i.test(flag.message),
+          ) ?? [],
+        ).toEqual([])
+      }
+    }
+
+    expect(plan.shiny).toBeDefined()
+    expect(plan.shiny?.tiers.map((tier) => tier.id)).toEqual(['base'])
+    expect(plan.shiny?.tiers[0]?.odds).toBe('1/8192')
+    expect(plan.shiny?.tiers[0]?.odds).not.toBe('1/4096')
+    expect(plan.shiny?.noBoostsReason).toMatch(
+      /nothing in this game improves egg shiny odds/i,
+    )
+    expect(plan.shiny?.determinedOnReceive).toMatch(
+      /locked when the egg is received/i,
+    )
+    expect(plan.steps.some((step) => step.id === 'masuda')).toBe(false)
+    expect(plan.steps.some((step) => step.id === 'shiny-charm')).toBe(false)
+    expect(JSON.stringify(plan.steps)).not.toMatch(/Obtain the Shiny Charm/i)
+    expect(plan.routesEquivalent).toBe(true)
+    expect(
+      plan.strategies.find((strategy) => strategy.id === 'ditto-pair')
+        ?.recommended,
+    ).toBeUndefined()
+  })
 })

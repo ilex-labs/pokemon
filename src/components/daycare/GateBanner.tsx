@@ -9,7 +9,7 @@ function gateCopy(feature: string): { noun: string; collapsed: string } {
     case 'daycare':
       return {
         noun: 'Day Care',
-        collapsed: 'Day Care unlocks later — tap to expand',
+        collapsed: 'Day Care unlocks after completing certain points of the story — tap to expand',
       }
     case 'move-reminder':
       return {

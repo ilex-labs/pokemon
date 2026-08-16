@@ -45,9 +45,9 @@
   --text-display: 1.625rem;
   --text-display--line-height: 1.2;
 
-  /* Grouping: ~1.75rem between sections, 14px within */
-  --spacing-section: 1.75rem;
-  --spacing-within: 0.875rem;
+  /* Grouping: tighter on small screens; 1.75rem / 14px from md */
+  --spacing-section: 1.25rem;
+  --spacing-within: 0.625rem;
 }
 
 /* Force a utility for every palette token so a malformed @theme fails the build assertion. */
@@ -97,18 +97,99 @@ body {
 /**
  * Page titles only. Not a Tailwind font-* utility — import PageTitle and use
  * this class so the serif cannot leak into header/nav/UI chrome.
+ * 28px at the narrowest, 32px from 400px, 48px only once the title has a row.
  */
 .page-title {
   font-family: "IBM Plex Serif", "IBM Plex Sans", ui-serif, Georgia, serif;
   font-weight: 600;
-  font-size: 2.75rem;
-  line-height: 1.1;
+  font-size: 1.75rem; /* 28px */
+  line-height: 1.15;
   letter-spacing: -0.02em;
   color: var(--color-bright);
 }
 
-@media (min-width: 640px) {
+/**
+ * Single-column shell: cap ~640px and centre so form controls cannot inflate
+ * to the viewport. From md the cap lifts — this rule must precede the md
+ * override so max-width: 80rem actually wins.
+ */
+.page-shell {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 40rem;
+  min-width: 0;
+}
+
+/**
+ * Daycare columns. Track mins are the point at which we drop a column —
+ * 16rem form / 18rem plan / 16rem hatch, plus gaps and page padding.
+ * Three columns start at 1180px, after those mins fit.
+ */
+.daycare-layout {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--spacing-section);
+  align-items: start;
+}
+
+.daycare-form,
+.daycare-plan,
+.daycare-hatch {
+  min-width: 0;
+}
+
+@media (min-width: 400px) {
+  .page-title {
+    font-size: 2rem; /* 32px */
+  }
+}
+
+@media (min-width: 768px) {
+  .page-title {
+    font-size: 2rem; /* 32px — 48px waits until the title has a full row */
+    line-height: 1.15;
+  }
+
+  .page-shell {
+    max-width: 80rem;
+  }
+
+  :root {
+    --spacing-section: 1.75rem;
+    --spacing-within: 0.875rem;
+  }
+
+  .daycare-layout {
+    grid-template-columns: minmax(16rem, 20rem) minmax(18rem, 1fr);
+  }
+
+  .daycare-hatch {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 1180px) {
+  .daycare-layout {
+    grid-template-columns:
+      minmax(16rem, 20rem)
+      minmax(18rem, 1fr)
+      minmax(16rem, 18rem);
+  }
+
+  /* Sticky only when hatch is a third column — not a full-width row
+     the form would pin over. */
+  .daycare-form,
+  .daycare-hatch {
+    grid-column: auto;
+    position: sticky;
+    top: 1rem;
+  }
+}
+
+@media (min-width: 1280px) {
   .page-title {
     font-size: 3rem; /* 48px */
+    line-height: 1.1;
   }
 }

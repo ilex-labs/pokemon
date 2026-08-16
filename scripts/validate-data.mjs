@@ -113,6 +113,30 @@ function validateRuleset(filePath, ruleset) {
   ) {
     fail(`${rel}: hatchLevel must be an integer >= 1`)
   }
+
+  function validateOdds(label, value) {
+    if (!value || typeof value !== 'object') {
+      fail(`${rel}: ${label} must be an object with odds and approximateEggs`)
+      return
+    }
+    if (!isNonEmptyString(value.odds) || !value.odds.includes('/')) {
+      fail(`${rel}: ${label}.odds must be a fraction string (got ${JSON.stringify(value.odds)})`)
+    }
+    if (typeof value.approximateEggs !== 'number' || value.approximateEggs < 1) {
+      fail(`${rel}: ${label}.approximateEggs must be a positive number`)
+    }
+  }
+
+  validateOdds('baseShinyOdds', ruleset.baseShinyOdds)
+  if (typeof ruleset.generation === 'number' && ruleset.generation >= 4) {
+    if (!ruleset.masudaMethod) {
+      fail(`${rel}: generation ${ruleset.generation} must include masudaMethod (introduced gen 4)`)
+    } else {
+      validateOdds('masudaMethod', ruleset.masudaMethod)
+    }
+  } else if (ruleset.masudaMethod) {
+    fail(`${rel}: masudaMethod must be omitted before generation 4`)
+  }
 }
 
 function validateGame(filePath, game, natures) {

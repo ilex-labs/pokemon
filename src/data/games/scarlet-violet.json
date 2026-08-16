@@ -41,6 +41,9 @@
   "eggMoveAcquisition": {
     "how": "Catch or hatch one that already knows the move, or copy it at a picnic with a Mirror Herb."
   },
+  "masudaAcquisition": {
+    "how": "Relative to the other parent, not a specific foreign language — a Japanese Charmander and an English Ditto already counts. Otherwise trade for one, or import from a cartridge saved in another language."
+  },
   "eggEfficiencyModifiers": [
     {
       "name": "Egg Power Sandwich",
@@ -92,14 +95,10 @@
   ],
   "hatchMechanicExplainer": "Eggs show up in the picnic basket while two compatible Pokémon are in your party picnic. Egg Power sandwiches raise how often eggs appear and also shorten hatch time — Lv. 2 from shop ingredients is the everyday target; Lv. 3 needs Herba Mystica from 5★+ Tera Raids and is roughly 10× the base find rate. A party Pokémon with Flame Body, Magma Armor, or Steam Engine halves remaining hatch cycles (abilities do not stack with each other). Hatch by covering ground on Koraidon or Miraidon — stay on the ground, and keep at least one non-egg Pokémon in the party.",
   "shinyEggModifiers": {
-    "masudaMethodAvailable": true,
     "shinyCharmAvailable": true,
     "shinyCharmStacksWithMasuda": true,
-    "oddsTiers": {
-      "base": { "odds": "1/4096", "approximateEggs": 4096 },
-      "masuda": { "odds": "1/683", "approximateEggs": 683 },
-      "masudaPlusCharm": { "odds": "1/512", "approximateEggs": 512 }
-    }
+    "masudaPlusCharmOdds": { "odds": "8/4096", "approximateEggs": 512 },
+    "shinyCharmUnlock": "completing the Paldea Pokédex"
   },
   "postgame": [],
   "provenance": {
@@ -113,6 +112,9 @@
     "abilityAcquisition": ["bulbapedia", "serebii"],
     "abilityInheritance": ["bulbapedia", "serebii"],
     "eggMoveAcquisition": ["bulbapedia", "serebii"],
+    "masudaAcquisition": ["bulbapedia", "serebii"],
+    "baseShinyOdds": ["bulbapedia", "serebii"],
+    "masudaMethod": ["bulbapedia", "serebii"],
     "eggMoves": ["bulbapedia", "serebii"],
     "eggMoveAlternative": ["bulbapedia", "serebii"],
     "moveDescriptions": ["pokeapi", "bulbapedia"],

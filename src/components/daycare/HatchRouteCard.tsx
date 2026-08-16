@@ -56,7 +56,9 @@ export default function HatchRouteCard({ game }: HatchRouteCardProps) {
   return (
     <section className="space-y-[var(--spacing-within)]">
       <div className="border-b border-edge pb-2">
-        <h2 className="text-section font-medium text-bright">Hatch efficiency</h2>
+        <h2 className="text-section font-medium text-pretty text-bright">
+          Hatch efficiency
+        </h2>
       </div>
 
       <div>

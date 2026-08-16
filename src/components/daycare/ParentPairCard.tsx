@@ -78,6 +78,9 @@ function ParentBlock({
         {parent.mustKnow && parent.mustKnow.length > 0 ? (
           <li>Must know: {parent.mustKnow.join(', ')}</li>
         ) : null}
+        {parent.mustOriginateFromDifferentLanguage ? (
+          <li>Must originate from a different-language game than its partner</li>
+        ) : null}
       </ul>
 
       {showHeldItems ? (
@@ -137,7 +140,7 @@ export default function ParentPairCard({
         <div
           className={
             strategies.length > 1
-              ? 'grid grid-cols-1 gap-2 sm:grid-cols-2'
+              ? 'grid grid-cols-1 gap-2 @[28rem]:grid-cols-2'
               : 'grid grid-cols-1 gap-2'
           }
           role="radiogroup"
@@ -154,8 +157,8 @@ export default function ParentPairCard({
                 onClick={() => onSelectStrategy(strategy.id)}
                 className={
                   isSelected
-                    ? 'rounded border border-accent bg-page px-3 py-3 text-left'
-                    : 'rounded border border-edge bg-page px-3 py-3 text-left hover:border-bright'
+                    ? 'min-w-0 rounded border border-accent bg-page px-3 py-3 text-left'
+                    : 'min-w-0 rounded border border-edge bg-page px-3 py-3 text-left hover:border-bright'
                 }
               >
                 <p className="text-item font-medium text-bright">

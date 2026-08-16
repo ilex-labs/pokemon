@@ -52,6 +52,7 @@ function printPlan(
         mustHaveAbility?: string
         mustHaveNature?: string
         heldItem?: string
+        mustOriginateFromDifferentLanguage?: boolean
         acquisition?: Array<{ severity: string; message: string }>
       }>
     }>
@@ -67,7 +68,10 @@ function printPlan(
         label: string
         odds: string
         approximateEggs: number
+        context?: string
       }>
+      noBoostsReason?: string
+      determinedOnReceive: string
     }
   },
 ) {
@@ -109,6 +113,9 @@ function printPlan(
         if (parent.mustKnow?.length) {
           console.log(`    must know: ${parent.mustKnow.join(', ')}`)
         }
+        if (parent.mustOriginateFromDifferentLanguage) {
+          console.log('    origin: language differs from its partner')
+        }
         if (parent.heldItem) console.log(`    held item: ${parent.heldItem}`)
         else console.log('    held item: (open)')
         if (parent.acquisition?.length) {
@@ -133,11 +140,16 @@ function printPlan(
 
   if (plan.shiny) {
     console.log('\n--- shiny payload ---')
+    if (plan.shiny.noBoostsReason) {
+      console.log(`   ${plan.shiny.noBoostsReason}`)
+    }
     for (const tier of plan.shiny.tiers) {
       console.log(
         `   ${tier.label}: ${tier.odds} (~${tier.approximateEggs} eggs)`,
       )
+      if (tier.context) console.log(`     ${tier.context}`)
     }
+    console.log(`   ${plan.shiny.determinedOnReceive}`)
   }
 
   console.log('')

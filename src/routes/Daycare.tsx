@@ -145,7 +145,7 @@ export default function Daycare() {
     null,
   )
   const [hydrated, setHydrated] = useState(false)
-  /** Narrow viewports only — desktop shows both panes and ignores this. */
+  /** Below md only — from 768px both panes show and this is ignored. */
   const [mobilePane, setMobilePane] = useState<'target' | 'plan'>('target')
   const [gateDismissals, setGateDismissals] = useState<GateDismissals>({})
 
@@ -286,72 +286,58 @@ export default function Daycare() {
 
   const blockingMessage = blocked ? firstBlockingMessage(steps) : null
 
-  const gameContext = (
-    <>
-      <GamePicker
-        options={gamesCatalog}
-        value={gameId}
-        onChange={selectGame}
-      />
+  const formVisible = mobilePane === 'target'
+  const planVisible = mobilePane === 'plan'
+
+  return (
+    <div className="space-y-[var(--spacing-within)] md:space-y-[var(--spacing-section)]">
+      {/*
+        Game selector is page context (spec §10), not a target field.
+        Gate banner is its own row under the header — spanning the content
+        width, not the selector's column.
+      */}
+      <div className="flex flex-col gap-[var(--spacing-within)] md:flex-row md:items-start md:gap-6">
+        <div className="min-w-0 flex-1">
+          <PageTitle>Daycare Planner</PageTitle>
+          <p className="mt-2 hidden text-sm text-body md:block">
+            Plan egg pairs, check inheritance rules, and route hatch efficiency
+            for a target spread.
+          </p>
+        </div>
+        <div className="w-full min-w-0 md:w-64 md:shrink-0">
+          <GamePicker
+            options={gamesCatalog}
+            value={gameId}
+            onChange={selectGame}
+          />
+        </div>
+      </div>
+
       <GateBanner
         gameId={gameId}
         gates={featureGates}
         dismissed={gateDismissals}
         onDismissedChange={updateGateDismissals}
       />
-    </>
-  )
-
-  return (
-    <div className="space-y-[var(--spacing-section)]">
-      {/*
-        Game selector is page context (spec §10), not a target field.
-        Desktop: title + selector on one row; gate sits under the selector.
-        Mobile: title alone here; selector + gate open the Target pane.
-      */}
-      <div className="hidden lg:block">
-        <div className="flex items-start justify-between gap-6">
-          <div className="min-w-0 flex-1">
-            <PageTitle>Daycare Planner</PageTitle>
-            <p className="mt-2 text-sm text-body">
-              Plan egg pairs, check inheritance rules, and route hatch efficiency
-              for a target spread.
-            </p>
-          </div>
-          <div className="w-[min(100%,18rem)] shrink-0 space-y-[var(--spacing-within)]">
-            {gameContext}
-          </div>
-        </div>
-      </div>
-
-      <div className="lg:hidden">
-        <PageTitle className="mb-2">Daycare Planner</PageTitle>
-        <p className="text-sm text-body">
-          Plan egg pairs, check inheritance rules, and route hatch efficiency for
-          a target spread.
-        </p>
-      </div>
 
       <DaycarePaneToggle value={mobilePane} onChange={setMobilePane} />
 
       {/*
-        ≥1024px: form sticky | output (main 1.45fr plan sequence + sidebar hatch).
-        Mobile: Target / Plan panes via segmented control.
+        <768: single column + Target/Plan toggle.
+        768–1179: form | plan, hatch beneath.
+        ≥1180: form | plan | hatch — only once each track can hold its heading.
       */}
-      <div className="grid grid-cols-1 gap-[var(--spacing-section)] lg:grid-cols-[minmax(17rem,22rem)_minmax(0,1fr)] lg:items-start">
+      <div className="daycare-layout">
         <aside
           className={
-            mobilePane === 'target'
-              ? 'space-y-[var(--spacing-within)] lg:sticky lg:top-4'
-              : 'hidden space-y-[var(--spacing-within)] lg:sticky lg:top-4 lg:block'
+            formVisible
+              ? 'daycare-form space-y-[var(--spacing-within)]'
+              : 'daycare-form hidden space-y-[var(--spacing-within)] md:block'
           }
           role="tabpanel"
           id="daycare-pane-target-panel"
           aria-labelledby="daycare-pane-target"
         >
-          <div className="space-y-[var(--spacing-within)] lg:hidden">
-            {gameContext}
-          </div>
           <section className="space-y-[var(--spacing-within)]">
             <div className="border-b border-edge pb-2">
               <h2 className="text-section font-medium text-bright">
@@ -376,8 +362,11 @@ export default function Daycare() {
                 ruleset.abilityInheritance.inheritanceExists
               }
               hiddenAbilitiesExist={ruleset.hiddenAbilitiesExist}
+              masudaAvailable={Boolean(ruleset.masudaMethod)}
               shinyHint={
-                shiny?.tiers.find((tier) => tier.id === 'base') ?? shiny?.tiers[0]
+                shiny?.tiers.find((tier) => tier.id === 'masuda') ??
+                shiny?.tiers.find((tier) => tier.id === 'base') ??
+                shiny?.tiers[0]
               }
               onChange={setTarget}
             />
@@ -386,70 +375,73 @@ export default function Daycare() {
 
         <div
           className={
-            mobilePane === 'plan'
-              ? 'min-w-0'
-              : 'hidden min-w-0 lg:block'
+            planVisible
+              ? 'daycare-plan @container'
+              : 'daycare-plan hidden @container md:block'
           }
           role="tabpanel"
           id="daycare-pane-plan-panel"
           aria-labelledby="daycare-pane-plan"
         >
-          <div className="grid grid-cols-1 gap-[var(--spacing-section)] lg:grid-cols-[1.45fr_1fr] lg:items-start">
-            <div className="min-w-0 space-y-[var(--spacing-section)]">
-              {blocked && blockingMessage ? (
-                <div
-                  role="alert"
-                  className="border-l-2 border-oxide bg-page py-3 pl-3"
-                >
-                  <p className="text-sm font-medium text-oxide">Blocked</p>
-                  <p className="mt-1 text-item text-bright">{blockingMessage}</p>
-                  <p className="mt-2 text-sm text-muted">
-                    Nothing can be planned for this target in this game.
-                  </p>
-                </div>
-              ) : null}
+          <div className="min-w-0 space-y-[var(--spacing-section)]">
+            {blocked && blockingMessage ? (
+              <div
+                role="alert"
+                className="border-l-2 border-oxide bg-page py-3 pl-3"
+              >
+                <p className="text-sm font-medium text-oxide">Blocked</p>
+                <p className="mt-1 text-item text-bright">{blockingMessage}</p>
+                <p className="mt-2 text-sm text-muted">
+                  Nothing can be planned for this target in this game.
+                </p>
+              </div>
+            ) : null}
 
-              {!blocked ? (
-                <>
-                  <ParentPairCard
-                    strategies={strategies}
-                    selectedStrategyId={activeStrategy?.id ?? ''}
-                    routesEquivalent={plan.routesEquivalent}
-                    excludedStrategies={plan.excludedStrategies}
-                    ruleset={ruleset}
-                    onSelectStrategy={selectStrategy}
-                    ownedRoles={ownedSet}
-                    onToggleOwned={toggleOwned}
-                  />
+            {!blocked ? (
+              <>
+                <ParentPairCard
+                  strategies={strategies}
+                  selectedStrategyId={activeStrategy?.id ?? ''}
+                  routesEquivalent={plan.routesEquivalent}
+                  excludedStrategies={plan.excludedStrategies}
+                  ruleset={ruleset}
+                  onSelectStrategy={selectStrategy}
+                  ownedRoles={ownedSet}
+                  onToggleOwned={toggleOwned}
+                />
 
-                  <section className="space-y-[var(--spacing-within)]">
-                    <div className="border-b border-edge pb-2">
-                      <h2 className="text-section font-medium text-bright">
-                        What to do
-                      </h2>
-                    </div>
-                    {steps.length > 0 ? (
-                      <PlanStepList
-                        steps={steps.map((step, index) => ({
-                          ...step,
-                          order: index + 1,
-                        }))}
-                        completedStepIds={completedStepIds}
-                        onToggleStep={toggleStep}
-                      />
-                    ) : null}
-                  </section>
-
-                  {shiny ? <ShinyOddsPanel shiny={shiny} /> : null}
-                </>
-              ) : null}
-            </div>
-
-            <aside className="min-w-0 space-y-[var(--spacing-section)] lg:sticky lg:top-4">
-              <HatchRouteCard game={game} />
-            </aside>
+                <section className="space-y-[var(--spacing-within)]">
+                  <div className="border-b border-edge pb-2">
+                    <h2 className="text-section font-medium text-bright">
+                      What to do
+                    </h2>
+                  </div>
+                  {steps.length > 0 ? (
+                    <PlanStepList
+                      steps={steps.map((step, index) => ({
+                        ...step,
+                        order: index + 1,
+                      }))}
+                      completedStepIds={completedStepIds}
+                      onToggleStep={toggleStep}
+                    />
+                  ) : null}
+                </section>
+              </>
+            ) : null}
           </div>
         </div>
+
+        <aside
+          className={
+            planVisible
+              ? 'daycare-hatch space-y-[var(--spacing-section)]'
+              : 'daycare-hatch hidden space-y-[var(--spacing-section)] md:block'
+          }
+        >
+          <HatchRouteCard game={game} />
+          {shiny ? <ShinyOddsPanel shiny={shiny} /> : null}
+        </aside>
       </div>
     </div>
   )
