@@ -1037,66 +1037,6 @@ function resolveStrategies(
   return { ...recommended, excludedStrategies }
 }
 
-function describeParentBrief(parent: ParentRequirement): string {
-  const parts: string[] = []
-  if (parent.gender) parts.push(parent.gender)
-  parts.push(parent.species.join('/'))
-  if (parent.mustHaveNature) parts.push(parent.mustHaveNature)
-  if (parent.mustHaveAbility) parts.push(parent.mustHaveAbility)
-  if (parent.mustKnow?.length) {
-    parts.push(`knows ${parent.mustKnow.join(', ')}`)
-  }
-  if (parent.mustOriginateFromDifferentLanguage) {
-    parts.push('origin language differs from its partner')
-  }
-  if (parent.heldItem) parts.push(`holding ${parent.heldItem}`)
-  return parts.join(', ')
-}
-
-function buildAssembleStep(
-  game: GameData,
-  ruleset: Ruleset,
-  speciesName: string,
-  species: SpeciesEggData,
-  parents: ParentRequirement[],
-  dittoPair: boolean,
-): StepDraft {
-  const offspring = species.hatchesInto
-  const a = parents.find((parent) => parent.role === 'A')
-  const b = parents.find((parent) => parent.role === 'B')
-
-  const parts: string[] = []
-  if (a && b) {
-    parts.push(
-      `Pair these two: ${describeParentBrief(a)}; and ${describeParentBrief(b)}.`,
-    )
-  }
-
-  parts.push(`Eggs hatch as ${offspring} at level ${ruleset.hatchLevel}.`)
-
-  const foreignDitto = parents.some(
-    (parent) =>
-      parent.species.includes('Ditto') &&
-      parent.mustOriginateFromDifferentLanguage,
-  )
-  if (dittoPair && game.ditto.obtainedAt && !foreignDitto) {
-    parts.push(
-      `Ditto sourcing: ${game.ditto.obtainedAt.replace(/\.+$/, '')}.`,
-    )
-  }
-
-  if (speciesName !== offspring) {
-    parts.push(
-      `If you need ${speciesName} specifically, hatch ${offspring} and evolve it.`,
-    )
-  }
-
-  return {
-    id: 'assemble',
-    instruction: parts.join(' '),
-  }
-}
-
 function buildBlockedPairStep(speciesName: string): StepDraft {
   return {
     id: 'assemble',
@@ -1119,41 +1059,6 @@ function buildIncenseStep(species: SpeciesEggData): StepDraft | null {
       {
         severity: 'warning',
         message: `Omitting the incense silently yields ${species.hatchesInto} instead of ${species.babyWithIncense}.`,
-      },
-    ],
-  }
-}
-
-function buildNatureConfirmStep(
-  ruleset: Ruleset,
-  nature: string,
-  parents: ParentRequirement[],
-): StepDraft | null {
-  const lock = ruleset.natureLock
-  // method "none" is a form-level constraint — never a plan step.
-  if (lock.method === 'none') return null
-
-  const holder = parents.find((parent) => parent.heldItem === 'Everstone')
-  const where = holder
-    ? `Parent ${holder.role}${holder.gender ? ` (${holder.gender})` : ''}`
-    : lock.holder === 'either-parent'
-      ? 'either parent'
-      : 'the female parent or Ditto'
-
-  if (lock.method === 'everstone-guaranteed') {
-    return {
-      id: 'nature',
-      instruction: `Confirm the Everstone is on ${where} to guarantee the hatch inherits ${nature}.`,
-    }
-  }
-
-  return {
-    id: 'nature',
-    instruction: `Confirm the Everstone is on ${where} for a 50% chance the hatch inherits ${nature}.`,
-    ruleFlags: [
-      {
-        severity: 'warning',
-        message: 'Everstone only gives a 50% nature chance in this game.',
       },
     ],
   }
@@ -1209,10 +1114,6 @@ function buildAbilityInheritStep(
   const { standardOdds, hiddenOdds } = ruleset.abilityInheritance
   const odds = hidden ? hiddenOdds : standardOdds
   const percent = formatOddsPercent(odds)
-  const missHint =
-    odds <= 0.65
-      ? ' Roughly two in five eggs miss.'
-      : ' Plan on hatching more than one egg.'
 
   const flags: RuleFlag[] = []
   if (hidden) {
@@ -1224,7 +1125,7 @@ function buildAbilityInheritStep(
 
   return {
     id: 'ability',
-    instruction: `Confirm Parent A has ${ability}. About ${percent} of eggs inherit that ability; the rest roll a different slot.${missHint}`,
+    instruction: `About ${percent} of eggs inherit ${ability}; the rest roll a different slot.`,
     ruleFlags: flags.length > 0 ? flags : undefined,
   }
 }
@@ -1234,54 +1135,15 @@ function buildEggMoveStepsForStrategy(
   ruleset: Ruleset,
   speciesName: string,
   eggMoves: string[],
-  strategyId: string,
 ): StepDraft[] {
   if (!ruleset.eggMovesExist || eggMoves.length === 0) return []
 
   const steps: StepDraft[] = []
-  const passers = eggMovePasserSpecies(game, speciesName, eggMoves)
-  const passerExamples =
-    passers.length === 0
-      ? null
-      : passers.length <= 3
-        ? formatSpeciesList(passers)
-        : `${passers.slice(0, 3).join(', ')} (+${passers.length - 3} more)`
-
-  if (strategyId === 'ditto-pair' || strategyId === 'ditto-only') {
-    if (game.eggMoveAlternative) {
-      const alt = game.eggMoveAlternative
-      const partnerNote = passerExamples
-        ? ` Picnic with a partner that already knows them — in this game that includes ${passerExamples}.`
-        : ''
-      steps.push({
-        id: 'consolidate-egg-moves',
-        instruction: `First consolidate ${eggMoves.join(', ')} onto ${speciesName} using ${alt.name}: ${alt.howItWorks}${partnerNote} Ditto cannot carry egg moves.`,
-      })
-    } else {
-      const fatherOnly = ruleset.eggMoveEligibleParents === 'male-only'
-      steps.push({
-        id: 'egg-moves-prerequisite',
-        instruction: fatherOnly
-          ? `Pair a male ${speciesName} that already knows ${eggMoves.join(', ')} with Ditto. That ${speciesName} usually comes from the species-pair route first — only the father passes egg moves here, and there is no other teach-onto-the-line mechanic.`
-          : `Pair a ${speciesName} that already knows ${eggMoves.join(', ')} with Ditto. That ${speciesName} usually comes from the species-pair route first — there is no other teach-onto-the-line mechanic here.`,
-      })
-    }
-    return steps
-  }
-
   const catalog = game.eggMoves[speciesName] ?? []
-  const fatherOnly = ruleset.eggMoveEligibleParents === 'male-only'
-  const parentRole = fatherOnly ? 'the father' : 'a parent'
-  const sourceNote = passerExamples
-    ? ` Passers in this game include ${passerExamples}.`
-    : ''
-
-  steps.push({
-    id: 'egg-moves',
-    instruction: fatherOnly
-      ? `The father must know ${eggMoves.join(', ')}.${sourceNote}`
-      : `Ensure ${parentRole} knows ${eggMoves.join(', ')}.${sourceNote}`,
-  })
+  const passer =
+    ruleset.eggMoveEligibleParents === 'male-only'
+      ? 'the father'
+      : 'the egg-move parent'
 
   for (const move of eggMoves) {
     const entry = catalog.find((item) => item.move === move)
@@ -1297,23 +1159,9 @@ function buildEggMoveStepsForStrategy(
     for (const source of indirectSources) {
       steps.push({
         id: `egg-move-${slug(move)}-via-${slug(source)}`,
-        instruction: `First get ${move} onto an intermediate parent from ${source}, then have ${fatherOnly ? 'the father' : 'the egg-move parent'} pass ${move} into the ${speciesName} line.`,
+        instruction: `First get ${move} onto an intermediate parent from ${source}, then have ${passer} pass ${move} into the ${speciesName} line.`,
       })
     }
-  }
-
-  if (
-    ruleset.eggMoveMethod === 'eggs-or-alternative' &&
-    game.eggMoveAlternative
-  ) {
-    const alt = game.eggMoveAlternative
-    const partnerNote = passerExamples
-      ? ` Picnic with a partner that already knows them — in this game that includes ${passerExamples}.`
-      : ''
-    steps.push({
-      id: 'egg-move-alternative',
-      instruction: `Alternatively, use ${alt.name} for ${eggMoves.join(', ')}: ${alt.howItWorks}${partnerNote}`,
-    })
   }
 
   return steps
@@ -1371,10 +1219,13 @@ function buildIvStep(
   ruleset: Ruleset,
   target: DaycareTarget,
   parents: ParentRequirement[],
-): StepDraft {
+): StepDraft | null {
+  if (!hasSpecificIvTargets(target.ivs) && !Boolean(target.wantsPowerItem)) {
+    return null
+  }
+
   const { ivInheritance, hyperTraining } = ruleset
   const flags: RuleFlag[] = []
-  const wantsPower = Boolean(target.wantsPowerItem)
 
   if (hyperTraining.available && isAllMaxIvs(target.ivs, ivInheritance.maxIv)) {
     flags.push(hyperTrainingAllMaxFlag(game, ruleset))
@@ -1391,21 +1242,9 @@ function buildIvStep(
   const conflict = itemConflictFromParents(parents, demands)
   if (conflict) flags.push(conflict)
 
-  let instruction = `Plan IV inheritance around ${ivInheritance.baseCountInherited} IVs passed from the parents by default (max IV ${ivInheritance.maxIv}).`
-  if (ivInheritance.destinyKnotAvailable) {
-    instruction += ` Destiny Knot raises inherited IVs from ${ivInheritance.baseCountInherited} to ${ivInheritance.destinyKnotBoostedCount}.`
-  }
-  if (wantsPower && ivInheritance.powerItemsAvailable) {
-    instruction +=
-      ' A power item locks one specific parent IV into the hatch.'
-  }
-  if (parents.some((parent) => parent.heldItem)) {
-    instruction += ' Held items are already assigned on the parent pair above.'
-  }
-
   return {
     id: 'iv-base',
-    instruction,
+    instruction: `Plan IV inheritance around ${ivInheritance.baseCountInherited} IVs passed from the parents by default (max IV ${ivInheritance.maxIv}).`,
     ruleFlags: flags.length > 0 ? flags : undefined,
   }
 }
@@ -1417,60 +1256,10 @@ function buildStepsForStrategy(
   species: SpeciesEggData,
   strategy: PairingStrategy,
 ): PlanStep[] {
-  const unconstrained = isUnconstrainedTarget(target, ruleset, species)
-  if (unconstrained) {
-    const drafts: StepDraft[] = [
-      {
-        id: 'assemble',
-        instruction: `Pair two ${target.species} and hatch. Eggs hatch at level ${ruleset.hatchLevel}.`,
-      },
-    ]
-    return finalizeSteps(drafts)
-  }
-
-  const dittoPair =
-    strategy.id === 'ditto-pair' || strategy.id === 'ditto-only'
-
-  // Masuda is the only extra constraint — name the pair, don't pad the plan.
-  if (isAttributeUnconstrained(target, ruleset, species)) {
-    const drafts: StepDraft[] = [
-      buildAssembleStep(
-        game,
-        ruleset,
-        target.species,
-        species,
-        strategy.parents,
-        dittoPair,
-      ),
-    ]
-    const incense = buildIncenseStep(species)
-    if (incense) drafts.push(incense)
-    return finalizeSteps(drafts)
-  }
   const drafts: StepDraft[] = []
-
-  drafts.push(
-    buildAssembleStep(
-      game,
-      ruleset,
-      target.species,
-      species,
-      strategy.parents,
-      dittoPair,
-    ),
-  )
 
   const incense = buildIncenseStep(species)
   if (incense) drafts.push(incense)
-
-  if (wantsNature(target, ruleset)) {
-    const natureStep = buildNatureConfirmStep(
-      ruleset,
-      target.nature,
-      strategy.parents,
-    )
-    if (natureStep) drafts.push(natureStep)
-  }
 
   if (wantsAbility(target, ruleset, species)) {
     const abilityBlock = buildAbilityBlockStep(
@@ -1497,10 +1286,11 @@ function buildStepsForStrategy(
       ruleset,
       target.species,
       target.eggMoves,
-      strategy.id,
     ),
   )
-  drafts.push(buildIvStep(game, ruleset, target, strategy.parents))
+
+  const ivStep = buildIvStep(game, ruleset, target, strategy.parents)
+  if (ivStep) drafts.push(ivStep)
 
   return finalizeSteps(drafts)
 }
