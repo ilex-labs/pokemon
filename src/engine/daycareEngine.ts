@@ -57,14 +57,11 @@ export type PairingStrategy = {
 }
 
 export type ShinyOddsTier = {
-  id: 'base' | 'masuda' | 'masudaPlusCharm'
+  id: 'base' | 'shinyCharm' | 'masuda' | 'masudaPlusCharm'
   label: string
   odds: string
   approximateEggs: number
-  /**
-   * Charm tiers only — completing a Pokédex is context, never an instruction
-   * to go get the charm.
-   */
+  /** Shown once per fact — don't repeat Masuda or Charm copy across rows. */
   context?: string
 }
 
@@ -301,10 +298,10 @@ function pushAcquisition(parent: ParentRequirement, flag: RuleFlag) {
 function masudaAcquisitionFlag(game: GameData): RuleFlag {
   const how =
     game.masudaAcquisition?.how ??
-    'Relative to the other parent, not a specific foreign language — a pair you already have that differs already counts. Otherwise trade for one, or import from a cartridge saved in another language.'
+    'You may already have one — a pair from different-language games would count. Otherwise trade for one, or import from a cartridge saved in another language.'
   return {
     severity: 'info',
-    message: `Masuda Method needs a parent from a different-language game than its partner — ${how}`,
+    message: how,
   }
 }
 
@@ -870,9 +867,8 @@ function isDittoRoute(strategy: PairingStrategy): boolean {
 /**
  * Recommend the route with fewest parents to acquire. When tied, recommend
  * neither — a badge without a real edge is just first position.
- * Masuda flips this: a Ditto whose origin language differs from its partner
- * pairs with anything and serves every future project, so that route is
- * strictly better.
+ * Masuda flips this: a Ditto works with any species, so you can reuse it
+ * for other hatches — strictly better than a foreign parent of the line.
  */
 function applyRouteRecommendations(
   strategies: PairingStrategy[],
@@ -895,7 +891,7 @@ function applyRouteRecommendations(
                 ...strategy,
                 recommended: true,
                 recommendReason:
-                  'A Ditto whose origin language differs from its partner pairs with anything and serves every future project',
+                  'A Ditto works with any species, so you can reuse it for other hatches.',
               }
             : {
                 ...strategy,
@@ -1510,7 +1506,7 @@ function buildStepsForStrategy(
 }
 
 const SHINY_DETERMINED_ON_RECEIVE =
-  'Shininess is locked when the egg is received, not when it hatches — hatch-speed modifiers do not change the odds, and there is no resetting before the hatch.'
+  "Shininess is decided the moment you receive the egg — hatch-speed modifiers don't change the odds, and resetting after that point can't change the result."
 
 function buildShinyPayload(game: GameData, ruleset: Ruleset): ShinyOdds {
   const modifiers = game.shinyEggModifiers
@@ -1523,12 +1519,34 @@ function buildShinyPayload(game: GameData, ruleset: Ruleset): ShinyOdds {
     },
   ]
 
+  if (modifiers?.shinyCharmAvailable && modifiers.shinyCharmOdds) {
+    const unlock = modifiers.shinyCharmUnlock
+    const note = modifiers.shinyCharmAloneNote
+    const context = [
+      unlock
+        ? `Applies if you already have the Shiny Charm — it means ${unlock}. Not a step in this hatch plan.`
+        : 'Applies if you already have the Shiny Charm. Not a step in this hatch plan.',
+      note,
+    ]
+      .filter(Boolean)
+      .join(' ')
+    tiers.push({
+      id: 'shinyCharm',
+      label: 'Shiny Charm',
+      odds: modifiers.shinyCharmOdds.odds,
+      approximateEggs: modifiers.shinyCharmOdds.approximateEggs,
+      context,
+    })
+  }
+
   if (ruleset.masudaMethod) {
     tiers.push({
       id: 'masuda',
       label: 'Masuda Method',
       odds: ruleset.masudaMethod.odds,
       approximateEggs: ruleset.masudaMethod.approximateEggs,
+      context:
+        'A parent originating from a different-language game than its partner.',
     })
   }
 
@@ -1538,21 +1556,18 @@ function buildShinyPayload(game: GameData, ruleset: Ruleset): ShinyOdds {
     modifiers.shinyCharmStacksWithMasuda &&
     modifiers.masudaPlusCharmOdds
   ) {
-    const unlock = modifiers.shinyCharmUnlock
     tiers.push({
       id: 'masudaPlusCharm',
       label: 'Masuda Method + Shiny Charm',
       odds: modifiers.masudaPlusCharmOdds.odds,
       approximateEggs: modifiers.masudaPlusCharmOdds.approximateEggs,
-      context: unlock
-        ? `Applies if you already have the Shiny Charm — it means ${unlock}. Not a step in this hatch plan.`
-        : 'Applies if you already have the Shiny Charm. Not a step in this hatch plan.',
     })
   }
 
   const noBoostsReason =
     !ruleset.masudaMethod && !modifiers?.shinyCharmAvailable
-      ? 'Nothing in this game improves egg shiny odds.'
+      ? (game.noEggShinyBoostsReason ??
+        'Nothing in this game improves egg shiny odds.')
       : undefined
 
   return {
@@ -1657,6 +1672,6 @@ export function planDaycare(
     steps: recommended
       ? buildStepsForStrategy(game, ruleset, target, species, recommended)
       : [],
-    shiny: target.wantsShiny ? buildShinyPayload(game, ruleset) : undefined,
+    shiny: buildShinyPayload(game, ruleset),
   }
 }

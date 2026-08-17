@@ -1,80 +1,121 @@
 /**
- * Print strategies + PlanStep[] (and shiny payload) for the acceptance cases.
- * Verification only — does not change engine behaviour.
+ * Print strategies + PlanStep[] (and shiny payload) for each game in
+ * src/data/games. Verification only — does not change engine behaviour.
+ *
+ * Games and rulesets are discovered from the data directories. Cases are
+ * derived from each game's data: a plain target, an egg-move target when
+ * the catalog has one, and a daycare-gate dump when that gate is present.
  */
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { planDaycare } from '../src/engine/daycareEngine.ts'
+import type { GameData, Ruleset } from '../src/data/schema.ts'
+import {
+  planDaycare,
+  type DaycarePlan,
+  type DaycareTarget,
+} from '../src/engine/daycareEngine.ts'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
+const gamesDir = join(root, 'src/data/games')
+const rulesetsDir = join(root, 'src/data/rulesets')
 
-function loadJson(relativePath: string) {
-  return JSON.parse(readFileSync(join(root, relativePath), 'utf8'))
+const ANY_IVS: DaycareTarget['ivs'] = {
+  hp: 'any',
+  atk: 'any',
+  def: 'any',
+  spa: 'any',
+  spd: 'any',
+  spe: 'any',
 }
 
-const gen9 = loadJson('src/data/rulesets/gen9.json')
-const scarletViolet = loadJson('src/data/games/scarlet-violet.json')
-
-const baseTarget = {
-  species: 'Charmander',
-  nature: 'Timid',
-  ability: 'Blaze',
-  eggMoves: ['Dragon Dance'],
-  ivs: {
-    hp: 31,
-    atk: 0,
-    def: 31,
-    spa: 31,
-    spd: 31,
-    spe: 31,
-  },
+function loadJson(filePath: string) {
+  return JSON.parse(readFileSync(filePath, 'utf8'))
 }
 
-function printPlan(
-  title: string,
-  plan: {
-    blocked: boolean
-    routesEquivalent?: boolean
-    strategies: Array<{
-      id: string
-      label: string
-      acquisitionCost: string
-      tradeoff: string
-      recommended?: boolean
-      recommendReason?: string
-      parents: Array<{
-        role: string
-        species: string[]
-        gender?: string
-        genderReason?: string
-        mustKnow?: string[]
-        mustHaveAbility?: string
-        mustHaveNature?: string
-        heldItem?: string
-        mustOriginateFromDifferentLanguage?: boolean
-        acquisition?: Array<{ severity: string; message: string }>
-      }>
-    }>
-    steps: Array<{
-      id: string
-      order: number
-      instruction: string
-      ruleFlags?: Array<{ severity: string; message: string }>
-    }>
-    shiny?: {
-      tiers: Array<{
-        id: string
-        label: string
-        odds: string
-        approximateEggs: number
-        context?: string
-      }>
-      noBoostsReason?: string
-      determinedOnReceive: string
-    }
-  },
-) {
+function jsonFiles(dir: string): string[] {
+  return readdirSync(dir)
+    .filter((name) => name.endsWith('.json'))
+    .map((name) => join(dir, name))
+}
+
+function loadGames(): GameData[] {
+  return jsonFiles(gamesDir)
+    .map((filePath) => loadJson(filePath) as GameData)
+    .sort((a, b) => a.displayName.localeCompare(b.displayName))
+}
+
+function loadRulesets(): Ruleset[] {
+  return jsonFiles(rulesetsDir).map((filePath) => loadJson(filePath) as Ruleset)
+}
+
+function mergeRuleset(base: Ruleset, overrides?: Partial<Ruleset>): Ruleset {
+  if (!overrides) return base
+  return {
+    ...base,
+    ...overrides,
+    abilityInheritance: {
+      ...base.abilityInheritance,
+      ...overrides.abilityInheritance,
+    },
+    ivInheritance: {
+      ...base.ivInheritance,
+      ...overrides.ivInheritance,
+    },
+    hyperTraining: {
+      ...base.hyperTraining,
+      ...overrides.hyperTraining,
+    },
+    natureLock: overrides.natureLock ?? base.natureLock,
+  }
+}
+
+function rulesetFor(game: GameData, rulesets: Ruleset[]): Ruleset {
+  const base = rulesets.find(
+    (ruleset) => ruleset.generation === game.generation,
+  )
+  if (!base) {
+    throw new Error(
+      `No ruleset for generation ${game.generation} (game ${game.id})`,
+    )
+  }
+  return mergeRuleset(base, game.rulesetOverrides)
+}
+
+function firstSpecies(game: GameData): string {
+  const name = Object.keys(game.species)[0]
+  if (!name) {
+    throw new Error(`${game.id}: species catalog is empty`)
+  }
+  return name
+}
+
+function plainTarget(species: string): DaycareTarget {
+  return {
+    species,
+    nature: 'any',
+    ability: 'any',
+    eggMoves: [],
+    ivs: { ...ANY_IVS },
+  }
+}
+
+/** First species that lists an egg move, with that move selected. */
+function eggMoveTarget(game: GameData): DaycareTarget | null {
+  for (const [species, entries] of Object.entries(game.eggMoves ?? {})) {
+    if (!game.species[species] || !Array.isArray(entries)) continue
+    const move = entries[0]?.move
+    if (!move) continue
+    return { ...plainTarget(species), eggMoves: [move] }
+  }
+  return null
+}
+
+function hasDaycareGate(game: GameData): boolean {
+  return (game.featureGates ?? []).some((gate) => gate.feature === 'daycare')
+}
+
+function printPlan(title: string, plan: DaycarePlan) {
   console.log('='.repeat(72))
   console.log(title)
   console.log(
@@ -83,6 +124,13 @@ function printPlan(
     }`,
   )
   console.log('='.repeat(72))
+
+  if (plan.featureGates.length > 0) {
+    console.log('\n--- Feature gates ---')
+    for (const gate of plan.featureGates) {
+      console.log(`   ${gate.feature}: unlocked after ${gate.unlockedAfter}`)
+    }
+  }
 
   if (plan.strategies.length > 0) {
     console.log('\n--- Pairing strategies ---')
@@ -127,6 +175,13 @@ function printPlan(
     }
   }
 
+  if (plan.excludedStrategies && plan.excludedStrategies.length > 0) {
+    console.log('\n--- Excluded strategies ---')
+    for (const excluded of plan.excludedStrategies) {
+      console.log(`   [${excluded.id}] ${excluded.label} — ${excluded.reason}`)
+    }
+  }
+
   console.log('\n--- What to do (steps for recommended / first) ---')
   for (const step of plan.steps) {
     console.log(`\n${step.order}. [${step.id}]`)
@@ -155,50 +210,34 @@ function printPlan(
   console.log('')
 }
 
-const case1 = planDaycare(scarletViolet, gen9, baseTarget)
-printPlan(
-  'Case 1 — Timid / Blaze / Dragon Dance / IV spread, no shiny',
-  case1,
-)
-
-const case2 = planDaycare(scarletViolet, gen9, {
-  ...baseTarget,
-  wantsShiny: true,
-})
-printPlan('Case 2 — same + wantsShiny: true', case2)
-
-const case3Ruleset = {
-  ...gen9,
-  abilityInheritance: {
-    ...gen9.abilityInheritance,
-    hiddenAbilityViaEggs: false,
-  },
+const rulesets = loadRulesets()
+const games = loadGames()
+if (games.length === 0) {
+  throw new Error(`No game JSON files in ${gamesDir}`)
 }
-const case3 = planDaycare(scarletViolet, case3Ruleset, {
-  ...baseTarget,
-  ability: 'Solar Power',
-})
-printPlan(
-  'Case 3 — Solar Power with hiddenAbilityViaEggs: false (harness override; plan continues)',
-  case3,
-)
 
-const case4Game = {
-  ...scarletViolet,
-  ditto: {
-    ...scarletViolet.ditto,
-    available: false,
-  },
-  species: {
-    ...scarletViolet.species,
-    Charmander: {
-      ...scarletViolet.species.Charmander,
-      genderRatio: 'genderless',
-    },
-  },
+for (const game of games) {
+  const ruleset = rulesetFor(game, rulesets)
+  const unconstrained = plainTarget(firstSpecies(game))
+
+  printPlan(
+    `${game.displayName} — plain target`,
+    planDaycare(game, ruleset, unconstrained),
+  )
+
+  const withEggMove = eggMoveTarget(game)
+  if (withEggMove) {
+    const move = withEggMove.eggMoves[0]
+    printPlan(
+      `${game.displayName} — egg move (${move} onto ${withEggMove.species})`,
+      planDaycare(game, ruleset, withEggMove),
+    )
+  }
+
+  if (hasDaycareGate(game)) {
+    printPlan(
+      `${game.displayName} — daycare gate`,
+      planDaycare(game, ruleset, unconstrained),
+    )
+  }
 }
-const case4 = planDaycare(case4Game, gen9, baseTarget)
-printPlan(
-  'Case 4 — genderless + ditto.available: false (harness override; plan truncated)',
-  case4,
-)

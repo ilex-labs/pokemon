@@ -42,7 +42,7 @@
     "how": "Catch or hatch one that already knows the move, or copy it at a picnic with a Mirror Herb."
   },
   "masudaAcquisition": {
-    "how": "Relative to the other parent, not a specific foreign language — a Japanese Charmander and an English Ditto already counts. Otherwise trade for one, or import from a cartridge saved in another language."
+    "how": "You may already have one — a Japanese Charmander with an English Ditto would count. Otherwise trade for one, or import from a cartridge saved in another language."
   },
   "eggEfficiencyModifiers": [
     {
@@ -97,6 +97,7 @@
   "shinyEggModifiers": {
     "shinyCharmAvailable": true,
     "shinyCharmStacksWithMasuda": true,
+    "shinyCharmOdds": { "odds": "2/4096", "approximateEggs": 2048 },
     "masudaPlusCharmOdds": { "odds": "8/4096", "approximateEggs": 512 },
     "shinyCharmUnlock": "completing the Paldea Pokédex"
   },
@@ -123,6 +124,7 @@
     "eggEfficiencyModifiers": ["bulbapedia", "serebii"],
     "hatchMechanicExplainer": ["bulbapedia", "serebii", "smogon"],
     "shinyEggModifiers": ["bulbapedia", "serebii"],
+    "shinyCharmOdds": ["bulbapedia", "dittobase"],
     "hatchLevel": ["bulbapedia", "serebii"]
   }
 }

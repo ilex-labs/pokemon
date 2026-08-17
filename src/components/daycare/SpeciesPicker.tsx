@@ -13,7 +13,7 @@ export default function SpeciesPicker({
     <label className="block">
       <span className="label-caps mb-1.5 block">Species</span>
       <select
-        className="w-full rounded border border-edge bg-raised px-3 py-2 text-sm text-bright"
+        className="select-ui"
         value={value}
         onChange={(event) => onChange(event.target.value)}
       >

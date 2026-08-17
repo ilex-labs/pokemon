@@ -1,5 +1,5 @@
 import PageTitle from '../components/shared/PageTitle'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { PlanStep } from '../data/schema'
 import {
   defaultIvSpread,
@@ -144,6 +144,8 @@ export default function Daycare() {
   const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(
     null,
   )
+  const userPickedStrategy = useRef(false)
+  const defaultKeyRef = useRef(`${gameId}:${target.species}`)
   const [hydrated, setHydrated] = useState(false)
   /** Below md only — from 768px both panes show and this is ignored. */
   const [mobilePane, setMobilePane] = useState<'target' | 'plan'>('target')
@@ -168,9 +170,28 @@ export default function Daycare() {
   )
 
   const strategies = plan.strategies
+  const defaultKey = `${gameId}:${target.species}`
+  if (defaultKeyRef.current !== defaultKey) {
+    defaultKeyRef.current = defaultKey
+    userPickedStrategy.current = false
+  }
+
+  const recommendedId =
+    (strategies.find((strategy) => strategy.recommended) ?? strategies[0])?.id ??
+    null
+  const selectionStillValid =
+    selectedStrategyId !== null &&
+    strategies.some((strategy) => strategy.id === selectedStrategyId)
+  const nextSelectedId =
+    userPickedStrategy.current && selectionStillValid
+      ? selectedStrategyId
+      : recommendedId
+  if (nextSelectedId !== selectedStrategyId) {
+    setSelectedStrategyId(nextSelectedId)
+  }
+
   const activeStrategy =
-    strategies.find((strategy) => strategy.id === selectedStrategyId) ??
-    strategies.find((strategy) => strategy.recommended) ??
+    strategies.find((strategy) => strategy.id === nextSelectedId) ??
     strategies[0]
 
   const steps = useMemo(() => {
@@ -181,19 +202,25 @@ export default function Daycare() {
     return stepsForStrategy(game, ruleset, target, activeStrategy)
   }, [plan, activeStrategy, strategies.length, game, ruleset, target])
 
+  const sequenceSteps = useMemo(
+    () => steps.filter((step) => step.id !== 'assemble'),
+    [steps],
+  )
+
+  const hatchOutcome = useMemo(() => {
+    const species = game.species[target.species]
+    if (!species) return null
+    const offspring = species.hatchesInto
+    const line = `Eggs hatch as ${offspring} at level ${ruleset.hatchLevel}.`
+    if (target.species !== offspring) {
+      return `${line} If you need ${target.species} specifically, hatch ${offspring} and evolve it.`
+    }
+    return line
+  }, [game, ruleset.hatchLevel, target.species])
+
   const blocked = plan.blocked
   const shiny = plan.shiny
   const featureGates = plan.featureGates ?? game.featureGates ?? []
-
-  // Keep selection valid when strategies recompute.
-  useEffect(() => {
-    if (strategies.length === 0) return
-    const ids = new Set(strategies.map((strategy) => strategy.id))
-    if (selectedStrategyId && ids.has(selectedStrategyId)) return
-    const recommended =
-      strategies.find((strategy) => strategy.recommended) ?? strategies[0]
-    setSelectedStrategyId(recommended?.id ?? null)
-  }, [strategies, selectedStrategyId])
 
   // Drop completed ids that no longer exist after a recompute.
   useEffect(() => {
@@ -254,6 +281,7 @@ export default function Daycare() {
   function selectGame(nextId: string) {
     const next = getGameOption(nextId)
     if (!next) return
+    userPickedStrategy.current = false
     setGameId(next.id)
     setTarget(createDefaultTarget(next))
     setOwnedParentRoles([])
@@ -263,6 +291,7 @@ export default function Daycare() {
   }
 
   function selectStrategy(id: string) {
+    userPickedStrategy.current = true
     setSelectedStrategyId(id)
     setOwnedParentRoles([])
     setCompletedStepIds([])
@@ -340,7 +369,7 @@ export default function Daycare() {
         >
           <section className="space-y-[var(--spacing-within)]">
             <div className="border-b border-edge pb-2">
-              <h2 className="text-section font-medium text-bright">
+              <h2 className="text-item font-medium text-muted">
                 Target spread
               </h2>
             </div>
@@ -363,11 +392,7 @@ export default function Daycare() {
               }
               hiddenAbilitiesExist={ruleset.hiddenAbilitiesExist}
               masudaAvailable={Boolean(ruleset.masudaMethod)}
-              shinyHint={
-                shiny?.tiers.find((tier) => tier.id === 'masuda') ??
-                shiny?.tiers.find((tier) => tier.id === 'base') ??
-                shiny?.tiers[0]
-              }
+              shinyAbsenceNote={game.noEggShinyBoostsReason}
               onChange={setTarget}
             />
           </section>
@@ -408,25 +433,26 @@ export default function Daycare() {
                   onSelectStrategy={selectStrategy}
                   ownedRoles={ownedSet}
                   onToggleOwned={toggleOwned}
+                  hatchOutcome={hatchOutcome}
                 />
 
-                <section className="space-y-[var(--spacing-within)]">
-                  <div className="border-b border-edge pb-2">
-                    <h2 className="text-section font-medium text-bright">
-                      What to do
-                    </h2>
-                  </div>
-                  {steps.length > 0 ? (
+                {sequenceSteps.length > 0 ? (
+                  <section className="space-y-[var(--spacing-within)]">
+                    <div className="border-b border-edge pb-2">
+                      <h2 className="text-section font-medium text-bright">
+                        What to do
+                      </h2>
+                    </div>
                     <PlanStepList
-                      steps={steps.map((step, index) => ({
+                      steps={sequenceSteps.map((step, index) => ({
                         ...step,
                         order: index + 1,
                       }))}
                       completedStepIds={completedStepIds}
                       onToggleStep={toggleStep}
                     />
-                  ) : null}
-                </section>
+                  </section>
+                ) : null}
               </>
             ) : null}
           </div>
@@ -439,8 +465,17 @@ export default function Daycare() {
               : 'daycare-hatch hidden space-y-[var(--spacing-section)] md:block'
           }
         >
-          <HatchRouteCard game={game} />
-          {shiny ? <ShinyOddsPanel shiny={shiny} /> : null}
+          {target.wantsShiny ? (
+            <>
+              {shiny ? <ShinyOddsPanel shiny={shiny} /> : null}
+              <HatchRouteCard game={game} />
+            </>
+          ) : (
+            <>
+              <HatchRouteCard game={game} />
+              {shiny ? <ShinyOddsPanel shiny={shiny} /> : null}
+            </>
+          )}
         </aside>
       </div>
     </div>

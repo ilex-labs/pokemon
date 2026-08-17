@@ -14,7 +14,7 @@
   },
   {
     "id": "physical-attacker",
-    "label": "Physical attacker",
+    "label": "Physical",
     "values": {
       "hp": "max",
       "atk": "max",
@@ -27,7 +27,7 @@
   },
   {
     "id": "special-attacker",
-    "label": "Special attacker",
+    "label": "Special",
     "values": {
       "hp": "max",
       "atk": 0,

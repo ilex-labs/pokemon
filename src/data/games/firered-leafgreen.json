@@ -38,6 +38,7 @@
   },
   "eggEfficiencyModifiers": [],
   "noEggRateBoostsReason": "This game has no item or charm that raises how often eggs appear — Day Care compatibility alone sets the rate.",
+  "noEggShinyBoostsReason": "The Masuda Method doesn't exist in this game — it was introduced in Generation IV — and the Shiny Charm came later still, in Generation V. Base odds are the only egg shiny odds here.",
   "hatchMechanicExplainer": "Leave two compatible Pokémon at the Four Island Day Care (the Route 5 Day Care only holds one, so it cannot produce eggs). After enough steps the Day-Care Man offers an Egg; how often that happens depends only on whether the parents share a species and Original Trainer — there is no Oval Charm or other rate boost here. Carry the Egg in your party and walk: it hatches at level 5. Flame Body does not shorten hatch steps in FireRed/LeafGreen (that starts in Emerald).",
   "eggMoves": {
     "Charmander": [
@@ -84,6 +85,7 @@
     "natureLock": ["bulbapedia", "serebii"],
     "hatchLevel": ["bulbapedia", "serebii"],
     "baseShinyOdds": ["bulbapedia", "serebii"],
-    "masudaMethod": ["bulbapedia", "serebii"]
+    "masudaMethod": ["bulbapedia", "serebii"],
+    "noEggShinyBoostsReason": ["bulbapedia", "serebii"]
   }
 }

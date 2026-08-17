@@ -33,7 +33,13 @@ describe('daycareEngine acceptance cases', () => {
     const plan = planDaycare(scarletViolet, gen9, baseTarget)
 
     expect(plan.blocked).toBe(false)
-    expect(plan.shiny).toBeUndefined()
+    expect(plan.shiny).toBeDefined()
+    expect(plan.shiny?.tiers.map((tier) => tier.id)).toEqual([
+      'base',
+      'shinyCharm',
+      'masuda',
+      'masudaPlusCharm',
+    ])
 
     const speciesPair = plan.strategies.find(
       (strategy) => strategy.id === 'species-pair',
@@ -131,21 +137,36 @@ describe('daycareEngine acceptance cases', () => {
     expect(plan.shiny).toBeDefined()
     expect(plan.shiny?.tiers.map((tier) => tier.id)).toEqual([
       'base',
+      'shinyCharm',
       'masuda',
       'masudaPlusCharm',
     ])
     expect(plan.shiny?.tiers[0]?.odds).toBe('1/4096')
-    expect(plan.shiny?.tiers[1]?.odds).toBe('6/4096')
+    expect(plan.shiny?.tiers[1]?.odds).toBe('2/4096')
+    expect(plan.shiny?.tiers[1]?.approximateEggs).toBe(2048)
+    expect(plan.shiny?.tiers[2]?.odds).toBe('6/4096')
+    expect(plan.shiny?.tiers[3]?.odds).toBe('8/4096')
     expect(plan.shiny?.noBoostsReason).toBeUndefined()
     expect(plan.shiny?.determinedOnReceive).toMatch(
-      /locked when the egg is received/i,
+      /decided the moment you receive the egg/i,
     )
-    expect(plan.shiny?.determinedOnReceive).toMatch(/not when it hatches/i)
-    const charmTier = plan.shiny?.tiers.find(
+    expect(plan.shiny?.determinedOnReceive).toMatch(
+      /hatch-speed modifiers don't change the odds/i,
+    )
+    expect(plan.shiny?.determinedOnReceive).toMatch(
+      /resetting after that point can't change the result/i,
+    )
+    const charmAlone = plan.shiny?.tiers.find((tier) => tier.id === 'shinyCharm')
+    expect(charmAlone?.context).toMatch(/Paldea Pokédex/i)
+    expect(charmAlone?.context).not.toMatch(/two egg rolls/i)
+    expect(charmAlone?.context).not.toMatch(/not 3\/4096/i)
+    expect(charmAlone?.context).not.toMatch(/obtain the Shiny Charm/i)
+    const masudaTier = plan.shiny?.tiers.find((tier) => tier.id === 'masuda')
+    expect(masudaTier?.context).toMatch(/different-language game than its partner/i)
+    const stacked = plan.shiny?.tiers.find(
       (tier) => tier.id === 'masudaPlusCharm',
     )
-    expect(charmTier?.context).toMatch(/Paldea Pokédex/i)
-    expect(charmTier?.context).not.toMatch(/obtain the Shiny Charm/i)
+    expect(stacked?.context).toBeUndefined()
 
     expect(plan.routesEquivalent).toBeUndefined()
     const dittoPair = plan.strategies.find(
@@ -156,9 +177,10 @@ describe('daycareEngine acceptance cases', () => {
     )
     expect(dittoPair?.recommended).toBe(true)
     expect(dittoPair?.recommendReason).toMatch(
-      /origin language differs from its partner/i,
+      /A Ditto works with any species/i,
     )
-    expect(dittoPair?.recommendReason).toMatch(/every future project/i)
+    expect(dittoPair?.recommendReason).toMatch(/reuse it for other hatches/i)
+    expect(dittoPair?.recommendReason).not.toMatch(/every future project/i)
     expect(speciesPair?.recommended).toBeUndefined()
 
     const dittoParent = dittoPair?.parents.find((parent) =>
@@ -167,14 +189,31 @@ describe('daycareEngine acceptance cases', () => {
     expect(dittoParent?.mustOriginateFromDifferentLanguage).toBe(true)
     expect(
       dittoParent?.acquisition?.some((flag) =>
-        /different-language game than its partner/i.test(flag.message),
+        /already have one/i.test(flag.message),
       ),
     ).toBe(true)
     expect(
       dittoParent?.acquisition?.some((flag) =>
-        /relative to the other parent|already counts/i.test(flag.message),
+        /Japanese Charmander with an English Ditto/i.test(flag.message),
       ),
     ).toBe(true)
+    expect(
+      dittoParent?.acquisition?.some((flag) =>
+        /any two parents from different-language/i.test(flag.message),
+      ),
+    ).toBe(false)
+    expect(
+      dittoParent?.acquisition?.some((flag) =>
+        /Must originate from a different-language/i.test(flag.message),
+      ),
+    ).toBe(false)
+    expect(
+      dittoParent?.acquisition?.some((flag) =>
+        /Masuda Method needs a parent from a different-language/i.test(
+          flag.message,
+        ),
+      ),
+    ).toBe(false)
     expect(
       dittoParent?.acquisition?.some((flag) =>
         /trade|import|cartridge/i.test(flag.message),
@@ -463,7 +502,7 @@ describe('daycareEngine acceptance cases', () => {
     })
 
     expect(plan.blocked).toBe(false)
-    expect(plan.shiny).toBeUndefined()
+    expect(plan.shiny).toBeDefined()
 
     for (const strategy of plan.strategies) {
       for (const parent of strategy.parents) {
@@ -514,7 +553,7 @@ describe('daycareEngine acceptance cases', () => {
     )
     expect(dittoPair?.recommended).toBe(true)
     expect(dittoPair?.recommendReason).toMatch(
-      /origin language differs from its partner/i,
+      /A Ditto works with any species/i,
     )
     expect(dittoPair?.acquisitionCost).toMatch(
       /Ditto whose origin language differs from its partner/i,
@@ -526,7 +565,7 @@ describe('daycareEngine acceptance cases', () => {
     expect(dittoParent?.mustOriginateFromDifferentLanguage).toBe(true)
     expect(
       dittoParent?.acquisition?.some((flag) =>
-        /than its partner/i.test(flag.message),
+        /already have one/i.test(flag.message),
       ),
     ).toBe(true)
 

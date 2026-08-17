@@ -6,7 +6,7 @@ import {
   resolvePresetValues,
   speciesAbilityGroups,
 } from '../../data/loadGame'
-import type { DaycareTarget, ShinyOddsTier } from '../../engine/daycareEngine'
+import type { DaycareTarget } from '../../engine/daycareEngine'
 import type { GameData, IvPreset, NaturesCatalog } from '../../data/schema'
 import IvPresetRow, { type IvPresetSelection } from './IvPresetRow'
 import IvTargetPicker from './IvTargetPicker'
@@ -31,15 +31,24 @@ type TargetSpreadFormProps = {
   hiddenAbilitiesExist: boolean
   /** True when this ruleset has Masuda (gen 4+). */
   masudaAvailable: boolean
-  /** Base-tier shiny figure when the hatch-for-shiny toggle is on. */
-  shinyHint?: ShinyOddsTier
+  /** Named absence when this game has no Masuda and no Shiny Charm. */
+  shinyAbsenceNote?: string
   onChange: (next: DaycareTarget) => void
 }
 
-/** Constraint copy at the decision point — never a numbered plan step. */
+/** Game limitation at the decision point — warning, not a plan step. */
 function ConstraintNote({ text }: { text: string }) {
   return (
     <p className="mt-1 border-l-2 border-brass py-1 pl-3 text-sm text-body">
+      {text}
+    </p>
+  )
+}
+
+/** Same treatment as info flags — edge rule, no colour. */
+function InfoNote({ text }: { text: string }) {
+  return (
+    <p className="mt-1 border-l-2 border-edge py-1 pl-3 text-sm text-body">
       {text}
     </p>
   )
@@ -78,7 +87,7 @@ export default function TargetSpreadForm({
   abilityInheritanceExists,
   hiddenAbilitiesExist,
   masudaAvailable,
-  shinyHint,
+  shinyAbsenceNote,
   onChange,
 }: TargetSpreadFormProps) {
   const abilityGroups = speciesAbilityGroups(game, value.species, {
@@ -146,7 +155,7 @@ export default function TargetSpreadForm({
       <label className="block">
         <span className="label-caps mb-1.5 block">Nature</span>
         <select
-          className="w-full rounded border border-edge bg-raised px-3 py-2 text-sm text-bright"
+          className="select-ui"
           value={value.nature}
           onChange={(event) => patch({ nature: event.target.value })}
         >
@@ -168,7 +177,7 @@ export default function TargetSpreadForm({
       <label className="block">
         <span className="label-caps mb-1.5 block">Ability</span>
         <select
-          className="w-full rounded border border-edge bg-raised px-3 py-2 text-sm text-bright"
+          className="select-ui"
           value={value.ability}
           onChange={(event) => patch({ ability: event.target.value })}
         >
@@ -252,22 +261,10 @@ export default function TargetSpreadForm({
           Hatch for shiny
         </label>
         {value.wantsShiny && masudaAvailable ? (
-          <ConstraintNote text="Requires a parent originating from a different-language game than its partner — not a specific foreign language. A pair you already have that differs already counts." />
+          <InfoNote text="Adds a parent from a different-language game." />
         ) : null}
-        {value.wantsShiny && !masudaAvailable ? (
-          <ConstraintNote text="Nothing in this game improves egg shiny odds." />
-        ) : null}
-        {value.wantsShiny && shinyHint ? (
-          <p className="mt-1.5 pl-6 text-meta text-muted">
-            {shinyHint.label}{' '}
-            <span className="num text-bright">{shinyHint.odds}</span>
-            <span>
-              {' '}
-              · ~
-              <span className="num">{shinyHint.approximateEggs.toLocaleString()}</span>{' '}
-              eggs
-            </span>
-          </p>
+        {value.wantsShiny && !masudaAvailable && shinyAbsenceNote ? (
+          <InfoNote text={shinyAbsenceNote} />
         ) : null}
       </div>
     </div>

@@ -15,7 +15,7 @@ export default function HatchModifierExplainer({
   return (
     <div className="border-t border-edge pt-[var(--spacing-within)]">
       <h3 className="label-caps">How hatching works here</h3>
-      <p className="mt-2 text-sm text-body">{withNums(text)}</p>
+      <p className="mt-2">{withNums(text)}</p>
     </div>
   )
 }

@@ -5,10 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node -e \"require('fs').copyFileSync('dist/index.html','dist/404.html')\" && node scripts/assert-theme.mjs",
+    "build": "node scripts/validate-data.mjs && vite build && node -e \"require('fs').copyFileSync('dist/index.html','dist/404.html')\" && node scripts/assert-theme.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "validate": "node scripts/validate-data.mjs",
+    "test": "vitest run",
     "test:engine": "vitest run src/engine",
     "test:engine:verbose": "node --experimental-strip-types --no-warnings=ExperimentalWarning scripts/print-engine-cases.mts"
   },

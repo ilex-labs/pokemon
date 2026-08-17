@@ -100,15 +100,27 @@ export interface ShinyEggModifiers {
   shinyCharmAvailable: boolean
   shinyCharmStacksWithMasuda: boolean
   /**
+   * Shiny Charm alone (no Masuda). Verified figure — never derived from
+   * roll count. Gen 8/9 is 2/4096, not 3/4096, because of a reroll bug.
+   * Omit when the charm is unavailable.
+   */
+  shinyCharmOdds?: ShinyOddsTierData
+  /**
    * Masuda + Shiny Charm stacked odds. Omit when the charm is unavailable
    * or does not stack. Gen 6+: 8/4096; B2W2: 8/8192.
    */
   masudaPlusCharmOdds?: ShinyOddsTierData
   /**
    * What having the charm means in this game (completing a regional Pokédex).
-   * Context only — never turned into a plan step.
+   * Context only — never turned into a plan step. Shown on the Charm-alone
+   * tier, not repeated on Masuda + Charm.
    */
   shinyCharmUnlock?: string
+  /**
+   * Extra Charm-alone copy. Omit rather than explain roll-count trivia —
+   * provenance already records why the figure is what it is.
+   */
+  shinyCharmAloneNote?: string
   notes?: string
 }
 
@@ -240,9 +252,10 @@ export interface GameData {
     how: string
   }
   /**
-   * How to obtain a parent whose language of origin differs from its partner
-   * (Masuda). Attached as an acquisition flag when wantsShiny is on and the
-   * ruleset has Masuda. Languages are relative to each other, not absolute.
+   * How to obtain a parent whose origin language differs from its partner
+   * (Masuda). Acquisition only — do not restate the parent-card constraint.
+   * Say that they may already have one, with a concrete example, then how
+   * to get a parent otherwise. Do not restate that languages must differ.
    */
   masudaAcquisition?: {
     how: string
@@ -270,6 +283,11 @@ export interface GameData {
    * reading like missing data.
    */
   noEggRateBoostsReason?: string
+  /**
+   * When this game has no Masuda and no Shiny Charm, name what is absent
+   * (introduced-in-gen, no Charm) so the panel does not read as a data gap.
+   */
+  noEggShinyBoostsReason?: string
   sandwichRecipes?: SandwichRecipe[]
   shinyEggModifiers?: ShinyEggModifiers
   featureGates?: FeatureGate[]

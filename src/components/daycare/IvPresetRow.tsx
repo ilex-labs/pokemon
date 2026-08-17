@@ -45,8 +45,8 @@ function Chip({
       aria-describedby={describedBy}
       className={
         selected
-          ? 'peer min-w-0 w-full rounded border border-bright bg-raised px-2 py-1.5 text-center text-sm leading-tight text-bright'
-          : 'peer min-w-0 w-full rounded border border-edge bg-raised px-2 py-1.5 text-center text-sm leading-tight text-bright hover:border-bright'
+          ? 'peer flex h-full min-h-0 w-full items-center justify-center rounded border border-bright bg-raised px-2 py-1.5 text-center text-sm leading-tight text-bright'
+          : 'peer flex h-full min-h-0 w-full items-center justify-center rounded border border-edge bg-raised px-2 py-1.5 text-center text-sm leading-tight text-bright hover:border-bright'
       }
       onClick={onClick}
     >
@@ -80,11 +80,11 @@ export default function IvPresetRow({
     <div>
       <p className="label-caps mb-2">IV presets</p>
       <div
-        className="grid grid-cols-3 gap-2"
+        className="grid auto-rows-fr grid-cols-3 gap-2"
         role="group"
         aria-label="IV presets"
       >
-        <span className="relative min-w-0">
+        <span className="relative flex h-full min-w-0">
           <Chip
             selected={selection === 'any'}
             label="Any"
@@ -97,7 +97,7 @@ export default function IvPresetRow({
           const text = presetRationale(preset, generation)
           const tooltipId = `${tooltipIdPrefix}-${preset.id}`
           return (
-            <span key={preset.id} className="relative min-w-0">
+            <span key={preset.id} className="relative flex h-full min-w-0">
               <Chip
                 selected={selection === preset.id}
                 label={preset.label}
@@ -121,7 +121,7 @@ export default function IvPresetRow({
           )
         })}
 
-        <span className="relative min-w-0">
+        <span className="relative flex h-full min-w-0">
           <Chip
             selected={selection === 'custom'}
             label="Custom"

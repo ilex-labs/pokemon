@@ -16,7 +16,7 @@ export default function PlanStepList({
   const completed = new Set(completedStepIds)
 
   return (
-    <ol className="list-none divide-y divide-edge border-y border-edge p-0">
+    <ol className="list-none divide-y divide-edge border-b border-edge p-0">
       {steps.map((step) => {
         const done = completed.has(step.id)
         return (

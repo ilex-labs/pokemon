@@ -47,9 +47,9 @@ export default function RuleFlag({ flag }: RuleFlagProps) {
   return (
     <div
       role="status"
-      className="mt-2 border-l-2 border-accent py-1.5 pl-3 text-sm text-body"
+      className="mt-2 border-l-2 border-edge py-1.5 pl-3 text-sm text-body"
     >
-      <span className="mr-2 font-medium text-accent">{SEVERITY_LABEL.info}</span>
+      <span className="mr-2 font-medium text-muted">{SEVERITY_LABEL.info}</span>
       {withNums(flag.message)}
     </div>
   )

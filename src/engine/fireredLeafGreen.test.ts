@@ -172,7 +172,7 @@ describe('FireRed/LeafGreen — ruleset branches never exercised by gen 9', () =
     expect(JSON.stringify(dittoSteps)).not.toMatch(/consolidat|Mirror Herb/i)
   })
 
-  it('wantsShiny adds no Masuda constraint and states that nothing improves egg shiny odds', () => {
+  it('wantsShiny adds no Masuda constraint and names the absent shiny mechanics', () => {
     expect(gen3.masudaMethod).toBeUndefined()
     expect(gen3.baseShinyOdds.odds).toBe('1/8192')
     expect(frlg.shinyEggModifiers).toBeUndefined()
@@ -198,11 +198,15 @@ describe('FireRed/LeafGreen — ruleset branches never exercised by gen 9', () =
     expect(plan.shiny?.tiers.map((tier) => tier.id)).toEqual(['base'])
     expect(plan.shiny?.tiers[0]?.odds).toBe('1/8192')
     expect(plan.shiny?.tiers[0]?.odds).not.toBe('1/4096')
+    expect(plan.shiny?.noBoostsReason).toMatch(/Masuda Method doesn't exist/i)
+    expect(plan.shiny?.noBoostsReason).toMatch(/Generation IV/i)
+    expect(plan.shiny?.noBoostsReason).toMatch(/Shiny Charm came later still/i)
+    expect(plan.shiny?.noBoostsReason).toMatch(/Generation V/i)
     expect(plan.shiny?.noBoostsReason).toMatch(
-      /nothing in this game improves egg shiny odds/i,
+      /Base odds are the only egg shiny odds/i,
     )
     expect(plan.shiny?.determinedOnReceive).toMatch(
-      /locked when the egg is received/i,
+      /decided the moment you receive the egg/i,
     )
     expect(plan.steps.some((step) => step.id === 'masuda')).toBe(false)
     expect(plan.steps.some((step) => step.id === 'shiny-charm')).toBe(false)

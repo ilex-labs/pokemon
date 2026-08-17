@@ -9,20 +9,23 @@ export default function ShinyOddsPanel({ shiny }: ShinyOddsPanelProps) {
   return (
     <section className="space-y-[var(--spacing-within)]">
       <div className="border-b border-edge pb-2">
-        <h2 className="text-section font-medium text-bismuth">Shiny egg odds</h2>
+        <h2 className="text-item font-medium text-bismuth">Shiny egg odds</h2>
       </div>
+      <p className="border-l-2 border-bismuth py-2 pl-3 text-sm text-bright">
+        {withNums(shiny.determinedOnReceive)}
+      </p>
       {shiny.noBoostsReason ? (
-        <p className="text-sm text-body">{withNums(shiny.noBoostsReason)}</p>
+        <p>{withNums(shiny.noBoostsReason)}</p>
       ) : (
-        <p className="text-sm text-muted">
+        <p className="text-muted">
           Approximate eggs until a shiny at each tier that applies in this game.
         </p>
       )}
-      <ul className="list-none divide-y divide-edge border-t border-edge p-0">
+      <ul className="list-none divide-y divide-edge p-0">
         {shiny.tiers.map((tier) => (
-          <li key={tier.id} className="py-3 text-sm">
-            <p className="text-item font-medium text-bright">{tier.label}</p>
-            <p className="text-body">
+          <li key={tier.id} className="py-2">
+            <p className="font-medium text-bright">{tier.label}</p>
+            <p>
               <span className="num text-bright">{tier.odds}</span>
               <span className="text-muted">
                 {' '}
@@ -34,12 +37,11 @@ export default function ShinyOddsPanel({ shiny }: ShinyOddsPanelProps) {
               </span>
             </p>
             {tier.context ? (
-              <p className="mt-1 text-meta text-muted">{withNums(tier.context)}</p>
+              <p className="mt-1 text-muted">{withNums(tier.context)}</p>
             ) : null}
           </li>
         ))}
       </ul>
-      <p className="text-meta text-muted">{withNums(shiny.determinedOnReceive)}</p>
     </section>
   )
 }

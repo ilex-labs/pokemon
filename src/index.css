@@ -95,6 +95,38 @@ body {
 }
 
 /**
+ * Styled select on fine pointers. Touch keeps the native control.
+ */
+.select-ui {
+  width: 100%;
+  max-width: 100%;
+  border-radius: 0.25rem;
+  border: 1px solid var(--color-edge);
+  background-color: var(--color-raised);
+  padding: 0.5rem 0.75rem;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
+  color: var(--color-bright);
+}
+
+.select-ui:focus {
+  outline: 1px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .select-ui {
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' viewBox='0 0 12 8'%3E%3Cpath stroke='%237A828A' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M1 1.5 6 6.5 11 1.5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 0.75rem 0.5rem;
+    padding-right: 2rem;
+  }
+}
+
+/**
  * Page titles only. Not a Tailwind font-* utility — import PageTitle and use
  * this class so the serif cannot leak into header/nav/UI chrome.
  * 28px at the narrowest, 32px from 400px, 48px only once the title has a row.
@@ -137,6 +169,15 @@ body {
 .daycare-plan,
 .daycare-hatch {
   min-width: 0;
+}
+
+/**
+ * Sidebar is reference: one step down from the plan column, tighter leading.
+ * Headings keep their own type-scale classes.
+ */
+.daycare-hatch {
+  font-size: var(--text-meta);
+  line-height: 1.35;
 }
 
 @media (min-width: 400px) {

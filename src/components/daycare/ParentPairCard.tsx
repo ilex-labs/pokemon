@@ -16,6 +16,7 @@ type ParentPairCardProps = {
   onSelectStrategy: (id: string) => void
   ownedRoles: Set<string>
   onToggleOwned: (role: 'A' | 'B') => void
+  hatchOutcome?: string | null
 }
 
 function ParentBlock({
@@ -83,25 +84,19 @@ function ParentBlock({
         ) : null}
       </ul>
 
-      {showHeldItems ? (
-        <div className="mt-[var(--spacing-within)]">
-          {parent.heldItem ? (
-            <div className="text-sm">
-              <p className="text-bright">
-                Held item: {parent.heldItem}
-                {!owned ? (
-                  <span className="text-muted"> — after you have this parent</span>
-                ) : null}
-              </p>
-              {parent.heldItemReason ? (
-                <p className="mt-1 text-meta text-muted">
-                  {withNums(parent.heldItemReason)}
-                </p>
-              ) : null}
-            </div>
-          ) : (
-            <p className="text-sm text-muted">Held item: (open slot)</p>
-          )}
+      {showHeldItems && parent.heldItem ? (
+        <div className="mt-[var(--spacing-within)] text-sm">
+          <p className="text-bright">
+            Held item: {parent.heldItem}
+            {!owned ? (
+              <span className="text-muted"> — after you have this parent</span>
+            ) : null}
+          </p>
+          {parent.heldItemReason ? (
+            <p className="mt-1 text-meta text-muted">
+              {withNums(parent.heldItemReason)}
+            </p>
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -117,6 +112,7 @@ export default function ParentPairCard({
   onSelectStrategy,
   ownedRoles,
   onToggleOwned,
+  hatchOutcome,
 }: ParentPairCardProps) {
   if (strategies.length === 0) return null
 
@@ -124,6 +120,9 @@ export default function ParentPairCard({
     strategies.find((strategy) => strategy.id === selectedStrategyId) ??
     strategies[0]
   const showHeldItems = eggAffectingHeldItemsExist(ruleset)
+  const recommendReason = strategies.find(
+    (strategy) => strategy.recommended && strategy.recommendReason,
+  )?.recommendReason
 
   return (
     <div className="space-y-[var(--spacing-section)]">
@@ -140,8 +139,8 @@ export default function ParentPairCard({
         <div
           className={
             strategies.length > 1
-              ? 'grid grid-cols-1 gap-2 @[28rem]:grid-cols-2'
-              : 'grid grid-cols-1 gap-2'
+              ? 'grid grid-cols-1 items-start gap-2 @[28rem]:grid-cols-2'
+              : 'grid grid-cols-1 items-start gap-2'
           }
           role="radiogroup"
           aria-label="Pairing routes"
@@ -154,6 +153,11 @@ export default function ParentPairCard({
                 type="button"
                 role="radio"
                 aria-checked={isSelected}
+                aria-describedby={
+                  strategy.recommended && recommendReason
+                    ? 'route-recommend-reason'
+                    : undefined
+                }
                 onClick={() => onSelectStrategy(strategy.id)}
                 className={
                   isSelected
@@ -167,15 +171,21 @@ export default function ParentPairCard({
                 <p className="mt-1 text-sm text-body">
                   {withNums(strategy.acquisitionCost)}
                 </p>
-                {strategy.recommended && strategy.recommendReason ? (
-                  <p className="mt-2 text-meta text-muted">
-                    Recommended — {strategy.recommendReason.toLowerCase()}
+                {strategy.recommended ? (
+                  <p className="mt-2 text-meta font-medium text-verdigris">
+                    Recommended
                   </p>
                 ) : null}
               </button>
             )
           })}
         </div>
+
+        {recommendReason ? (
+          <p id="route-recommend-reason" className="text-meta leading-snug text-muted">
+            {recommendReason}
+          </p>
+        ) : null}
 
         {routesEquivalent && strategies.length > 1 ? (
           <p className="text-sm text-muted">
@@ -197,15 +207,12 @@ export default function ParentPairCard({
               What you need
             </h2>
           </div>
-          <p className="text-item font-medium text-bright">
-            Parents for {selected.label}
-          </p>
           {!showHeldItems ? (
             <p className="text-sm text-body">
               No held item affects egg outcomes in this game.
             </p>
           ) : null}
-          <div className="divide-y divide-edge border-t border-edge">
+          <div className="divide-y divide-edge">
             {selected.parents.map((parent) => (
               <div
                 key={`${selected.id}-${parent.role}`}
@@ -220,6 +227,9 @@ export default function ParentPairCard({
               </div>
             ))}
           </div>
+          {hatchOutcome ? (
+            <p className="text-sm text-body">{withNums(hatchOutcome)}</p>
+          ) : null}
         </section>
       ) : null}
     </div>

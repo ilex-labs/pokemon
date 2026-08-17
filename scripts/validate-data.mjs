@@ -32,6 +32,7 @@ const ALLOWED_SOURCES = new Set([
   'serebii',
   'smogon',
   'game',
+  'dittobase',
 ])
 
 function validateNatures(natures) {
@@ -167,7 +168,7 @@ function validateGame(filePath, game, natures) {
       for (const source of sources) {
         if (!ALLOWED_SOURCES.has(source)) {
           fail(
-            `${label}: provenance.${category} source "${source}" is not an allowed independent lineage (use pokeapi|bulbapedia|serebii|smogon|game)`,
+            `${label}: provenance.${category} source "${source}" is not an allowed independent lineage (use pokeapi|bulbapedia|serebii|smogon|game|dittobase)`,
           )
         }
       }
@@ -253,6 +254,32 @@ function validateGame(filePath, game, natures) {
         }
       }
     }
+  }
+
+  const shinyMods = game.shinyEggModifiers
+  if (shinyMods?.shinyCharmAvailable) {
+    const charmOdds = shinyMods.shinyCharmOdds
+    if (
+      !charmOdds ||
+      typeof charmOdds !== 'object' ||
+      !isNonEmptyString(charmOdds.odds) ||
+      !charmOdds.odds.includes('/') ||
+      typeof charmOdds.approximateEggs !== 'number'
+    ) {
+      fail(
+        `${label}: shinyCharmAvailable requires shinyCharmOdds with a verified odds fraction — do not derive it from roll count`,
+      )
+    }
+  }
+  if (
+    typeof game.generation === 'number' &&
+    game.generation < 4 &&
+    !shinyMods?.shinyCharmAvailable &&
+    !isNonEmptyString(game.noEggShinyBoostsReason)
+  ) {
+    fail(
+      `${label}: games without Masuda and without a Shiny Charm must set noEggShinyBoostsReason (name the absent mechanics)`,
+    )
   }
 
   // Natures: shared catalog is what the form offers when naturesExist.
