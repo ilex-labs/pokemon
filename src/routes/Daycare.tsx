@@ -25,6 +25,7 @@ import ParentPairCard from '../components/daycare/ParentPairCard'
 import PlanStepList from '../components/daycare/PlanStepList'
 import ShinyOddsPanel from '../components/daycare/ShinyOddsPanel'
 import TargetSpreadForm from '../components/daycare/TargetSpreadForm'
+import { formatHatchOutcome } from '../lib/hatchOutcome'
 import { getJson, removeJson, setJson } from '../lib/storage'
 
 const STORAGE_KEY = 'pokemon:daycare:v1'
@@ -210,13 +211,8 @@ export default function Daycare() {
   const hatchOutcome = useMemo(() => {
     const species = game.species[target.species]
     if (!species) return null
-    const offspring = species.hatchesInto
-    const line = `Eggs hatch as ${offspring} at level ${ruleset.hatchLevel}.`
-    if (target.species !== offspring) {
-      return `${line} If you need ${target.species} specifically, hatch ${offspring} and evolve it.`
-    }
-    return line
-  }, [game, ruleset.hatchLevel, target.species])
+    return formatHatchOutcome(ruleset, species, target.species)
+  }, [game, ruleset, target.species])
 
   const blocked = plan.blocked
   const shiny = plan.shiny
