@@ -1096,8 +1096,6 @@ function resolveStrategies(
 
   if (canOfferDittoPair(game, target)) {
     strategies.push(buildDittoPairStrategy(game, ruleset, target, species))
-  } else if (abilityExclusion && !game.ditto.available) {
-    // Ability needs Ditto but Ditto isn't obtainable — handled by empty strategies.
   }
 
   const recommended = applyRouteRecommendations(
@@ -1507,35 +1505,6 @@ export function planDaycare(
     resolveStrategies(game, ruleset, target, species, dittoOnly)
   const recommended =
     strategies.find((strategy) => strategy.recommended) ?? strategies[0]
-
-  if (strategies.length === 0) {
-    const abilityExclusion = excludedStrategies.find(
-      (entry) => entry.id === 'species-pair',
-    )
-    return {
-      strategies: [],
-      excludedStrategies:
-        excludedStrategies.length > 0 ? excludedStrategies : undefined,
-      featureGates,
-      blocked: true,
-      steps: finalizeSteps([
-        {
-          id: 'no-route',
-          instruction:
-            abilityExclusion?.reason ??
-            `No viable pairing route can produce this target in this game.`,
-          ruleFlags: [
-            {
-              severity: 'blocking',
-              message:
-                abilityExclusion?.reason ??
-                'No viable pairing route exists for this target.',
-            },
-          ],
-        },
-      ]),
-    }
-  }
 
   return {
     strategies,
