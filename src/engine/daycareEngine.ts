@@ -170,6 +170,50 @@ function eggGroupsForSpecies(game: GameData, species: string): string[] {
     .map(([group]) => group)
 }
 
+/** True if the name is a species key or appears in any egg-group membership list. */
+function isKnownSpecies(game: GameData, name: string): boolean {
+  if (Object.hasOwn(game.species, name)) return true
+  return Object.values(game.eggGroups).some((members) => members.includes(name))
+}
+
+/**
+ * Empty membership is always a data gap today — the inverted index cannot
+ * represent a species that legitimately has no groups. Known vs unknown
+ * changes only the copy.
+ */
+function eggGroupMembershipWarning(
+  game: GameData,
+  name: string,
+): RuleFlag | undefined {
+  if (eggGroupsForSpecies(game, name).length > 0) return undefined
+  return {
+    severity: 'warning',
+    message: isKnownSpecies(game, name)
+      ? `${name} is in the catalog but has no egg-group membership recorded`
+      : `no egg-group data is held for ${name}`,
+  }
+}
+
+function applyEggGroupLookupWarnings(
+  game: GameData,
+  parent: ParentRequirement,
+  speciesName: string,
+  eggMoves: string[],
+) {
+  const catalog = game.eggMoves[speciesName] ?? []
+  const seen = new Set<string>()
+  for (const move of eggMoves) {
+    const sources =
+      catalog.find((item) => item.move === move)?.parentSpecies ?? []
+    for (const source of sources) {
+      if (seen.has(source)) continue
+      seen.add(source)
+      const warning = eggGroupMembershipWarning(game, source)
+      if (warning) pushAcquisition(parent, warning)
+    }
+  }
+}
+
 function sharesEggGroup(game: GameData, a: string, b: string): boolean {
   const groupsA = new Set(eggGroupsForSpecies(game, a))
   return eggGroupsForSpecies(game, b).some((group) => groupsA.has(group))
@@ -672,6 +716,7 @@ function buildSpeciesPairStrategy(
       severity: 'info',
       message: `Egg moves are not level-up moves for ${target.species}.${passerNote} ${how} Need: ${moveList}.`,
     })
+    applyEggGroupLookupWarnings(game, parentB, target.species, target.eggMoves)
   }
 
   const carrierGenderReasons: string[] = []
@@ -768,6 +813,7 @@ function buildDittoPairStrategy(
       severity: 'info',
       message: how,
     })
+    applyEggGroupLookupWarnings(game, parentA, target.species, target.eggMoves)
   }
 
   const parentB: ParentRequirement = {
@@ -845,6 +891,7 @@ function buildDittoOnlyStrategy(
   applyNatureAbility(parentA, game, ruleset, species, target)
   if (target.eggMoves.length > 0) {
     parentA.mustKnow = [...target.eggMoves]
+    applyEggGroupLookupWarnings(game, parentA, target.species, target.eggMoves)
   }
 
   const parentB: ParentRequirement = {
@@ -1174,8 +1221,7 @@ function buildEggMoveStepsForStrategy(
 
     const indirectSources = sources.filter((source) => {
       if (source === speciesName) return false
-      const sourceGroups = eggGroupsForSpecies(game, source)
-      if (sourceGroups.length === 0) return false
+      if (eggGroupMembershipWarning(game, source)) return false
       return !sharesEggGroup(game, speciesName, source)
     })
 
