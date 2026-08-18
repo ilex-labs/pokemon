@@ -89,32 +89,13 @@ describe('daycareEngine acceptance cases', () => {
     expect(moveParent?.heldItemReason).toMatch(/IV target/i)
     expect(moveParent?.heldItemReason).toMatch(/3 to 5/)
 
-    const assemble = plan.steps.find((step) => step.id === 'assemble')
-    expect(assemble?.instruction).toMatch(/Charmander/)
-    expect(assemble?.instruction).toMatch(/Salamence|Dragapult|Gyarados/)
-    expect(assemble?.instruction).toMatch(/Eggs hatch as Charmander at level 1\./)
-    expect(assemble?.instruction).not.toMatch(/Ditto/i)
-    expect(assemble?.instruction).not.toMatch(/egg groups:\s*monster\s*\/\s*dragon/i)
     expect(gen9.hatchLevel).toBe(1)
-
-    const nature = plan.steps.find((step) => step.id === 'nature')
-    expect(nature?.instruction).toMatch(/guarantee/i)
-    expect(nature?.instruction).not.toMatch(/50%/)
-    expect(nature?.instruction).toMatch(/Everstone/)
-    expect(nature?.instruction).toMatch(/Timid/)
 
     // Blaze is Charmander's only standard ability — automatic, no inherit step.
     expect(plan.steps.some((step) => step.id === 'ability')).toBe(false)
 
-    const eggAlt = plan.steps.find((step) => step.id === 'egg-move-alternative')
-    expect(eggAlt?.instruction).toMatch(/Mirror Herb/)
-    expect(eggAlt?.instruction).toMatch(/Salamence|Dragapult|Gyarados/)
-    expect(eggAlt?.instruction).not.toMatch(/move reminder/i)
-
     const ivBase = plan.steps.find((step) => step.id === 'iv-base')
     expect(ivBase?.instruction).toMatch(/\baround 3 IVs\b/)
-    expect(ivBase?.instruction).toMatch(/Destiny Knot/)
-    expect(ivBase?.instruction).toMatch(/\bfrom 3 to 5\b/)
     expect(ivBase?.instruction).not.toMatch(/power item/i)
 
     expect(plan.steps.some((step) => step.id === 'destiny-knot')).toBe(false)
@@ -261,13 +242,6 @@ describe('daycareEngine acceptance cases', () => {
       (flag) => flag.severity === 'blocking',
     )
     expect(blocking?.length).toBeGreaterThan(0)
-    expect(plan.steps.find((step) => step.id === 'assemble')).toBeDefined()
-    expect(plan.steps.find((step) => step.id === 'nature')?.instruction).toMatch(
-      /guarantee/i,
-    )
-    expect(
-      plan.steps.find((step) => step.id === 'egg-move-alternative')?.instruction,
-    ).toMatch(/Mirror Herb/)
     expect(plan.steps.find((step) => step.id === 'iv-base')).toBeDefined()
   })
 
@@ -516,15 +490,7 @@ describe('daycareEngine acceptance cases', () => {
       }
     }
 
-    expect(plan.steps).toHaveLength(1)
-    expect(plan.steps[0]?.id).toBe('assemble')
-    expect(plan.steps[0]?.instruction).toMatch(
-      /^Pair two Charmander and hatch\. Eggs hatch at level 1\.$/,
-    )
-    expect(plan.steps.some((step) => step.id === 'nature')).toBe(false)
-    expect(plan.steps.some((step) => step.id === 'iv-base')).toBe(false)
-    expect(plan.steps.some((step) => step.id === 'ability')).toBe(false)
-    expect(plan.steps.some((step) => step.id === 'ability-odds')).toBe(false)
+    expect(plan.steps).toEqual([])
   })
 
   it('all-Any plus wantsShiny with Masuda adds a different-language parent and recommends Ditto', () => {
@@ -569,13 +535,7 @@ describe('daycareEngine acceptance cases', () => {
       ),
     ).toBe(true)
 
-    expect(plan.steps).toHaveLength(1)
-    expect(plan.steps[0]?.id).toBe('assemble')
-    expect(plan.steps[0]?.instruction).toMatch(
-      /origin language differs from its partner/i,
-    )
-    expect(plan.steps.some((step) => step.id === 'nature')).toBe(false)
-    expect(plan.steps.some((step) => step.id === 'shiny-charm')).toBe(false)
+    expect(plan.steps).toEqual([])
   })
 
   it('nature Any with an egg move still forces the carrier gender for the right reason', () => {

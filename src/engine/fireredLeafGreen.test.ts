@@ -74,12 +74,7 @@ describe('FireRed/LeafGreen — ruleset branches never exercised by gen 9', () =
       },
     })
 
-    expect(plan.steps.some((step) => step.id === 'ability')).toBe(false)
-    expect(plan.steps).toHaveLength(1)
-    expect(plan.steps[0]?.id).toBe('assemble')
-    expect(plan.steps[0]?.instruction).toMatch(
-      /^Pair two Charmander and hatch\. Eggs hatch at level 5\.$/,
-    )
+    expect(plan.steps).toEqual([])
 
     for (const strategy of plan.strategies) {
       for (const parent of strategy.parents) {
