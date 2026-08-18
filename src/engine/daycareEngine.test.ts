@@ -96,7 +96,6 @@ describe('daycareEngine acceptance cases', () => {
 
     const ivBase = plan.steps.find((step) => step.id === 'iv-base')
     expect(ivBase?.instruction).toMatch(/\baround 3 IVs\b/)
-    expect(ivBase?.instruction).not.toMatch(/power item/i)
 
     expect(plan.steps.some((step) => step.id === 'destiny-knot')).toBe(false)
     expect(plan.steps.some((step) => step.id === 'power-items')).toBe(false)

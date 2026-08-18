@@ -45,6 +45,10 @@ describe('FireRed/LeafGreen — ruleset branches never exercised by gen 9', () =
     expect(gen3.hatchLevel).toBe(5)
   })
 
+  it("gen3 eggMoveEligibleParents is 'male-only'", () => {
+    expect(gen3.eggMoveEligibleParents).toBe('male-only')
+  })
+
   it('random ability is not a plan step when inheritance does not exist', () => {
     const plan = planDaycare(frlg, gen3, {
       ...baseTarget,
