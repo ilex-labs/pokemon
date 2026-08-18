@@ -234,6 +234,26 @@ function validateGame(filePath, game, natures) {
     }
   }
 
+  for (const [speciesName, entries] of Object.entries(game.eggMoves ?? {})) {
+    if (!Array.isArray(entries)) continue
+    for (const entry of entries) {
+      if (!Array.isArray(entry?.parentSpecies)) continue
+      for (const parent of entry.parentSpecies) {
+        if (!isNonEmptyString(parent)) {
+          fail(
+            `${label}: eggMoves.${speciesName} has a parentSpecies entry that is not a name`,
+          )
+          continue
+        }
+        if (!knownNames.has(parent)) {
+          fail(
+            `${label}: eggMoves.${speciesName} parentSpecies "${parent}", which is not present in this game's species catalog or eggGroups index`,
+          )
+        }
+      }
+    }
+  }
+
   for (const ability of referencedAbilities) {
     if (!isNonEmptyString(abilityDescriptions[ability])) {
       fail(
