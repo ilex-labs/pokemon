@@ -4,7 +4,8 @@
   "generation": 3,
   "eggGroups": {
     "monster": ["Charmander"],
-    "dragon": ["Charmander", "Gyarados"]
+    "dragon": ["Charmander", "Gyarados", "Magikarp"],
+    "water-2": ["Gyarados", "Magikarp"]
   },
   "species": {
     "Charmander": {
