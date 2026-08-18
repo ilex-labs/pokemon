@@ -1506,6 +1506,12 @@ export function planDaycare(
   const recommended =
     strategies.find((strategy) => strategy.recommended) ?? strategies[0]
 
+  if (strategies.length === 0) {
+    throw new Error(
+      `Engine invariant violation: no pairing strategies for ${target.species} in ${game.id}. This is not a user-facing state.`,
+    )
+  }
+
   return {
     strategies,
     routesEquivalent: routesEquivalent || undefined,
