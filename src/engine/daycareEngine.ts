@@ -1109,7 +1109,7 @@ function resolveStrategies(
 
 function buildBlockedPairStep(speciesName: string): StepDraft {
   return {
-    id: 'assemble',
+    id: 'blocked-pair',
     instruction: `${speciesName} can only pair with Ditto in this game, and Ditto is not obtainable here.`,
     ruleFlags: [
       {
@@ -1520,7 +1520,7 @@ export function planDaycare(
       blocked: true,
       steps: finalizeSteps([
         {
-          id: 'assemble',
+          id: 'no-route',
           instruction:
             abilityExclusion?.reason ??
             `No viable pairing route can produce this target in this game.`,

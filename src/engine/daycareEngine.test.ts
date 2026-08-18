@@ -268,10 +268,10 @@ describe('daycareEngine acceptance cases', () => {
     expect(plan.steps).toHaveLength(1)
     expect(plan.strategies).toHaveLength(0)
 
-    const [assemble] = plan.steps
-    expect(assemble.id).toBe('assemble')
-    expect(assemble.instruction).toMatch(/Ditto/i)
-    expect(assemble.instruction).toMatch(/not obtainable|unavailable/i)
+    const [blockedPair] = plan.steps
+    expect(blockedPair.id).toBe('blocked-pair')
+    expect(blockedPair.instruction).toMatch(/Ditto/i)
+    expect(blockedPair.instruction).toMatch(/not obtainable|unavailable/i)
     expect(plan.steps.some((step) => step.id === 'nature')).toBe(false)
     expect(plan.steps.some((step) => step.id === 'iv-base')).toBe(false)
   })

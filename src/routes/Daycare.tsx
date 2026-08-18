@@ -203,11 +203,6 @@ export default function Daycare() {
     return stepsForStrategy(game, ruleset, target, activeStrategy)
   }, [plan, activeStrategy, strategies.length, game, ruleset, target])
 
-  const sequenceSteps = useMemo(
-    () => steps.filter((step) => step.id !== 'assemble'),
-    [steps],
-  )
-
   const hatchOutcome = useMemo(() => {
     const species = game.species[target.species]
     if (!species) return null
@@ -432,7 +427,7 @@ export default function Daycare() {
                   hatchOutcome={hatchOutcome}
                 />
 
-                {sequenceSteps.length > 0 ? (
+                {steps.length > 0 ? (
                   <section className="space-y-[var(--spacing-within)]">
                     <div className="border-b border-edge pb-2">
                       <h2 className="text-section font-medium text-bright">
@@ -440,7 +435,7 @@ export default function Daycare() {
                       </h2>
                     </div>
                     <PlanStepList
-                      steps={sequenceSteps.map((step, index) => ({
+                      steps={steps.map((step, index) => ({
                         ...step,
                         order: index + 1,
                       }))}
