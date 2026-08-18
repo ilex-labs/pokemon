@@ -202,16 +202,35 @@ function validateGame(filePath, game, natures) {
   }
 
   const referencedAbilities = new Set()
+  const knownNames = new Set(Object.keys(game.species ?? {}))
+  for (const members of Object.values(game.eggGroups ?? {})) {
+    if (!Array.isArray(members)) continue
+    for (const member of members) {
+      if (typeof member === 'string' && member.trim().length > 0) {
+        knownNames.add(member)
+      }
+    }
+  }
+
   for (const [speciesName, species] of Object.entries(game.species ?? {})) {
     if (!species?.abilities || !Array.isArray(species.abilities.standard)) {
       fail(`${label}: species.${speciesName}.abilities.standard is required`)
-      continue
+    } else {
+      for (const ability of species.abilities.standard) {
+        referencedAbilities.add(ability)
+      }
+      if (species.abilities.hidden) {
+        referencedAbilities.add(species.abilities.hidden)
+      }
     }
-    for (const ability of species.abilities.standard) {
-      referencedAbilities.add(ability)
-    }
-    if (species.abilities.hidden) {
-      referencedAbilities.add(species.abilities.hidden)
+
+    const offspring = species?.hatchesInto
+    if (!isNonEmptyString(offspring)) {
+      fail(`${label}: species.${speciesName}.hatchesInto is required`)
+    } else if (!knownNames.has(offspring)) {
+      fail(
+        `${label}: species.${speciesName} hatchesInto "${offspring}", which is not present in this game's species catalog or eggGroups index`,
+      )
     }
   }
 
