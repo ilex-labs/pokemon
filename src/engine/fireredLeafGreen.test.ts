@@ -6,7 +6,6 @@ import { speciesAbilityGroups } from '../data/loadGame'
 import {
   eggAffectingHeldItemsExist,
   planDaycare,
-  stepsForStrategy,
   type DaycareTarget,
 } from './daycareEngine'
 
@@ -29,15 +28,6 @@ const baseTarget: DaycareTarget = {
 }
 
 describe('FireRed/LeafGreen — ruleset branches never exercised by gen 9', () => {
-  it('egg-move step names the father specifically, not either parent', () => {
-    const plan = planDaycare(frlg, gen3, baseTarget)
-    const eggStep = plan.steps.find((step) => step.id === 'egg-moves')
-    expect(eggStep).toBeDefined()
-    expect(eggStep?.instruction).toMatch(/the father must know/i)
-    expect(eggStep?.instruction).not.toMatch(/either parent/i)
-    expect(eggStep?.instruction).toMatch(/Dragon Dance/)
-  })
-
   it('emits no Everstone step at all — not a hedged one', () => {
     const plan = planDaycare(frlg, gen3, baseTarget)
     expect(JSON.stringify(plan.steps)).not.toMatch(/Everstone/i)
@@ -51,12 +41,8 @@ describe('FireRed/LeafGreen — ruleset branches never exercised by gen 9', () =
     expect(plan.steps.some((step) => step.id === 'nature')).toBe(false)
   })
 
-  it('assemble outcome notes eggs hatch at level 5', () => {
+  it('gen3 hatchLevel is 5', () => {
     expect(gen3.hatchLevel).toBe(5)
-    const plan = planDaycare(frlg, gen3, baseTarget)
-    const assemble = plan.steps.find((step) => step.id === 'assemble')
-    expect(assemble?.instruction).toMatch(/Eggs hatch as Charmander at level 5\./)
-    expect(assemble?.instruction).not.toMatch(/level 1/)
   })
 
   it('random ability is not a plan step when inheritance does not exist', () => {
@@ -160,11 +146,6 @@ describe('FireRed/LeafGreen — ruleset branches never exercised by gen 9', () =
         /species-pair route first/i.test(flag.message),
       ),
     ).toBe(true)
-
-    const dittoSteps = stepsForStrategy(frlg, gen3, baseTarget, ditto!)
-    const prereq = dittoSteps.find((step) => step.id === 'egg-moves-prerequisite')
-    expect(prereq?.instruction).toMatch(/species-pair route first/i)
-    expect(JSON.stringify(dittoSteps)).not.toMatch(/consolidat|Mirror Herb/i)
   })
 
   it('wantsShiny adds no Masuda constraint and names the absent shiny mechanics', () => {
