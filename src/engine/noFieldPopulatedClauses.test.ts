@@ -22,6 +22,7 @@ const STEP_BUILDERS = new Set([
   'hyperTrainingAllMaxFlag',
   'itemConflictFromParents',
   'buildIvStep',
+  'heldItemConflictFlag',
   'buildStepsForStrategy',
 ])
 

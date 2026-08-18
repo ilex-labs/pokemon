@@ -1283,11 +1283,21 @@ function itemConflictFromParents(
   }
 }
 
+function heldItemConflictFlag(
+  parents: ParentRequirement[],
+  ruleset: Ruleset,
+  target: DaycareTarget,
+): RuleFlag | undefined {
+  return itemConflictFromParents(
+    parents,
+    collectHeldItemDemands(ruleset, target),
+  )
+}
+
 function buildIvStep(
   game: GameData,
   ruleset: Ruleset,
   target: DaycareTarget,
-  parents: ParentRequirement[],
 ): StepDraft | null {
   if (!hasSpecificIvTargets(target.ivs) && !Boolean(target.wantsPowerItem)) {
     return null
@@ -1306,10 +1316,6 @@ function buildIvStep(
         'Hyper Training only raises IVs and can never produce a 0. A 0 requires a parent that already has 0 in that stat. Hyper Trained parents pass their innate IVs, not the trained ones.',
     })
   }
-
-  const demands = collectHeldItemDemands(ruleset, target)
-  const conflict = itemConflictFromParents(parents, demands)
-  if (conflict) flags.push(conflict)
 
   return {
     id: 'iv-base',
@@ -1358,8 +1364,18 @@ function buildStepsForStrategy(
     ),
   )
 
-  const ivStep = buildIvStep(game, ruleset, target, strategy.parents)
-  if (ivStep) drafts.push(ivStep)
+  const ivStep = buildIvStep(game, ruleset, target)
+  if (ivStep) {
+    const conflict = heldItemConflictFlag(strategy.parents, ruleset, target)
+    drafts.push(
+      conflict
+        ? {
+            ...ivStep,
+            ruleFlags: [...(ivStep.ruleFlags ?? []), conflict],
+          }
+        : ivStep,
+    )
+  }
 
   return finalizeSteps(drafts)
 }
