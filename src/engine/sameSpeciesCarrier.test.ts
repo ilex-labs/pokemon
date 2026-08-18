@@ -1,0 +1,183 @@
+import { describe, expect, it } from 'vitest'
+import type { GameData, Ruleset } from '../data/schema'
+import gen9Json from '../data/rulesets/gen9.json'
+import { planDaycare, type DaycareTarget } from './daycareEngine'
+
+const gen9 = gen9Json as Ruleset
+const maleOnly = {
+  ...gen9,
+  eggMoveEligibleParents: 'male-only',
+} as Ruleset
+
+const anyIvs: DaycareTarget['ivs'] = {
+  hp: 'any',
+  atk: 'any',
+  def: 'any',
+  spa: 'any',
+  spd: 'any',
+  spe: 'any',
+}
+
+const fixtureTarget: DaycareTarget = {
+  species: 'FixtureMon',
+  nature: 'any',
+  ability: 'any',
+  eggMoves: ['FixtureMove'],
+  ivs: anyIvs,
+}
+
+function fixtureSpecies(name: string) {
+  return {
+    abilities: { standard: ['FixtureAbility'] },
+    genderRatio: { malePercent: 50 },
+    hatchesInto: name,
+    eggCycles: 20,
+  }
+}
+
+/** Catalog passer is the target itself — same-species carrier. */
+const fixtureGameSameSpecies: GameData = {
+  id: 'fixture-same-species-carrier',
+  displayName: 'Fixture same-species carrier',
+  generation: 9,
+  eggGroups: { field: ['FixtureMon'] },
+  species: { FixtureMon: fixtureSpecies('FixtureMon') },
+  ditto: {
+    available: true,
+    universalParent: true,
+    obtainedAt: 'Fixture Ditto location.',
+  },
+  eggMoves: {
+    FixtureMon: [{ move: 'FixtureMove', parentSpecies: ['FixtureMon'] }],
+  },
+  eggMoveAcquisition: {
+    how: 'Catch or hatch a parent that already knows FixtureMove.',
+  },
+  hatchRoutes: [
+    {
+      routeName: 'Fixture walk',
+      cycleCount: 'medium',
+      method: 'Walk.',
+    },
+  ],
+}
+
+/** Catalog passer is a different species — external carrier. */
+const fixtureGameExternalCarrier: GameData = {
+  id: 'fixture-external-carrier',
+  displayName: 'Fixture external carrier',
+  generation: 9,
+  eggGroups: {
+    field: ['FixtureMon'],
+    dragon: ['FixtureCarrier'],
+  },
+  species: {
+    FixtureMon: fixtureSpecies('FixtureMon'),
+    FixtureCarrier: fixtureSpecies('FixtureCarrier'),
+  },
+  ditto: {
+    available: true,
+    universalParent: true,
+    obtainedAt: 'Fixture Ditto location.',
+  },
+  eggMoves: {
+    FixtureMon: [{ move: 'FixtureMove', parentSpecies: ['FixtureCarrier'] }],
+  },
+  eggMoveAcquisition: {
+    how: 'Catch or hatch a parent that already knows FixtureMove.',
+  },
+  hatchRoutes: [
+    {
+      routeName: 'Fixture walk',
+      cycleCount: 'medium',
+      method: 'Walk.',
+    },
+  ],
+}
+
+function speciesPairParents(game: GameData, ruleset: Ruleset) {
+  const plan = planDaycare(game, ruleset, fixtureTarget)
+  const speciesPair = plan.strategies.find(
+    (strategy) => strategy.id === 'species-pair',
+  )
+  return { plan, speciesPair, parents: speciesPair?.parents ?? [] }
+}
+
+describe('same-species egg-move carrier slot', () => {
+  it('fixtureGameSameSpecies on gen 9: mustKnow and acquisition on exactly one parent', () => {
+    const { parents } = speciesPairParents(fixtureGameSameSpecies, gen9)
+    const carriers = parents.filter((parent) =>
+      parent.mustKnow?.includes('FixtureMove'),
+    )
+    expect(carriers).toHaveLength(1)
+    expect(carriers[0]?.role).toBe('B')
+    expect(carriers[0]?.species).toEqual(['FixtureMon'])
+    expect(
+      carriers[0]?.acquisition?.some((flag) =>
+        /FixtureMove/.test(flag.message),
+      ),
+    ).toBe(true)
+    expect(
+      carriers[0]?.acquisition?.some((flag) =>
+        /Catch or hatch a parent that already knows FixtureMove/.test(
+          flag.message,
+        ),
+      ),
+    ).toBe(true)
+  })
+
+  it('fixtureGameSameSpecies on male-only: carrier is male for egg-move eligibility, not species', () => {
+    const { parents } = speciesPairParents(fixtureGameSameSpecies, maleOnly)
+    const carrier = parents.find((parent) =>
+      parent.mustKnow?.includes('FixtureMove'),
+    )
+    expect(carrier?.gender).toBe('male')
+    expect(carrier?.genderReason).toMatch(/father passes egg moves/i)
+    expect(carrier?.genderReason).not.toMatch(/would produce .+ eggs instead/i)
+    expect(carrier?.genderReason).not.toMatch(/can't both be female/i)
+  })
+
+  it('fixtureGameExternalCarrier on male-only: male, both causes stated', () => {
+    const { parents } = speciesPairParents(fixtureGameExternalCarrier, maleOnly)
+    const carrier = parents.find((parent) =>
+      parent.mustKnow?.includes('FixtureMove'),
+    )
+    expect(carrier?.species).toEqual(['FixtureCarrier'])
+    expect(carrier?.gender).toBe('male')
+    expect(carrier?.genderReason).toMatch(
+      /female FixtureCarrier would produce FixtureCarrier eggs/i,
+    )
+    expect(carrier?.genderReason).toMatch(/father passes egg moves/i)
+  })
+
+  it('fixtureGameSameSpecies Ditto route: mustKnow on exactly one parent', () => {
+    const plan = planDaycare(fixtureGameSameSpecies, gen9, fixtureTarget)
+    const ditto = plan.strategies.find((strategy) => strategy.id === 'ditto-pair')
+    const carriers = (ditto?.parents ?? []).filter(
+      (parent) =>
+        JSON.stringify(parent.mustKnow) ===
+        JSON.stringify(fixtureTarget.eggMoves),
+    )
+    expect(carriers).toHaveLength(1)
+  })
+
+  it('every egg-move-capable strategy has exactly one mustKnow parent', () => {
+    const plan = planDaycare(fixtureGameSameSpecies, gen9, fixtureTarget)
+    const capable = plan.strategies.filter((strategy) =>
+      strategy.parents.some((parent) =>
+        parent.species.some((name) => name !== 'Ditto'),
+      ),
+    )
+    const violations = capable
+      .filter((strategy) => {
+        const carriers = strategy.parents.filter(
+          (parent) =>
+            JSON.stringify(parent.mustKnow) ===
+            JSON.stringify(fixtureTarget.eggMoves),
+        )
+        return carriers.length !== 1
+      })
+      .map((strategy) => strategy.id)
+    expect(violations).toEqual([])
+  })
+})

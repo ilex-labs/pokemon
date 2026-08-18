@@ -440,6 +440,11 @@ function genderReasonMaleExternalCarrier(carrierSpecies: string[]): string {
   return `Male because a female of that species (${formatSpeciesList(carrierSpecies)}) would produce its own eggs instead.`
 }
 
+/** Ruleset egg-move eligibility — only the father passes in this game. */
+function genderReasonMaleEggMoveEligible(): string {
+  return 'Male because only the father passes egg moves in this game.'
+}
+
 /**
  * Power items only when opted in — never inferred from having numeric IV
  * targets. Destiny Knot still applies when specific IVs are set.
@@ -648,22 +653,40 @@ function buildSpeciesPairStrategy(
     species: useExternalCarrier ? externalPassers : [target.species],
   }
 
-  if (useExternalCarrier) {
-    parentB.gender = 'male'
-    parentB.genderReason = genderReasonMaleExternalCarrier(externalPassers)
+  if (target.eggMoves.length > 0) {
     parentB.mustKnow = [...target.eggMoves]
     const passerList =
-      externalPassers.length <= 3
-        ? externalPassers.join(', ')
-        : `${externalPassers.slice(0, 3).join(', ')} (+${externalPassers.length - 3} more)`
+      externalPassers.length === 0
+        ? null
+        : externalPassers.length <= 3
+          ? externalPassers.join(', ')
+          : `${externalPassers.slice(0, 3).join(', ')} (+${externalPassers.length - 3} more)`
     const moveList = target.eggMoves.join(', ')
     const how =
       game.eggMoveAcquisition?.how ??
       "Catch or hatch a parent that already knows the move, or copy it with this game's egg-move alternative."
+    const passerNote = passerList
+      ? ` Concrete passers in this game: ${passerList}.`
+      : ''
     pushAcquisition(parentB, {
       severity: 'info',
-      message: `Egg moves are not level-up moves for ${target.species}. Concrete passers in this game: ${passerList}. ${how} Need: ${moveList}.`,
+      message: `Egg moves are not level-up moves for ${target.species}.${passerNote} ${how} Need: ${moveList}.`,
     })
+  }
+
+  const carrierGenderReasons: string[] = []
+  if (useExternalCarrier) {
+    carrierGenderReasons.push(genderReasonMaleExternalCarrier(externalPassers))
+  }
+  if (
+    target.eggMoves.length > 0 &&
+    ruleset.eggMoveEligibleParents === 'male-only'
+  ) {
+    carrierGenderReasons.push(genderReasonMaleEggMoveEligible())
+  }
+  if (carrierGenderReasons.length > 0) {
+    parentB.gender = 'male'
+    parentB.genderReason = carrierGenderReasons.join(' ')
   } else if (natureWanted || abilityNeedsFemale) {
     parentB.gender = 'male'
     parentB.genderReason = genderReasonMaleSameSpeciesPartner()
