@@ -14,6 +14,7 @@ import type {
   Ruleset,
   SpeciesEggData,
 } from '../data/schema'
+import type { Reason } from '../lib/reason'
 
 export type DaycareTarget = {
   species: string
@@ -31,7 +32,7 @@ export type ParentRequirement = {
   species: string[]
   gender?: 'male' | 'female'
   /** Why this gender is forced — required whenever gender is set. */
-  genderReason?: string
+  genderReason?: Reason[]
   mustKnow?: string[]
   mustHaveAbility?: string
   mustHaveNature?: string
@@ -458,35 +459,24 @@ function abilityAcquisitionFlag(
   return undefined
 }
 
-function formatSpeciesList(names: string[]): string {
-  if (names.length === 0) return 'that species'
-  if (names.length === 1) return names[0]!
-  if (names.length === 2) return `${names[0]} or ${names[1]}`
-  return `${names.slice(0, -1).join(', ')}, or ${names[names.length - 1]}`
+function femaleSpeciesHolder(offspringSpecies: string): Reason {
+  return { code: 'female-species-holder', offspringSpecies }
 }
 
-/** Female nature/ability holder — female determines offspring species. */
-function genderReasonFemaleSpeciesHolder(offspringSpecies: string): string {
-  return `Female because the female parent determines the offspring's species — eggs hatch as ${offspringSpecies}.`
+function femaleAbilityNeedsDitto(): Reason {
+  return { code: 'female-ability-needs-ditto' }
 }
 
-/** Same-species partner opposite the female holder. */
-function genderReasonMaleSameSpeciesPartner(): string {
-  return "Male because the pair can't both be female."
+function maleSameSpeciesPartner(): Reason {
+  return { code: 'male-same-species-partner' }
 }
 
-/** Different-species egg-move carrier — a female would hatch as that species. */
-function genderReasonMaleExternalCarrier(carrierSpecies: string[]): string {
-  if (carrierSpecies.length === 1) {
-    const name = carrierSpecies[0]!
-    return `Male because a female ${name} would produce ${name} eggs instead.`
-  }
-  return `Male because a female of that species (${formatSpeciesList(carrierSpecies)}) would produce its own eggs instead.`
+function maleExternalCarrier(carrierSpecies: string[]): Reason {
+  return { code: 'male-external-carrier', carrierSpecies }
 }
 
-/** Ruleset egg-move eligibility — only the father passes in this game. */
-function genderReasonMaleEggMoveEligible(): string {
-  return 'Male because only the father passes egg moves in this game.'
+function maleEggMoveEligible(): Reason {
+  return { code: 'male-egg-move-eligible' }
 }
 
 /**
@@ -585,10 +575,12 @@ function allocateHeldItems(
         if (natureParent) {
           if (!natureParent.gender) {
             natureParent.gender = 'female'
-            if (!natureParent.genderReason) {
-              natureParent.genderReason = genderReasonFemaleSpeciesHolder(
-                natureParent.species[0] ?? 'the target',
-              )
+            if (!natureParent.genderReason?.length) {
+              natureParent.genderReason = [
+                femaleSpeciesHolder(
+                  natureParent.species[0] ?? 'the target',
+                ),
+              ]
             }
           }
           assignTo(natureParent, everstone)
@@ -685,11 +677,10 @@ function buildSpeciesPairStrategy(
   // Recompute gender from what the target actually forces — do not assert.
   if (natureWanted || useExternalCarrier) {
     parentA.gender = 'female'
-    parentA.genderReason = genderReasonFemaleSpeciesHolder(target.species)
+    parentA.genderReason = [femaleSpeciesHolder(target.species)]
   } else if (abilityNeedsFemale) {
     parentA.gender = 'female'
-    parentA.genderReason =
-      'Female because a male or genderless parent can only pass its ability when paired with Ditto.'
+    parentA.genderReason = [femaleAbilityNeedsDitto()]
   }
 
   const parentB: ParentRequirement = {
@@ -719,22 +710,22 @@ function buildSpeciesPairStrategy(
     applyEggGroupLookupWarnings(game, parentB, target.species, target.eggMoves)
   }
 
-  const carrierGenderReasons: string[] = []
+  const carrierGenderReasons: Reason[] = []
   if (useExternalCarrier) {
-    carrierGenderReasons.push(genderReasonMaleExternalCarrier(externalPassers))
+    carrierGenderReasons.push(maleExternalCarrier(externalPassers))
   }
   if (
     target.eggMoves.length > 0 &&
     ruleset.eggMoveEligibleParents === 'male-only'
   ) {
-    carrierGenderReasons.push(genderReasonMaleEggMoveEligible())
+    carrierGenderReasons.push(maleEggMoveEligible())
   }
   if (carrierGenderReasons.length > 0) {
     parentB.gender = 'male'
-    parentB.genderReason = carrierGenderReasons.join(' ')
+    parentB.genderReason = carrierGenderReasons
   } else if (natureWanted || abilityNeedsFemale) {
     parentB.gender = 'male'
-    parentB.genderReason = genderReasonMaleSameSpeciesPartner()
+    parentB.genderReason = [maleSameSpeciesPartner()]
   }
 
   const parents = [parentA, parentB]
@@ -787,7 +778,7 @@ function buildDittoPairStrategy(
 
   if (fatherOnlyMoves) {
     parentA.gender = 'male'
-    parentA.genderReason = genderReasonMaleEggMoveFather()
+    parentA.genderReason = [maleEggMoveEligible()]
   }
 
   if (target.eggMoves.length > 0) {
@@ -1029,10 +1020,6 @@ function canOfferDittoPair(game: GameData, _target: DaycareTarget): boolean {
   // knows them can — including in eggs-only eras where that parent usually
   // comes from the species-pair route first (circular to bootstrap, valid later).
   return game.ditto.available
-}
-
-function genderReasonMaleEggMoveFather(): string {
-  return 'Male because only the father passes egg moves in this game.'
 }
 
 function resolveStrategies(

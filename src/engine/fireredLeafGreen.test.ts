@@ -3,6 +3,7 @@ import type { GameData, Ruleset } from '../data/schema'
 import gen3Json from '../data/rulesets/gen3.json'
 import frlgJson from '../data/games/firered-leafgreen.json'
 import { speciesAbilityGroups } from '../data/loadGame'
+import { formatReasons, type Reason } from '../lib/reason'
 import {
   eggAffectingHeldItemsExist,
   planDaycare,
@@ -11,6 +12,10 @@ import {
 
 const gen3 = gen3Json as Ruleset
 const frlg = frlgJson as GameData
+
+function genderProse(parent: { genderReason?: Reason[] } | undefined): string {
+  return formatReasons(parent?.genderReason ?? [])
+}
 
 const baseTarget: DaycareTarget = {
   species: 'Charmander',
@@ -74,7 +79,7 @@ describe('FireRed/LeafGreen — ruleset branches never exercised by gen 9', () =
             /ability|Blaze|inherit/i.test(flag.message),
           ) ?? [],
         ).toEqual([])
-        expect(parent.genderReason ?? '').not.toMatch(/ability/i)
+        expect(genderProse(parent)).not.toMatch(/ability/i)
       }
     }
     expect(plan.excludedStrategies ?? []).toEqual([])
@@ -141,7 +146,7 @@ describe('FireRed/LeafGreen — ruleset branches never exercised by gen 9', () =
       parent.species.includes('Charmander'),
     )
     expect(charmander?.gender).toBe('male')
-    expect(charmander?.genderReason).toMatch(/father passes egg moves/i)
+    expect(genderProse(charmander)).toMatch(/father passes egg moves/i)
     expect(charmander?.mustKnow).toEqual(
       expect.arrayContaining(['Dragon Dance']),
     )

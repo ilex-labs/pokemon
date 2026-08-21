@@ -132,9 +132,7 @@ describe('same-species egg-move carrier slot', () => {
       parent.mustKnow?.includes('FixtureMove'),
     )
     expect(carrier?.gender).toBe('male')
-    expect(carrier?.genderReason).toMatch(/father passes egg moves/i)
-    expect(carrier?.genderReason).not.toMatch(/would produce .+ eggs instead/i)
-    expect(carrier?.genderReason).not.toMatch(/can't both be female/i)
+    expect(carrier?.genderReason).toEqual([{ code: 'male-egg-move-eligible' }])
   })
 
   it('fixtureGameExternalCarrier on male-only: male, both causes stated', () => {
@@ -144,10 +142,13 @@ describe('same-species egg-move carrier slot', () => {
     )
     expect(carrier?.species).toEqual(['FixtureCarrier'])
     expect(carrier?.gender).toBe('male')
-    expect(carrier?.genderReason).toMatch(
-      /female FixtureCarrier would produce FixtureCarrier eggs/i,
-    )
-    expect(carrier?.genderReason).toMatch(/father passes egg moves/i)
+    expect(carrier?.genderReason).toEqual([
+      {
+        code: 'male-external-carrier',
+        carrierSpecies: ['FixtureCarrier'],
+      },
+      { code: 'male-egg-move-eligible' },
+    ])
   })
 
   it('fixtureGameSameSpecies Ditto route: mustKnow on exactly one parent', () => {

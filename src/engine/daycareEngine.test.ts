@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { GameData, Ruleset } from '../data/schema'
 import gen9Json from '../data/rulesets/gen9.json'
 import scarletVioletJson from '../data/games/scarlet-violet.json'
+import { formatReasons, type Reason } from '../lib/reason'
 import { planDaycare, type DaycareTarget } from './daycareEngine'
 
 const gen9 = gen9Json as Ruleset
@@ -26,6 +27,10 @@ function recommendedParents(plan: ReturnType<typeof planDaycare>) {
   const strategy =
     plan.strategies.find((item) => item.recommended) ?? plan.strategies[0]
   return strategy?.parents ?? []
+}
+
+function genderProse(parent: { genderReason?: Reason[] } | undefined): string {
+  return formatReasons(parent?.genderReason ?? [])
 }
 
 describe('daycareEngine acceptance cases', () => {
@@ -67,19 +72,19 @@ describe('daycareEngine acceptance cases', () => {
     expect(natureParent?.mustHaveAbility).toBeUndefined()
     expect(natureParent?.heldItemReason).toMatch(/Timid/)
     expect(natureParent?.heldItemReason).toMatch(/Guarantees/i)
-    expect(natureParent?.genderReason).toMatch(
+    expect(genderProse(natureParent)).toMatch(
       /female because the female parent determines/i,
     )
-    expect(natureParent?.genderReason).not.toMatch(/egg-move carrier/i)
+    expect(genderProse(natureParent)).not.toMatch(/egg-move carrier/i)
 
     const moveParent = speciesPair?.parents.find((parent) =>
       parent.mustKnow?.includes('Dragon Dance'),
     )
     expect(moveParent?.gender).toBe('male')
-    expect(moveParent?.genderReason).toMatch(
+    expect(genderProse(moveParent)).toMatch(
       /male because a female .+ would produce .+ eggs instead/i,
     )
-    expect(moveParent?.genderReason).not.toMatch(
+    expect(genderProse(moveParent)).not.toMatch(
       /female parent determines the offspring/i,
     )
     expect(moveParent?.species).toEqual(
@@ -340,12 +345,12 @@ describe('daycareEngine acceptance cases', () => {
     const parentB = speciesPair?.parents.find((parent) => parent.role === 'B')
     expect(parentB?.species).toEqual(['Charmander'])
     expect(parentB?.gender).toBe('male')
-    expect(parentB?.genderReason).toMatch(/can't both be female/i)
+    expect(genderProse(parentB)).toMatch(/can't both be female/i)
     const parentA = speciesPair?.parents.find((parent) => parent.role === 'A')
-    expect(parentA?.genderReason).toMatch(
+    expect(genderProse(parentA)).toMatch(
       /female because the female parent determines/i,
     )
-    expect(parentA?.genderReason).not.toMatch(/egg-move/i)
+    expect(genderProse(parentA)).not.toMatch(/egg-move/i)
   })
 
   it('Ditto route does not invent a genderReason when gender is not forced', () => {
@@ -558,7 +563,7 @@ describe('daycareEngine acceptance cases', () => {
     expect(parentA?.mustHaveNature).toBeUndefined()
     expect(parentA?.heldItem).not.toBe('Everstone')
     expect(parentA?.gender).toBe('female')
-    expect(parentA?.genderReason).toMatch(
+    expect(genderProse(parentA)).toMatch(
       /female because the female parent determines/i,
     )
 
@@ -566,10 +571,10 @@ describe('daycareEngine acceptance cases', () => {
       parent.mustKnow?.includes('Dragon Dance'),
     )
     expect(moveParent?.gender).toBe('male')
-    expect(moveParent?.genderReason).toMatch(
+    expect(genderProse(moveParent)).toMatch(
       /male because a female .+ would produce .+ eggs instead/i,
     )
-    expect(moveParent?.genderReason).not.toMatch(/can't both be female/i)
+    expect(genderProse(moveParent)).not.toMatch(/can't both be female/i)
 
     expect(plan.steps.some((step) => step.id === 'nature')).toBe(false)
   })
@@ -677,7 +682,7 @@ describe('daycareEngine acceptance cases', () => {
     for (const strategy of plan.strategies) {
       for (const parent of strategy.parents) {
         expect(parent.mustHaveAbility).toBeUndefined()
-        expect(parent.genderReason ?? '').not.toMatch(/pass its ability/i)
+        expect(genderProse(parent)).not.toMatch(/pass its ability/i)
       }
     }
     const speciesPair = plan.strategies.find(
