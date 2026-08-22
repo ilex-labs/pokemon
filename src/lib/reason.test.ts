@@ -52,6 +52,36 @@ describe('formatReason', () => {
       'Male because only the father passes egg moves in this game.',
     )
   })
+
+  it('everstone-guaranteed names the nature', () => {
+    expect(
+      formatReason({ code: 'everstone-guaranteed', nature: 'Timid' }),
+    ).toBe('Guarantees the hatch inherits Timid.')
+  })
+
+  it('everstone-chance hedges the same nature', () => {
+    expect(
+      formatReason({ code: 'everstone-chance', nature: 'Timid' }),
+    ).toBe('Gives a 50% chance the hatch inherits Timid.')
+  })
+
+  it('destiny-knot-iv names the inherited counts', () => {
+    expect(
+      formatReason({
+        code: 'destiny-knot-iv',
+        baseCountInherited: 3,
+        destinyKnotBoostedCount: 5,
+      }),
+    ).toBe(
+      'Serves the IV target — raises inherited IVs from 3 to 5.',
+    )
+  })
+
+  it('power-item-iv locks one stat', () => {
+    expect(formatReason({ code: 'power-item-iv' })).toBe(
+      'Serves the IV target — locks one specific parent IV into the hatch.',
+    )
+  })
 })
 
 describe('formatReasons', () => {

@@ -38,7 +38,7 @@ export type ParentRequirement = {
   mustHaveNature?: string
   heldItem?: string
   /** Why this held item is assigned — required whenever heldItem is set. */
-  heldItemReason?: string
+  heldItemReason?: Reason
   /** Masuda — origin language must differ from the other parent. */
   mustOriginateFromDifferentLanguage?: boolean
   acquisition?: RuleFlag[]
@@ -110,7 +110,7 @@ type HeldItemDemand = {
   label: string
   placement: 'either' | 'female-or-ditto'
   /** One line naming the target attribute this item serves. */
-  reason: string
+  reason: Reason
 }
 
 /** True when this ruleset has any held item that can change egg outcomes. */
@@ -505,8 +505,8 @@ function collectHeldItemDemands(
         lock.holder === 'female-or-ditto' ? 'female-or-ditto' : 'either',
       reason:
         lock.method === 'everstone-guaranteed'
-          ? `Guarantees the hatch inherits ${target.nature}.`
-          : `Gives a 50% chance the hatch inherits ${target.nature}.`,
+          ? { code: 'everstone-guaranteed', nature: target.nature }
+          : { code: 'everstone-chance', nature: target.nature },
     })
   }
 
@@ -516,7 +516,11 @@ function collectHeldItemDemands(
       id: 'destiny-knot',
       label: 'Destiny Knot',
       placement: 'either',
-      reason: `Serves the IV target — raises inherited IVs from ${baseCountInherited} to ${destinyKnotBoostedCount}.`,
+      reason: {
+        code: 'destiny-knot-iv',
+        baseCountInherited,
+        destinyKnotBoostedCount,
+      },
     })
   }
 
@@ -529,7 +533,7 @@ function collectHeldItemDemands(
       id: 'power-item',
       label: 'a power item',
       placement: 'either',
-      reason: 'Serves the IV target — locks one specific parent IV into the hatch.',
+      reason: { code: 'power-item-iv' },
     })
   }
 

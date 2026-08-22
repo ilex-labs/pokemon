@@ -10,6 +10,14 @@ export type Reason =
   | { code: 'male-same-species-partner' }
   | { code: 'male-external-carrier'; carrierSpecies: string[] }
   | { code: 'male-egg-move-eligible' }
+  | { code: 'everstone-guaranteed'; nature: string }
+  | { code: 'everstone-chance'; nature: string }
+  | {
+      code: 'destiny-knot-iv'
+      baseCountInherited: number
+      destinyKnotBoostedCount: number
+    }
+  | { code: 'power-item-iv' }
 
 function formatSpeciesList(names: string[]): string {
   if (names.length === 0) return 'that species'
@@ -34,6 +42,14 @@ export function formatReason(reason: Reason): string {
       return `Male because a female of that species (${formatSpeciesList(reason.carrierSpecies)}) would produce its own eggs instead.`
     case 'male-egg-move-eligible':
       return 'Male because only the father passes egg moves in this game.'
+    case 'everstone-guaranteed':
+      return `Guarantees the hatch inherits ${reason.nature}.`
+    case 'everstone-chance':
+      return `Gives a 50% chance the hatch inherits ${reason.nature}.`
+    case 'destiny-knot-iv':
+      return `Serves the IV target — raises inherited IVs from ${reason.baseCountInherited} to ${reason.destinyKnotBoostedCount}.`
+    case 'power-item-iv':
+      return 'Serves the IV target — locks one specific parent IV into the hatch.'
     default: {
       const _exhaustive: never = reason
       return _exhaustive

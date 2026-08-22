@@ -70,8 +70,10 @@ describe('daycareEngine acceptance cases', () => {
       heldItem: 'Everstone',
     })
     expect(natureParent?.mustHaveAbility).toBeUndefined()
-    expect(natureParent?.heldItemReason).toMatch(/Timid/)
-    expect(natureParent?.heldItemReason).toMatch(/Guarantees/i)
+    expect(natureParent?.heldItemReason).toEqual({
+      code: 'everstone-guaranteed',
+      nature: 'Timid',
+    })
     expect(genderProse(natureParent)).toMatch(
       /female because the female parent determines/i,
     )
@@ -91,8 +93,16 @@ describe('daycareEngine acceptance cases', () => {
       expect.arrayContaining(['Salamence', 'Dragapult', 'Gyarados']),
     )
     expect(moveParent?.heldItem).toBe('Destiny Knot')
-    expect(moveParent?.heldItemReason).toMatch(/IV target/i)
-    expect(moveParent?.heldItemReason).toMatch(/3 to 5/)
+    expect(moveParent?.heldItemReason).toEqual({
+      code: 'destiny-knot-iv',
+      baseCountInherited: 3,
+      destinyKnotBoostedCount: 5,
+    })
+    for (const strategy of plan.strategies) {
+      for (const parent of strategy.parents) {
+        expect(parent.heldItemReason?.code).not.toBe('everstone-chance')
+      }
+    }
 
     expect(gen9.hatchLevel).toBe(1)
 
@@ -461,6 +471,58 @@ describe('daycareEngine acceptance cases', () => {
     )
     expect(conflict).toBeDefined()
     expect(conflict?.message).toMatch(/power item/i)
+  })
+
+  it('everstone-chance is a different code from guaranteed', () => {
+    const chanceRuleset: Ruleset = {
+      ...gen9,
+      natureLock: { method: 'everstone-chance', holder: 'either-parent' },
+    }
+    const plan = planDaycare(scarletViolet, chanceRuleset, {
+      ...baseTarget,
+      eggMoves: [],
+      ivs: {
+        hp: 'any',
+        atk: 'any',
+        def: 'any',
+        spa: 'any',
+        spd: 'any',
+        spe: 'any',
+      },
+    })
+    const natureParent = plan.strategies
+      .flatMap((strategy) => strategy.parents)
+      .find((parent) => parent.heldItem === 'Everstone')
+    expect(natureParent?.heldItemReason).toEqual({
+      code: 'everstone-chance',
+      nature: 'Timid',
+    })
+  })
+
+  it('opt-in power item without Everstone assigns power-item-iv', () => {
+    const plan = planDaycare(scarletViolet, gen9, {
+      species: 'Charmander',
+      nature: 'any',
+      ability: 'any',
+      eggMoves: [],
+      ivs: baseTarget.ivs,
+      wantsPowerItem: true,
+    })
+    for (const strategy of plan.strategies) {
+      const reasons = strategy.parents
+        .map((parent) => parent.heldItemReason)
+        .filter((reason) => reason != null)
+      expect(reasons).toEqual(
+        expect.arrayContaining([
+          {
+            code: 'destiny-knot-iv',
+            baseCountInherited: 3,
+            destinyKnotBoostedCount: 5,
+          },
+          { code: 'power-item-iv' },
+        ]),
+      )
+    }
   })
 
   it('all-Any target produces no acquisition flags and no held-item steps', () => {

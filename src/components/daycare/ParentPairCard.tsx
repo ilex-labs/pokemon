@@ -5,7 +5,7 @@ import {
   type ParentRequirement,
 } from '../../engine/daycareEngine'
 import { withNums } from '../../lib/withNums'
-import { formatReasons } from '../../lib/reason'
+import { formatReason, formatReasons } from '../../lib/reason'
 import RuleFlag from './RuleFlag'
 
 type ParentPairCardProps = {
@@ -95,7 +95,7 @@ function ParentBlock({
           </p>
           {parent.heldItemReason ? (
             <p className="mt-1 text-meta text-muted">
-              {withNums(parent.heldItemReason)}
+              {withNums(formatReason(parent.heldItemReason))}
             </p>
           ) : null}
         </div>
