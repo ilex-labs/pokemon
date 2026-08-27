@@ -85,7 +85,7 @@ describe('formatReason', () => {
 })
 
 describe('formatReasons', () => {
-  it('joins two reasons with a space', () => {
+  it('composes two male reasons without restating Male because', () => {
     const reasons: Reason[] = [
       {
         code: 'male-external-carrier',
@@ -94,7 +94,37 @@ describe('formatReasons', () => {
       { code: 'male-egg-move-eligible' },
     ]
     expect(formatReasons(reasons)).toBe(
-      'Male because a female FixtureCarrier would produce FixtureCarrier eggs instead. Male because only the father passes egg moves in this game.',
+      'Male because a female FixtureCarrier would produce FixtureCarrier eggs instead, and because only the father passes egg moves in this game.',
     )
+  })
+
+  it('composes the list-form carrier the same way', () => {
+    const reasons: Reason[] = [
+      {
+        code: 'male-external-carrier',
+        carrierSpecies: ['Salamence', 'Dragapult', 'Gyarados'],
+      },
+      { code: 'male-egg-move-eligible' },
+    ]
+    expect(formatReasons(reasons)).toBe(
+      'Male because a female of that species (Salamence, Dragapult, or Gyarados) would produce its own eggs instead, and because only the father passes egg moves in this game.',
+    )
+  })
+
+  it('composes three reasons as a series, not and-because twice', () => {
+    const reasons: Reason[] = [
+      {
+        code: 'male-external-carrier',
+        carrierSpecies: ['FixtureCarrier'],
+      },
+      { code: 'male-same-species-partner' },
+      { code: 'male-egg-move-eligible' },
+    ]
+    const sentence = formatReasons(reasons)
+    expect(sentence).toBe(
+      "Male because a female FixtureCarrier would produce FixtureCarrier eggs instead, the pair can't both be female, and only the father passes egg moves in this game.",
+    )
+    expect(sentence.match(/Male because/g)).toEqual(['Male because'])
+    expect(sentence).not.toMatch(/and because.*and because/)
   })
 })
