@@ -477,16 +477,16 @@ function abilityAcquisitionFlag(
   return undefined
 }
 
+function pairOppositeGenders(): Reason {
+  return { code: 'pair-opposite-genders' }
+}
+
 function femaleSpeciesHolder(offspringSpecies: string): Reason {
   return { code: 'female-species-holder', offspringSpecies }
 }
 
 function femaleAbilityNeedsDitto(): Reason {
   return { code: 'female-ability-needs-ditto' }
-}
-
-function maleSameSpeciesPartner(): Reason {
-  return { code: 'male-same-species-partner' }
 }
 
 function maleExternalCarrier(carrierSpecies: string[]): Reason {
@@ -605,11 +605,7 @@ function allocateHeldItems(
           if (!natureParent.gender) {
             natureParent.gender = 'female'
             if (!natureParent.genderReason?.length) {
-              natureParent.genderReason = [
-                femaleSpeciesHolder(
-                  natureParent.species[0] ?? 'the target',
-                ),
-              ]
+              natureParent.genderReason = [{ code: 'holder-female-or-ditto' }]
             }
           }
           assignTo(natureParent, everstone)
@@ -704,7 +700,11 @@ function buildSpeciesPairStrategy(
   // Recompute gender from what the target actually forces — do not assert.
   if (natureWanted || useExternalCarrier) {
     parentA.gender = 'female'
-    parentA.genderReason = [femaleSpeciesHolder(target.species)]
+    if (useExternalCarrier) {
+      parentA.genderReason = [femaleSpeciesHolder(target.species)]
+    } else {
+      parentA.genderReason = [pairOppositeGenders()]
+    }
   } else if (abilityNeedsFemale) {
     parentA.gender = 'female'
     parentA.genderReason = [femaleAbilityNeedsDitto()]
@@ -746,7 +746,7 @@ function buildSpeciesPairStrategy(
     parentB.genderReason = carrierGenderReasons
   } else if (natureWanted || abilityNeedsFemale) {
     parentB.gender = 'male'
-    parentB.genderReason = [maleSameSpeciesPartner()]
+    parentB.genderReason = [pairOppositeGenders()]
   }
 
   const parents = [parentA, parentB]

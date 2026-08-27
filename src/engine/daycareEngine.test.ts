@@ -362,12 +362,37 @@ describe('daycareEngine acceptance cases', () => {
     const parentB = speciesPair?.parents.find((parent) => parent.role === 'B')
     expect(parentB?.species).toEqual(['Charmander'])
     expect(parentB?.gender).toBe('male')
-    expect(genderProse(parentB)).toMatch(/can't both be female/i)
+    expect(parentB?.genderReason).toEqual([{ code: 'pair-opposite-genders' }])
+    expect(genderProse(parentB)).toBe(
+      'The pair needs one female and one male — this arrangement is one valid choice.',
+    )
     const parentA = speciesPair?.parents.find((parent) => parent.role === 'A')
-    expect(genderProse(parentA)).toMatch(
-      /female because the female parent determines/i,
+    expect(parentA?.gender).toBe('female')
+    expect(parentA?.genderReason).toEqual([{ code: 'pair-opposite-genders' }])
+    expect(genderProse(parentA)).toBe(
+      'The pair needs one female and one male — this arrangement is one valid choice.',
     )
     expect(genderProse(parentA)).not.toMatch(/egg-move/i)
+  })
+
+  it('female-species-holder is absent when every parent is the target species', () => {
+    const plan = planDaycare(scarletViolet, gen9, {
+      ...baseTarget,
+      eggMoves: [],
+    })
+    const speciesPair = plan.strategies.find(
+      (strategy) => strategy.id === 'species-pair',
+    )
+    const parents = speciesPair?.parents ?? []
+    expect(parents.length).toBe(2)
+    for (const parent of parents) {
+      expect(parent.species).toEqual(['Charmander'])
+      expect(
+        parent.genderReason?.some(
+          (reason) => reason.code === 'female-species-holder',
+        ),
+      ).not.toBe(true)
+    }
   })
 
   it('Ditto route does not invent a genderReason when gender is not forced', () => {
@@ -645,7 +670,9 @@ describe('daycareEngine acceptance cases', () => {
     expect(genderProse(moveParent)).toMatch(
       /male because a female .+ would produce .+ eggs instead/i,
     )
-    expect(genderProse(moveParent)).not.toMatch(/can't both be female/i)
+    expect(genderProse(moveParent)).not.toMatch(
+      /this arrangement is one valid choice/i,
+    )
 
     expect(plan.steps.some((step) => step.id === 'nature')).toBe(false)
   })

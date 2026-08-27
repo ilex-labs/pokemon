@@ -19,12 +19,6 @@ describe('formatReason', () => {
     )
   })
 
-  it('male-same-species-partner', () => {
-    expect(formatReason({ code: 'male-same-species-partner' })).toBe(
-      "Male because the pair can't both be female.",
-    )
-  })
-
   it('male-external-carrier with one species names it twice', () => {
     expect(
       formatReason({
@@ -50,6 +44,12 @@ describe('formatReason', () => {
   it('male-egg-move-eligible is the father-passes rule', () => {
     expect(formatReason({ code: 'male-egg-move-eligible' })).toBe(
       'Male because only the father passes egg moves in this game.',
+    )
+  })
+
+  it('pair-opposite-genders names the pair rule, not the species rule', () => {
+    expect(formatReason({ code: 'pair-opposite-genders' })).toBe(
+      'The pair needs one female and one male — this arrangement is one valid choice.',
     )
   })
 
@@ -99,9 +99,12 @@ describe('formatReasons', () => {
       },
       { code: 'male-egg-move-eligible' },
     ]
-    expect(formatReasons(reasons)).toBe(
+    const sentence = formatReasons(reasons)
+    expect(sentence).toBe(
       'Male because a female FixtureCarrier would produce FixtureCarrier eggs instead, and because only the father passes egg moves in this game.',
     )
+    expect(sentence.match(/Male because/g)).toEqual(['Male because'])
+    expect(sentence).not.toMatch(/and because.*and because/)
   })
 
   it('composes the list-form carrier the same way', () => {
@@ -115,23 +118,6 @@ describe('formatReasons', () => {
     expect(formatReasons(reasons)).toBe(
       'Male because a female of that species (Salamence, Dragapult, or Gyarados) would produce its own eggs instead, and because only the father passes egg moves in this game.',
     )
-  })
-
-  it('composes three reasons as a series, not and-because twice', () => {
-    const reasons: Reason[] = [
-      {
-        code: 'male-external-carrier',
-        carrierSpecies: ['FixtureCarrier'],
-      },
-      { code: 'male-same-species-partner' },
-      { code: 'male-egg-move-eligible' },
-    ]
-    const sentence = formatReasons(reasons)
-    expect(sentence).toBe(
-      "Male because a female FixtureCarrier would produce FixtureCarrier eggs instead, the pair can't both be female, and only the father passes egg moves in this game.",
-    )
-    expect(sentence.match(/Male because/g)).toEqual(['Male because'])
-    expect(sentence).not.toMatch(/and because.*and because/)
   })
 })
 

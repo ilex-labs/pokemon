@@ -7,9 +7,9 @@
 export type Reason =
   | { code: 'female-species-holder'; offspringSpecies: string }
   | { code: 'female-ability-needs-ditto' }
-  | { code: 'male-same-species-partner' }
   | { code: 'male-external-carrier'; carrierSpecies: string[] }
   | { code: 'male-egg-move-eligible' }
+  | { code: 'pair-opposite-genders' }
   | { code: 'everstone-guaranteed'; nature: string }
   | { code: 'everstone-chance'; nature: string }
   | { code: 'holder-female-or-ditto' }
@@ -121,8 +121,6 @@ function genderReasonParts(reason: Reason): GenderedParts | undefined {
         clause:
           'a male or genderless parent can only pass its ability when paired with Ditto',
       }
-    case 'male-same-species-partner':
-      return { gender: 'male', clause: "the pair can't both be female" }
     case 'male-external-carrier':
       if (reason.carrierSpecies.length === 1) {
         const name = reason.carrierSpecies[0]!
@@ -140,6 +138,7 @@ function genderReasonParts(reason: Reason): GenderedParts | undefined {
         gender: 'male',
         clause: 'only the father passes egg moves in this game',
       }
+    case 'pair-opposite-genders':
     case 'everstone-guaranteed':
     case 'everstone-chance':
     case 'holder-female-or-ditto':
@@ -197,7 +196,6 @@ export function formatReason(reason: Reason): string {
   switch (reason.code) {
     case 'female-species-holder':
     case 'female-ability-needs-ditto':
-    case 'male-same-species-partner':
     case 'male-external-carrier':
     case 'male-egg-move-eligible': {
       const gendered = genderReasonParts(reason)
@@ -206,6 +204,8 @@ export function formatReason(reason: Reason): string {
       }
       return formatGendered(gendered.gender, [gendered.clause])
     }
+    case 'pair-opposite-genders':
+      return 'The pair needs one female and one male — this arrangement is one valid choice.'
     case 'everstone-guaranteed':
       return `Guarantees the hatch inherits ${reason.nature}.`
     case 'everstone-chance':
