@@ -39,7 +39,7 @@ export type GameOption = {
   ruleset: Ruleset
 }
 
-function deepMergeRuleset(
+export function deepMergeRuleset(
   base: Ruleset,
   overrides?: Partial<Ruleset>,
 ): Ruleset {
