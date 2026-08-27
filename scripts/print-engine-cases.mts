@@ -139,7 +139,7 @@ function printPlan(title: string, plan: DaycarePlan) {
       console.log(
         `\n  [${strategy.id}] ${strategy.label}${
           strategy.recommended
-            ? ` (recommended — ${strategy.recommendReason ?? 'no reason'})`
+            ? ` (recommended — ${strategy.recommendReason ? formatReason(strategy.recommendReason) : 'no reason'})`
             : ''
         }`,
       )
@@ -181,7 +181,7 @@ function printPlan(title: string, plan: DaycarePlan) {
   if (plan.excludedStrategies && plan.excludedStrategies.length > 0) {
     console.log('\n--- Excluded strategies ---')
     for (const excluded of plan.excludedStrategies) {
-      console.log(`   [${excluded.id}] ${excluded.label} — ${excluded.reason}`)
+      console.log(`   [${excluded.id}] ${excluded.label} — ${formatReason(excluded.reason)}`)
     }
   }
 

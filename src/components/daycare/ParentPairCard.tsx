@@ -5,14 +5,14 @@ import {
   type ParentRequirement,
 } from '../../engine/daycareEngine'
 import { withNums } from '../../lib/withNums'
-import { formatReason, formatReasons } from '../../lib/reason'
+import { formatReason, formatReasons, type Reason } from '../../lib/reason'
 import RuleFlag from './RuleFlag'
 
 type ParentPairCardProps = {
   strategies: PairingStrategy[]
   selectedStrategyId: string
   routesEquivalent?: boolean
-  excludedStrategies?: Array<{ id: string; label: string; reason: string }>
+  excludedStrategies?: Array<{ id: string; label: string; reason: Reason }>
   ruleset: Ruleset
   onSelectStrategy: (id: string) => void
   ownedRoles: Set<string>
@@ -184,7 +184,7 @@ export default function ParentPairCard({
 
         {recommendReason ? (
           <p id="route-recommend-reason" className="text-meta leading-snug text-muted">
-            {recommendReason}
+            {formatReason(recommendReason)}
           </p>
         ) : null}
 
@@ -196,7 +196,7 @@ export default function ParentPairCard({
 
         {excludedStrategies.map((excluded) => (
           <p key={excluded.id} className="text-sm text-muted">
-            {excluded.label} isn&apos;t available — {excluded.reason}
+            {excluded.label} isn&apos;t available — {formatReason(excluded.reason)}
           </p>
         ))}
       </section>

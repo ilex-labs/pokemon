@@ -74,6 +74,12 @@ export type Reason =
       knotVersusPower: boolean
     }
   | { code: 'unknown-species'; species: string }
+  | { code: 'recommend-masuda-ditto-reuse' }
+  | { code: 'recommend-only-viable-route' }
+  | { code: 'recommend-fewer-parents' }
+  | { code: 'exclude-pair-hidden-needs-ditto'; ability: string }
+  | { code: 'exclude-pair-ability-needs-ditto'; ability: string }
+  | { code: 'exclude-pair-ditto-only-species'; species: string }
 
 type GenderedParts = {
   gender: 'male' | 'female'
@@ -158,6 +164,12 @@ function genderReasonParts(reason: Reason): GenderedParts | undefined {
     case 'hyper-cannot-make-zero':
     case 'held-item-conflict':
     case 'unknown-species':
+    case 'recommend-masuda-ditto-reuse':
+    case 'recommend-only-viable-route':
+    case 'recommend-fewer-parents':
+    case 'exclude-pair-hidden-needs-ditto':
+    case 'exclude-pair-ability-needs-ditto':
+    case 'exclude-pair-ditto-only-species':
       return undefined
     default: {
       const _exhaustive: never = reason
@@ -267,6 +279,18 @@ export function formatReason(reason: Reason): string {
     }
     case 'unknown-species':
       return `No species entry for ${reason.species}.`
+    case 'recommend-masuda-ditto-reuse':
+      return 'A Ditto works with any species, so you can reuse it for other hatches.'
+    case 'recommend-only-viable-route':
+      return 'Only viable pairing route in this game.'
+    case 'recommend-fewer-parents':
+      return 'Fewer parents to obtain'
+    case 'exclude-pair-hidden-needs-ditto':
+      return `${reason.ability} can't be passed on a species pair — a male or genderless parent only passes its hidden ability when paired with Ditto.`
+    case 'exclude-pair-ability-needs-ditto':
+      return `${reason.ability} can't be passed on a species pair — a male or genderless parent only passes its ability when paired with Ditto.`
+    case 'exclude-pair-ditto-only-species':
+      return `${reason.species} can only pair with Ditto in this game.`
     default: {
       const _exhaustive: never = reason
       return _exhaustive

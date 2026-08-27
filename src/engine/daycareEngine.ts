@@ -56,7 +56,7 @@ export type PairingStrategy = {
   tradeoff: string
   recommended?: boolean
   /** Required whenever recommended — e.g. "Fewer parents to obtain". */
-  recommendReason?: string
+  recommendReason?: Reason
 }
 
 export type ShinyOddsTier = {
@@ -90,7 +90,7 @@ export type DaycarePlan = {
   excludedStrategies?: Array<{
     id: string
     label: string
-    reason: string
+    reason: Reason
   }>
   /** Steps for the recommended strategy (or the first / selected default). */
   steps: PlanStep[]
@@ -153,18 +153,17 @@ function speciesPairAbilityExclusion(
   ruleset: Ruleset,
   species: SpeciesEggData,
   target: DaycareTarget,
-): string | null {
+): Reason | null {
   if (!wantsAbility(target, ruleset, species)) return null
   if (!ruleset.abilityInheritance.inheritanceExists) return null
   if (!ruleset.abilityInheritance.maleOrGenderlessNeedsDitto) return null
   if (!isMaleOrGenderlessRatio(species.genderRatio)) return null
 
   const ability = target.ability
-  const hidden = isAbilityHidden(species, ability)
-  if (hidden) {
-    return `${ability} can't be passed on a species pair — a male or genderless parent only passes its hidden ability when paired with Ditto.`
+  if (isAbilityHidden(species, ability)) {
+    return { code: 'exclude-pair-hidden-needs-ditto', ability }
   }
-  return `${ability} can't be passed on a species pair — a male or genderless parent only passes its ability when paired with Ditto.`
+  return { code: 'exclude-pair-ability-needs-ditto', ability }
 }
 
 function eggGroupsForSpecies(game: GameData, species: string): string[] {
@@ -974,8 +973,7 @@ function applyRouteRecommendations(
             ? {
                 ...strategy,
                 recommended: true,
-                recommendReason:
-                  'A Ditto works with any species, so you can reuse it for other hatches.',
+                recommendReason: { code: 'recommend-masuda-ditto-reuse' },
               }
             : {
                 ...strategy,
@@ -995,7 +993,7 @@ function applyRouteRecommendations(
         {
           ...only,
           recommended: true,
-          recommendReason: 'Only viable pairing route in this game.',
+          recommendReason: { code: 'recommend-only-viable-route' },
         },
       ],
       routesEquivalent: false,
@@ -1026,7 +1024,7 @@ function applyRouteRecommendations(
         ? {
             ...strategy,
             recommended: true,
-            recommendReason: 'Fewer parents to obtain',
+            recommendReason: { code: 'recommend-fewer-parents' },
           }
         : {
             ...strategy,
@@ -1054,12 +1052,12 @@ function resolveStrategies(
 ): {
   strategies: PairingStrategy[]
   routesEquivalent: boolean
-  excludedStrategies: Array<{ id: string; label: string; reason: string }>
+  excludedStrategies: Array<{ id: string; label: string; reason: Reason }>
 } {
   const excludedStrategies: Array<{
     id: string
     label: string
-    reason: string
+    reason: Reason
   }> = []
 
   if (dittoOnly) {
@@ -1078,7 +1076,10 @@ function resolveStrategies(
       excludedStrategies.push({
         id: 'species-pair',
         label: 'Species pair',
-        reason: `${target.species} can only pair with Ditto in this game.`,
+        reason: {
+          code: 'exclude-pair-ditto-only-species',
+          species: target.species,
+        },
       })
     }
     const recommended = applyRouteRecommendations(

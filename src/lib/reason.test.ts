@@ -363,3 +363,54 @@ describe('formatReason step flags', () => {
     ).toBe('No species entry for MissingNo.')
   })
 })
+
+describe('formatReason recommend and exclude', () => {
+  it('recommend-masuda-ditto-reuse', () => {
+    expect(formatReason({ code: 'recommend-masuda-ditto-reuse' })).toBe(
+      'A Ditto works with any species, so you can reuse it for other hatches.',
+    )
+  })
+
+  it('recommend-only-viable-route', () => {
+    expect(formatReason({ code: 'recommend-only-viable-route' })).toBe(
+      'Only viable pairing route in this game.',
+    )
+  })
+
+  it('recommend-fewer-parents is the current parent-count sentence', () => {
+    expect(formatReason({ code: 'recommend-fewer-parents' })).toBe(
+      'Fewer parents to obtain',
+    )
+  })
+
+  it('exclude-pair-hidden-needs-ditto', () => {
+    expect(
+      formatReason({
+        code: 'exclude-pair-hidden-needs-ditto',
+        ability: 'Solar Power',
+      }),
+    ).toBe(
+      "Solar Power can't be passed on a species pair — a male or genderless parent only passes its hidden ability when paired with Ditto.",
+    )
+  })
+
+  it('exclude-pair-ability-needs-ditto', () => {
+    expect(
+      formatReason({
+        code: 'exclude-pair-ability-needs-ditto',
+        ability: 'Blaze',
+      }),
+    ).toBe(
+      "Blaze can't be passed on a species pair — a male or genderless parent only passes its ability when paired with Ditto.",
+    )
+  })
+
+  it('exclude-pair-ditto-only-species', () => {
+    expect(
+      formatReason({
+        code: 'exclude-pair-ditto-only-species',
+        species: 'Charmander',
+      }),
+    ).toBe('Charmander can only pair with Ditto in this game.')
+  })
+})

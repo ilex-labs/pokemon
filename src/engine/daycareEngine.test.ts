@@ -175,11 +175,9 @@ describe('daycareEngine acceptance cases', () => {
       (strategy) => strategy.id === 'species-pair',
     )
     expect(dittoPair?.recommended).toBe(true)
-    expect(dittoPair?.recommendReason).toMatch(
-      /A Ditto works with any species/i,
-    )
-    expect(dittoPair?.recommendReason).toMatch(/reuse it for other hatches/i)
-    expect(dittoPair?.recommendReason).not.toMatch(/every future project/i)
+    expect(dittoPair?.recommendReason).toEqual({
+      code: 'recommend-masuda-ditto-reuse',
+    })
     expect(speciesPair?.recommended).toBeUndefined()
 
     const dittoParent = dittoPair?.parents.find((parent) =>
@@ -423,7 +421,9 @@ describe('daycareEngine acceptance cases', () => {
     expect(dittoOnly.blocked).toBe(false)
     expect(dittoOnly.strategies).toHaveLength(1)
     expect(dittoOnly.strategies[0]?.recommended).toBe(true)
-    expect(dittoOnly.strategies[0]?.recommendReason).toMatch(/only viable/i)
+    expect(dittoOnly.strategies[0]?.recommendReason).toEqual({
+      code: 'recommend-only-viable-route',
+    })
   })
 
   it('nature requirement carries an acquisition flag on the nature parent', () => {
@@ -589,9 +589,9 @@ describe('daycareEngine acceptance cases', () => {
       (strategy) => strategy.id === 'ditto-pair',
     )
     expect(dittoPair?.recommended).toBe(true)
-    expect(dittoPair?.recommendReason).toMatch(
-      /A Ditto works with any species/i,
-    )
+    expect(dittoPair?.recommendReason).toEqual({
+      code: 'recommend-masuda-ditto-reuse',
+    })
     expect(dittoPair?.acquisitionCost).toMatch(
       /Ditto whose origin language differs from its partner/i,
     )
@@ -689,9 +689,10 @@ describe('daycareEngine acceptance cases', () => {
     const excluded = plan.excludedStrategies?.find(
       (entry) => entry.id === 'species-pair',
     )
-    expect(excluded?.reason).toMatch(/Solar Power/i)
-    expect(excluded?.reason).toMatch(/Ditto/i)
-    expect(excluded?.reason).toMatch(/male or genderless/i)
+    expect(excluded?.reason).toEqual({
+      code: 'exclude-pair-hidden-needs-ditto',
+      ability: 'Solar Power',
+    })
   })
 
   it('ability step quotes standard vs hidden rates', () => {
