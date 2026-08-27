@@ -44,9 +44,7 @@ export type ParentRequirement = {
   acquisition?: AcquisitionFlag[]
 }
 
-export type AcquisitionFlag = Reason & {
-  severity: 'info' | 'warning' | 'blocking'
-}
+export type AcquisitionFlag = RuleFlag
 
 export type PairingStrategy = {
   id: string
@@ -636,21 +634,19 @@ function allocateHeldItems(
 
   const unassigned = [...remaining]
     .map((id) => byId.get(id)?.label)
-    .filter(Boolean)
+    .filter((label): label is string => Boolean(label))
   const assigned = parents
     .map((parent) => parent.heldItem)
-    .filter(Boolean)
+    .filter((item): item is string => Boolean(item))
 
-  let message = `Only two held-item slots exist (one per parent). Assigned: ${
-    assigned.length > 0 ? assigned.join(', ') : 'none'
-  }. Could not also fit: ${unassigned.join(', ')}.`
-
-  if (remaining.has('destiny-knot') || remaining.has('power-item')) {
-    message +=
-      ' Destiny Knot spreads five IVs while a power item guarantees one specific stat — which matters more depends on whether you need the spread or a locked stat.'
+  return {
+    severity: 'warning',
+    code: 'held-item-conflict',
+    assigned,
+    unassigned,
+    knotVersusPower:
+      remaining.has('destiny-knot') || remaining.has('power-item'),
   }
-
-  return { severity: 'warning', message }
 }
 
 function applyNatureAbility(
@@ -1126,7 +1122,8 @@ function buildBlockedPairStep(speciesName: string): StepDraft {
     ruleFlags: [
       {
         severity: 'blocking',
-        message: `No valid pair exists for ${speciesName} — Ditto is unavailable in this game.`,
+        code: 'blocked-pair-no-ditto',
+        species: speciesName,
       },
     ],
   }
@@ -1140,7 +1137,9 @@ function buildIncenseStep(species: SpeciesEggData): StepDraft | null {
     ruleFlags: [
       {
         severity: 'warning',
-        message: `Omitting the incense silently yields ${species.hatchesInto} instead of ${species.babyWithIncense}.`,
+        code: 'incense-omit-yields-adult',
+        adult: species.hatchesInto,
+        baby: species.babyWithIncense,
       },
     ],
   }
@@ -1177,7 +1176,8 @@ function buildAbilityBlockStep(
     ruleFlags: [
       {
         severity: 'blocking',
-        message: `${ability} is a hidden ability and cannot be passed via eggs here.`,
+        code: 'acquire-hidden-cannot-pass',
+        ability,
       },
     ],
   }
@@ -1201,7 +1201,9 @@ function buildAbilityInheritStep(
   if (hidden) {
     flags.push({
       severity: 'info',
-      message: `Hidden abilities pass at a lower rate than standard ones (${formatOddsPercent(hiddenOdds)} per egg vs ${formatOddsPercent(standardOdds)}).`,
+      code: 'hidden-ability-lower-rate',
+      hiddenOdds,
+      standardOdds,
     })
   }
 
@@ -1254,26 +1256,21 @@ function hyperTrainingAllMaxFlag(
 ): RuleFlag {
   const level = ruleset.hyperTraining.levelRequired
   const access = game.hyperTrainingAccess
-  const tradeOff =
-    "Hyper Training doesn't change the IVs a Pokémon passes down, so it suits a finished battler while hatching suits a parent you'll pair from again."
 
   if (!access) {
     return {
       severity: 'info',
-      message: `${tradeOff} A Gold Bottle Cap can max every IV at level ${level}.`,
+      code: 'hyper-no-access',
+      level,
     }
   }
 
-  const costSentence =
-    access.effort === 'routine'
-      ? `A Gold Bottle Cap maxes every IV at level ${level}, and getting one is routine here (${access.goldBottleCap}).`
-      : access.effort === 'grindy'
-        ? `A Gold Bottle Cap maxes every IV at level ${level}, though getting one is a grind here (${access.goldBottleCap}).`
-        : `A Gold Bottle Cap maxes every IV at level ${level}, but Gold Bottle Caps are rare here (${access.goldBottleCap}).`
-
   return {
     severity: 'info',
-    message: `${tradeOff} ${costSentence}`,
+    code: 'hyper-effort',
+    tier: access.effort,
+    level,
+    goldBottleCap: access.goldBottleCap,
   }
 }
 
@@ -1289,9 +1286,10 @@ function itemConflictFromParents(
 
   return {
     severity: 'warning',
-    message: `Only two held-item slots exist (one per parent). Assigned: ${
-      held.length > 0 ? held.join(', ') : 'none'
-    }. Could not also fit: ${missing.join(', ')}. Destiny Knot spreads five IVs while a power item guarantees one specific stat — which matters more depends on whether you need the spread or a locked stat.`,
+    code: 'held-item-conflict',
+    assigned: held.filter((item): item is string => Boolean(item)),
+    unassigned: missing,
+    knotVersusPower: true,
   }
 }
 
@@ -1324,8 +1322,7 @@ function buildIvStep(
   if (hyperTraining.available && hasZeroIv(target.ivs)) {
     flags.push({
       severity: 'info',
-      message:
-        'Hyper Training only raises IVs and can never produce a 0. A 0 requires a parent that already has 0 in that stat. Hyper Trained parents pass their innate IVs, not the trained ones.',
+      code: 'hyper-cannot-make-zero',
     })
   }
 
@@ -1496,7 +1493,8 @@ export function planDaycare(
           ruleFlags: [
             {
               severity: 'blocking',
-              message: `No species entry for ${target.species}.`,
+              code: 'unknown-species',
+              species: target.species,
             },
           ],
         },

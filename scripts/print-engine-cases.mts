@@ -191,7 +191,7 @@ function printPlan(title: string, plan: DaycarePlan) {
     console.log(`   ${step.instruction}`)
     if (step.ruleFlags && step.ruleFlags.length > 0) {
       for (const flag of step.ruleFlags) {
-        console.log(`   flag (${flag.severity}): ${flag.message}`)
+        console.log(`   flag (${flag.severity}): ${formatReason(flag)}`)
       }
     }
   }

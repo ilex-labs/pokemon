@@ -275,3 +275,93 @@ describe('formatReason acquisition', () => {
     )
   })
 })
+
+describe('formatReason step flags', () => {
+  it('blocked-pair-no-ditto', () => {
+    expect(
+      formatReason({ code: 'blocked-pair-no-ditto', species: 'Charmander' }),
+    ).toBe(
+      'No valid pair exists for Charmander — Ditto is unavailable in this game.',
+    )
+  })
+
+  it('incense-omit-yields-adult', () => {
+    expect(
+      formatReason({
+        code: 'incense-omit-yields-adult',
+        adult: 'Marill',
+        baby: 'Azurill',
+      }),
+    ).toBe('Omitting the incense silently yields Marill instead of Azurill.')
+  })
+
+  it('acquire-hidden-cannot-pass without how keeps the step sentence', () => {
+    expect(
+      formatReason({
+        code: 'acquire-hidden-cannot-pass',
+        ability: 'Solar Power',
+      }),
+    ).toBe(
+      'Solar Power is a hidden ability and cannot be passed via eggs here.',
+    )
+  })
+
+  it('hidden-ability-lower-rate', () => {
+    expect(
+      formatReason({
+        code: 'hidden-ability-lower-rate',
+        hiddenOdds: 0.6,
+        standardOdds: 0.8,
+      }),
+    ).toBe(
+      'Hidden abilities pass at a lower rate than standard ones (60% per egg vs 80%).',
+    )
+  })
+
+  it('hyper-no-access is not an effort tier', () => {
+    expect(
+      formatReason({ code: 'hyper-no-access', level: 50 }),
+    ).toBe(
+      "Hyper Training doesn't change the IVs a Pokémon passes down, so it suits a finished battler while hatching suits a parent you'll pair from again. A Gold Bottle Cap can max every IV at level 50.",
+    )
+  })
+
+  it('hyper-effort rare names the gold-cap source', () => {
+    expect(
+      formatReason({
+        code: 'hyper-effort',
+        tier: 'rare',
+        level: 50,
+        goldBottleCap:
+          'Accumulators auction listings and rare special rewards',
+      }),
+    ).toBe(
+      "Hyper Training doesn't change the IVs a Pokémon passes down, so it suits a finished battler while hatching suits a parent you'll pair from again. A Gold Bottle Cap maxes every IV at level 50, but Gold Bottle Caps are rare here (Accumulators auction listings and rare special rewards).",
+    )
+  })
+
+  it('hyper-cannot-make-zero', () => {
+    expect(formatReason({ code: 'hyper-cannot-make-zero' })).toBe(
+      'Hyper Training only raises IVs and can never produce a 0. A 0 requires a parent that already has 0 in that stat. Hyper Trained parents pass their innate IVs, not the trained ones.',
+    )
+  })
+
+  it('held-item-conflict appendix is a param', () => {
+    expect(
+      formatReason({
+        code: 'held-item-conflict',
+        assigned: ['Everstone', 'Destiny Knot'],
+        unassigned: ['a power item'],
+        knotVersusPower: true,
+      }),
+    ).toBe(
+      'Only two held-item slots exist (one per parent). Assigned: Everstone, Destiny Knot. Could not also fit: a power item. Destiny Knot spreads five IVs while a power item guarantees one specific stat — which matters more depends on whether you need the spread or a locked stat.',
+    )
+  })
+
+  it('unknown-species', () => {
+    expect(
+      formatReason({ code: 'unknown-species', species: 'MissingNo' }),
+    ).toBe('No species entry for MissingNo.')
+  })
+})

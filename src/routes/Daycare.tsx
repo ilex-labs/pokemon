@@ -26,6 +26,7 @@ import PlanStepList from '../components/daycare/PlanStepList'
 import ShinyOddsPanel from '../components/daycare/ShinyOddsPanel'
 import TargetSpreadForm from '../components/daycare/TargetSpreadForm'
 import { formatHatchOutcome } from '../lib/hatchOutcome'
+import { formatReason } from '../lib/reason'
 import { getJson, removeJson, setJson } from '../lib/storage'
 
 const STORAGE_KEY = 'pokemon:daycare:v1'
@@ -126,7 +127,7 @@ function createDefaultTarget(option: GameOption): DaycareTarget {
 function firstBlockingMessage(steps: PlanStep[]): string | null {
   for (const step of steps) {
     const blocking = step.ruleFlags?.find((flag) => flag.severity === 'blocking')
-    if (blocking) return blocking.message
+    if (blocking) return formatReason(blocking)
   }
   return null
 }

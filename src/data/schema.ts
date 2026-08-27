@@ -3,6 +3,8 @@
  * and in-session progress. Pure types only — no engine logic here.
  */
 
+import type { Reason } from '../lib/reason'
+
 export type NatureLock =
   | { method: 'none' }
   | {
@@ -160,9 +162,8 @@ export interface PostgameItem {
   prerequisiteIds?: string[]
 }
 
-export interface RuleFlag {
+export type RuleFlag = Reason & {
   severity: 'info' | 'warning' | 'blocking'
-  message: string
 }
 
 export interface PlanStep {

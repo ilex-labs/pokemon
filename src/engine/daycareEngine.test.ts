@@ -308,7 +308,7 @@ describe('daycareEngine acceptance cases', () => {
     const conflict = ivBase?.ruleFlags?.find(
       (flag) =>
         flag.severity === 'warning' &&
-        /Destiny Knot spreads five IVs/i.test(flag.message),
+        /Destiny Knot spreads five IVs/i.test(flagProse(flag)),
     )
     expect(conflict).toBeUndefined()
     expect(JSON.stringify(ivBase?.ruleFlags ?? [])).not.toMatch(/power item/i)
@@ -471,10 +471,11 @@ describe('daycareEngine acceptance cases', () => {
     const conflict = ivBase?.ruleFlags?.find(
       (flag) =>
         flag.severity === 'warning' &&
-        /Destiny Knot spreads five IVs/i.test(flag.message),
+        /Destiny Knot spreads five IVs/i.test(flagProse(flag)),
     )
     expect(conflict).toBeDefined()
-    expect(conflict?.message).toMatch(/power item/i)
+    expect(conflict?.code).toBe('held-item-conflict')
+    expect(flagProse(conflict!)).toMatch(/power item/i)
   })
 
   it('everstone-chance is a different code from guaranteed', () => {
@@ -728,7 +729,7 @@ describe('daycareEngine acceptance cases', () => {
     expect(hiddenStep?.instruction).toMatch(/60%/)
     expect(
       hiddenStep?.ruleFlags?.some((flag) =>
-        /lower rate than standard/i.test(flag.message),
+        /lower rate than standard/i.test(flagProse(flag)),
       ),
     ).toBe(true)
     // Two-gender Charmander can still use species-pair with a female HA carrier.

@@ -21,7 +21,7 @@ export type Reason =
   | { code: 'acquire-nature'; nature: string; how: string }
   | { code: 'mints-dont-pass' }
   | { code: 'acquire-hidden-can-pass'; ability: string; how: string }
-  | { code: 'acquire-hidden-cannot-pass'; ability: string; how: string }
+  | { code: 'acquire-hidden-cannot-pass'; ability: string; how?: string }
   | { code: 'acquire-standard-ability'; ability: string; how: string }
   | {
       code: 'acquire-egg-move-pair'
@@ -52,6 +52,28 @@ export type Reason =
   | { code: 'acquire-masuda'; how: string }
   | { code: 'egg-group-unknown'; species: string }
   | { code: 'egg-group-catalogued-empty'; species: string }
+  | { code: 'blocked-pair-no-ditto'; species: string }
+  | { code: 'incense-omit-yields-adult'; adult: string; baby: string }
+  | {
+      code: 'hidden-ability-lower-rate'
+      hiddenOdds: number
+      standardOdds: number
+    }
+  | { code: 'hyper-no-access'; level: number }
+  | {
+      code: 'hyper-effort'
+      tier: 'routine' | 'grindy' | 'rare'
+      level: number
+      goldBottleCap: string
+    }
+  | { code: 'hyper-cannot-make-zero' }
+  | {
+      code: 'held-item-conflict'
+      assigned: string[]
+      unassigned: string[]
+      knotVersusPower: boolean
+    }
+  | { code: 'unknown-species'; species: string }
 
 type GenderedParts = {
   gender: 'male' | 'female'
@@ -70,6 +92,13 @@ function formatPasserPreview(passers: string[]): string | null {
   if (passers.length <= 3) return passers.join(', ')
   return `${passers.slice(0, 3).join(', ')} (+${passers.length - 3} more)`
 }
+
+function formatOddsPercent(odds: number): string {
+  return `${Math.round(odds * 100)}%`
+}
+
+const HYPER_IV_TRADEOFF =
+  "Hyper Training doesn't change the IVs a Pokémon passes down, so it suits a finished battler while hatching suits a parent you'll pair from again."
 
 /** Clause only — conclusion is applied once in formatGendered. */
 function genderReasonParts(reason: Reason): GenderedParts | undefined {
@@ -121,6 +150,14 @@ function genderReasonParts(reason: Reason): GenderedParts | undefined {
     case 'acquire-masuda':
     case 'egg-group-unknown':
     case 'egg-group-catalogued-empty':
+    case 'blocked-pair-no-ditto':
+    case 'incense-omit-yields-adult':
+    case 'hidden-ability-lower-rate':
+    case 'hyper-no-access':
+    case 'hyper-effort':
+    case 'hyper-cannot-make-zero':
+    case 'held-item-conflict':
+    case 'unknown-species':
       return undefined
     default: {
       const _exhaustive: never = reason
@@ -170,7 +207,10 @@ export function formatReason(reason: Reason): string {
     case 'acquire-hidden-can-pass':
       return `${reason.ability} is a hidden ability — ${reason.how}`
     case 'acquire-hidden-cannot-pass':
-      return `${reason.ability} cannot be passed via eggs here. ${reason.how}`
+      if (reason.how) {
+        return `${reason.ability} cannot be passed via eggs here. ${reason.how}`
+      }
+      return `${reason.ability} is a hidden ability and cannot be passed via eggs here.`
     case 'acquire-standard-ability':
       return `Acquire ${reason.ability}: ${reason.how}`
     case 'acquire-egg-move-pair': {
@@ -197,6 +237,37 @@ export function formatReason(reason: Reason): string {
       return `no egg-group data is held for ${reason.species}`
     case 'egg-group-catalogued-empty':
       return `${reason.species} is in the catalog but has no egg-group membership recorded`
+    case 'blocked-pair-no-ditto':
+      return `No valid pair exists for ${reason.species} — Ditto is unavailable in this game.`
+    case 'incense-omit-yields-adult':
+      return `Omitting the incense silently yields ${reason.adult} instead of ${reason.baby}.`
+    case 'hidden-ability-lower-rate':
+      return `Hidden abilities pass at a lower rate than standard ones (${formatOddsPercent(reason.hiddenOdds)} per egg vs ${formatOddsPercent(reason.standardOdds)}).`
+    case 'hyper-no-access':
+      return `${HYPER_IV_TRADEOFF} A Gold Bottle Cap can max every IV at level ${reason.level}.`
+    case 'hyper-effort': {
+      const cost =
+        reason.tier === 'routine'
+          ? `A Gold Bottle Cap maxes every IV at level ${reason.level}, and getting one is routine here (${reason.goldBottleCap}).`
+          : reason.tier === 'grindy'
+            ? `A Gold Bottle Cap maxes every IV at level ${reason.level}, though getting one is a grind here (${reason.goldBottleCap}).`
+            : `A Gold Bottle Cap maxes every IV at level ${reason.level}, but Gold Bottle Caps are rare here (${reason.goldBottleCap}).`
+      return `${HYPER_IV_TRADEOFF} ${cost}`
+    }
+    case 'hyper-cannot-make-zero':
+      return 'Hyper Training only raises IVs and can never produce a 0. A 0 requires a parent that already has 0 in that stat. Hyper Trained parents pass their innate IVs, not the trained ones.'
+    case 'held-item-conflict': {
+      const assigned =
+        reason.assigned.length > 0 ? reason.assigned.join(', ') : 'none'
+      let line = `Only two held-item slots exist (one per parent). Assigned: ${assigned}. Could not also fit: ${reason.unassigned.join(', ')}.`
+      if (reason.knotVersusPower) {
+        line +=
+          ' Destiny Knot spreads five IVs while a power item guarantees one specific stat — which matters more depends on whether you need the spread or a locked stat.'
+      }
+      return line
+    }
+    case 'unknown-species':
+      return `No species entry for ${reason.species}.`
     default: {
       const _exhaustive: never = reason
       return _exhaustive
