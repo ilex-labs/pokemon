@@ -181,21 +181,36 @@ function validateGame(filePath, game, natures) {
     fail(`${label}: ditto.available must be a boolean`)
   }
 
+  if (!game.eggGroups || typeof game.eggGroups !== 'object') {
+    fail(`${label}: eggGroups is required`)
+  }
+  if (!game.species || typeof game.species !== 'object') {
+    fail(`${label}: species is required`)
+  }
+  if (!game.eggMoves || typeof game.eggMoves !== 'object') {
+    fail(`${label}: eggMoves is required`)
+  }
+  if (!Array.isArray(game.hatchRoutes)) {
+    fail(`${label}: hatchRoutes is required`)
+  }
+
   const moveDescriptions = game.moveDescriptions ?? {}
   const abilityDescriptions = game.abilityDescriptions ?? {}
 
   const referencedMoves = new Set()
-  for (const [species, entries] of Object.entries(game.eggMoves ?? {})) {
-    if (!Array.isArray(entries)) {
-      fail(`${label}: eggMoves.${species} must be an array`)
-      continue
-    }
-    for (const entry of entries) {
-      if (!entry?.move) {
-        fail(`${label}: eggMoves.${species} has an entry without move`)
+  if (game.eggMoves && typeof game.eggMoves === 'object') {
+    for (const [species, entries] of Object.entries(game.eggMoves)) {
+      if (!Array.isArray(entries)) {
+        fail(`${label}: eggMoves.${species} must be an array`)
         continue
       }
-      referencedMoves.add(entry.move)
+      for (const entry of entries) {
+        if (!entry?.move) {
+          fail(`${label}: eggMoves.${species} has an entry without move`)
+          continue
+        }
+        referencedMoves.add(entry.move)
+      }
     }
   }
 
@@ -208,53 +223,78 @@ function validateGame(filePath, game, natures) {
   }
 
   const referencedAbilities = new Set()
-  const knownNames = new Set(Object.keys(game.species ?? {}))
-  for (const members of Object.values(game.eggGroups ?? {})) {
-    if (!Array.isArray(members)) continue
-    for (const member of members) {
-      if (typeof member === 'string' && member.trim().length > 0) {
-        knownNames.add(member)
-      }
+  const knownNames = new Set()
+  if (game.species && typeof game.species === 'object') {
+    for (const name of Object.keys(game.species)) {
+      knownNames.add(name)
     }
   }
-
-  for (const [speciesName, species] of Object.entries(game.species ?? {})) {
-    if (!species?.abilities || !Array.isArray(species.abilities.standard)) {
-      fail(`${label}: species.${speciesName}.abilities.standard is required`)
-    } else {
-      for (const ability of species.abilities.standard) {
-        referencedAbilities.add(ability)
-      }
-      if (species.abilities.hidden) {
-        referencedAbilities.add(species.abilities.hidden)
-      }
-    }
-
-    const offspring = species?.hatchesInto
-    if (!isNonEmptyString(offspring)) {
-      fail(`${label}: species.${speciesName}.hatchesInto is required`)
-    } else if (!knownNames.has(offspring)) {
-      fail(
-        `${label}: species.${speciesName} hatchesInto "${offspring}", which is not present in this game's species catalog or eggGroups index`,
-      )
-    }
-  }
-
-  for (const [speciesName, entries] of Object.entries(game.eggMoves ?? {})) {
-    if (!Array.isArray(entries)) continue
-    for (const entry of entries) {
-      if (!Array.isArray(entry?.parentSpecies)) continue
-      for (const parent of entry.parentSpecies) {
-        if (!isNonEmptyString(parent)) {
-          fail(
-            `${label}: eggMoves.${speciesName} has a parentSpecies entry that is not a name`,
-          )
-          continue
+  if (game.eggGroups && typeof game.eggGroups === 'object') {
+    for (const members of Object.values(game.eggGroups)) {
+      if (!Array.isArray(members)) continue
+      for (const member of members) {
+        if (typeof member === 'string' && member.trim().length > 0) {
+          knownNames.add(member)
         }
-        if (!knownNames.has(parent)) {
-          fail(
-            `${label}: eggMoves.${speciesName} parentSpecies "${parent}", which is not present in this game's species catalog or eggGroups index`,
-          )
+      }
+    }
+  }
+
+  if (game.species && typeof game.species === 'object') {
+    for (const [speciesName, species] of Object.entries(game.species)) {
+      if (!species?.abilities || !Array.isArray(species.abilities.standard)) {
+        fail(`${label}: species.${speciesName}.abilities.standard is required`)
+      } else {
+        for (const ability of species.abilities.standard) {
+          referencedAbilities.add(ability)
+        }
+        if (species.abilities.hidden) {
+          referencedAbilities.add(species.abilities.hidden)
+        }
+      }
+
+      const ratio = species?.genderRatio
+      if (
+        ratio !== 'genderless' &&
+        ratio !== 'male-only' &&
+        ratio !== 'female-only' &&
+        !(
+          ratio &&
+          typeof ratio === 'object' &&
+          typeof ratio.malePercent === 'number'
+        )
+      ) {
+        fail(`${label}: species.${speciesName}.genderRatio is required`)
+      }
+
+      const offspring = species?.hatchesInto
+      if (!isNonEmptyString(offspring)) {
+        fail(`${label}: species.${speciesName}.hatchesInto is required`)
+      } else if (!knownNames.has(offspring)) {
+        fail(
+          `${label}: species.${speciesName} hatchesInto "${offspring}", which is not present in this game's species catalog or eggGroups index`,
+        )
+      }
+    }
+  }
+
+  if (game.eggMoves && typeof game.eggMoves === 'object') {
+    for (const [speciesName, entries] of Object.entries(game.eggMoves)) {
+      if (!Array.isArray(entries)) continue
+      for (const entry of entries) {
+        if (!Array.isArray(entry?.parentSpecies)) continue
+        for (const parent of entry.parentSpecies) {
+          if (!isNonEmptyString(parent)) {
+            fail(
+              `${label}: eggMoves.${speciesName} has a parentSpecies entry that is not a name`,
+            )
+            continue
+          }
+          if (!knownNames.has(parent)) {
+            fail(
+              `${label}: eggMoves.${speciesName} parentSpecies "${parent}", which is not present in this game's species catalog or eggGroups index`,
+            )
+          }
         }
       }
     }
