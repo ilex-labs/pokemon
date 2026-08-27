@@ -175,6 +175,12 @@ function validateGame(filePath, game, natures) {
     }
   }
 
+  if (!game.ditto || typeof game.ditto !== 'object') {
+    fail(`${label}: ditto is required`)
+  } else if (typeof game.ditto.available !== 'boolean') {
+    fail(`${label}: ditto.available must be a boolean`)
+  }
+
   const moveDescriptions = game.moveDescriptions ?? {}
   const abilityDescriptions = game.abilityDescriptions ?? {}
 
