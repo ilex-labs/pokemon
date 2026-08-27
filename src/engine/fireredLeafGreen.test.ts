@@ -3,7 +3,7 @@ import type { GameData, Ruleset } from '../data/schema'
 import gen3Json from '../data/rulesets/gen3.json'
 import frlgJson from '../data/games/firered-leafgreen.json'
 import { speciesAbilityGroups } from '../data/loadGame'
-import { formatReasons, type Reason } from '../lib/reason'
+import { formatReason, formatReasons, type Reason } from '../lib/reason'
 import {
   eggAffectingHeldItemsExist,
   planDaycare,
@@ -15,6 +15,10 @@ const frlg = frlgJson as GameData
 
 function genderProse(parent: { genderReason?: Reason[] } | undefined): string {
   return formatReasons(parent?.genderReason ?? [])
+}
+
+function flagProse(flag: Reason): string {
+  return formatReason(flag)
 }
 
 const baseTarget: DaycareTarget = {
@@ -76,7 +80,7 @@ describe('FireRed/LeafGreen — ruleset branches never exercised by gen 9', () =
         expect(parent.mustHaveAbility).toBeUndefined()
         expect(
           parent.acquisition?.filter((flag) =>
-            /ability|Blaze|inherit/i.test(flag.message),
+            /ability|Blaze|inherit/i.test(flagProse(flag)),
           ) ?? [],
         ).toEqual([])
         expect(genderProse(parent)).not.toMatch(/ability/i)
@@ -152,7 +156,7 @@ describe('FireRed/LeafGreen — ruleset branches never exercised by gen 9', () =
     )
     expect(
       charmander?.acquisition?.some((flag) =>
-        /species-pair route first/i.test(flag.message),
+        /species-pair route first/i.test(flagProse(flag)),
       ),
     ).toBe(true)
   })
@@ -173,7 +177,7 @@ describe('FireRed/LeafGreen — ruleset branches never exercised by gen 9', () =
         expect(parent.mustOriginateFromDifferentLanguage).toBeUndefined()
         expect(
           parent.acquisition?.filter((flag) =>
-            /Masuda|different-language/i.test(flag.message),
+            /Masuda|different-language/i.test(flagProse(flag)),
           ) ?? [],
         ).toEqual([])
       }

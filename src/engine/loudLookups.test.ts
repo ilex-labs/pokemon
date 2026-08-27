@@ -110,7 +110,9 @@ function eggGroupWarnings(parent: ReturnType<typeof eggMoveParent>['parent']) {
   return (
     parent?.acquisition?.filter(
       (flag) =>
-        flag.severity === 'warning' && /egg-group/i.test(flag.message),
+        flag.severity === 'warning' &&
+        (flag.code === 'egg-group-unknown' ||
+          flag.code === 'egg-group-catalogued-empty'),
     ) ?? []
   )
 }
@@ -122,7 +124,8 @@ describe('loud egg-group lookups', () => {
     expect(eggGroupWarnings(parent)).toEqual([
       {
         severity: 'warning',
-        message: 'no egg-group data is held for FixtureGhost',
+        code: 'egg-group-unknown',
+        species: 'FixtureGhost',
       },
     ])
   })
@@ -133,8 +136,8 @@ describe('loud egg-group lookups', () => {
     expect(eggGroupWarnings(parent)).toEqual([
       {
         severity: 'warning',
-        message:
-          'FixturePasser is in the catalog but has no egg-group membership recorded',
+        code: 'egg-group-catalogued-empty',
+        species: 'FixturePasser',
       },
     ])
   })

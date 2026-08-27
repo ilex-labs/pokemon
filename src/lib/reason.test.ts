@@ -128,3 +128,150 @@ describe('formatReasons', () => {
     expect(sentence).not.toMatch(/and because.*and because/)
   })
 })
+
+describe('formatReason acquisition', () => {
+  it('acquire-nature', () => {
+    expect(
+      formatReason({
+        code: 'acquire-nature',
+        nature: 'Timid',
+        how: 'Keep hunting wild encounters.',
+      }),
+    ).toBe('Acquire a Timid parent first: Keep hunting wild encounters.')
+  })
+
+  it('mints-dont-pass', () => {
+    expect(formatReason({ code: 'mints-dont-pass' })).toBe(
+      'Nature Mints only change battle stats — a minted Pokémon still passes its original nature. An item that fixes a Pokémon for battle does not fix it for the daycare.',
+    )
+  })
+
+  it('acquire-hidden-can-pass', () => {
+    expect(
+      formatReason({
+        code: 'acquire-hidden-can-pass',
+        ability: 'Solar Power',
+        how: 'Catch one with the hidden ability.',
+      }),
+    ).toBe('Solar Power is a hidden ability — Catch one with the hidden ability.')
+  })
+
+  it('acquire-hidden-cannot-pass', () => {
+    expect(
+      formatReason({
+        code: 'acquire-hidden-cannot-pass',
+        ability: 'Solar Power',
+        how: 'Use an Ability Patch where available.',
+      }),
+    ).toBe(
+      'Solar Power cannot be passed via eggs here. Use an Ability Patch where available.',
+    )
+  })
+
+  it('acquire-standard-ability', () => {
+    expect(
+      formatReason({
+        code: 'acquire-standard-ability',
+        ability: 'Blaze',
+        how: 'Catch one in the wild.',
+      }),
+    ).toBe('Acquire Blaze: Catch one in the wild.')
+  })
+
+  it('acquire-egg-move-pair includes passers and need', () => {
+    expect(
+      formatReason({
+        code: 'acquire-egg-move-pair',
+        species: 'Charmander',
+        moves: ['Dragon Dance'],
+        how: 'Catch or hatch one that already knows the move, or copy it at a picnic with a Mirror Herb.',
+        passers: ['Salamence', 'Dragapult', 'Gyarados'],
+      }),
+    ).toBe(
+      'Egg moves are not level-up moves for Charmander. Concrete passers in this game: Salamence, Dragapult, Gyarados. Catch or hatch one that already knows the move, or copy it at a picnic with a Mirror Herb. Need: Dragon Dance.',
+    )
+  })
+
+  it('acquire-egg-move-ditto-alternative', () => {
+    expect(
+      formatReason({
+        code: 'acquire-egg-move-ditto-alternative',
+        species: 'Charmander',
+        moves: ['Dragon Dance'],
+        alternativeName: 'Mirror Herb',
+        alternativeHow:
+          'Held during a picnic, it copies egg moves from a partner that already knows them.',
+        passers: ['Salamence', 'Dragapult', 'Gyarados'],
+      }),
+    ).toBe(
+      'Consolidate Dragon Dance onto Charmander first using Mirror Herb: Held during a picnic, it copies egg moves from a partner that already knows them. Picnic with a partner that already knows the move — in this game that includes Salamence, Dragapult, Gyarados. Ditto only knows Transform and cannot pass egg moves.',
+    )
+  })
+
+  it('acquire-egg-move-ditto-father-only', () => {
+    expect(
+      formatReason({
+        code: 'acquire-egg-move-ditto-father-only',
+        species: 'Charmander',
+        moves: ['Dragon Dance'],
+      }),
+    ).toBe(
+      'This route needs a male Charmander that already knows Dragon Dance. In this game that usually means hatching one from the species-pair route first (only the father passes egg moves); there is no separate teach-onto-the-line mechanic. Ditto only knows Transform and cannot pass egg moves.',
+    )
+  })
+
+  it('acquire-egg-move-ditto-bootstrap', () => {
+    expect(
+      formatReason({
+        code: 'acquire-egg-move-ditto-bootstrap',
+        species: 'Charmander',
+        moves: ['Dragon Dance'],
+      }),
+    ).toBe(
+      'This route needs a Charmander that already knows Dragon Dance. In this game that usually means getting the moves via the species-pair route first; there is no separate teach-onto-the-line mechanic. Ditto only knows Transform and cannot pass egg moves.',
+    )
+  })
+
+  it('acquire-ditto strips trailing periods then adds one', () => {
+    expect(
+      formatReason({
+        code: 'acquire-ditto',
+        obtainedAt:
+          'Wild encounters across Paldea (including outbreaks); also available via picnic eggs from a Ditto parent pair.',
+      }),
+    ).toBe(
+      'Obtain Ditto: Wild encounters across Paldea (including outbreaks); also available via picnic eggs from a Ditto parent pair.',
+    )
+  })
+
+  it('acquire-masuda is the game how string', () => {
+    expect(
+      formatReason({
+        code: 'acquire-masuda',
+        how: 'You may already have one — a Japanese Charmander with an English Ditto would count. Otherwise trade for one, or import from a cartridge saved in another language.',
+      }),
+    ).toBe(
+      'You may already have one — a Japanese Charmander with an English Ditto would count. Otherwise trade for one, or import from a cartridge saved in another language.',
+    )
+  })
+
+  it('egg-group-unknown', () => {
+    expect(
+      formatReason({
+        code: 'egg-group-unknown',
+        species: 'FixtureGhost',
+      }),
+    ).toBe('no egg-group data is held for FixtureGhost')
+  })
+
+  it('egg-group-catalogued-empty', () => {
+    expect(
+      formatReason({
+        code: 'egg-group-catalogued-empty',
+        species: 'FixturePasser',
+      }),
+    ).toBe(
+      'FixturePasser is in the catalog but has no egg-group membership recorded',
+    )
+  })
+})

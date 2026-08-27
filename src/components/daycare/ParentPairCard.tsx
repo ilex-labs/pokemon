@@ -64,7 +64,10 @@ function ParentBlock({
           {acquisition.map((flag, index) => (
             <RuleFlag
               key={`${parent.role}-acq-${flag.severity}-${index}`}
-              flag={flag}
+              flag={{
+                severity: flag.severity,
+                message: formatReason(flag),
+              }}
             />
           ))}
         </div>

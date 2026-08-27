@@ -15,6 +15,7 @@ import {
   type DaycarePlan,
   type DaycareTarget,
 } from '../src/engine/daycareEngine.ts'
+import { formatReason } from '../src/lib/reason.ts'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 const gamesDir = join(root, 'src/data/games')
@@ -168,7 +169,9 @@ function printPlan(title: string, plan: DaycarePlan) {
         else console.log('    held item: (open)')
         if (parent.acquisition?.length) {
           for (const flag of parent.acquisition) {
-            console.log(`    acquisition (${flag.severity}): ${flag.message}`)
+            console.log(
+              `    acquisition (${flag.severity}): ${formatReason(flag)}`,
+            )
           }
         }
       }

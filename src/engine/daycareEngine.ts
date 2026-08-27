@@ -41,7 +41,11 @@ export type ParentRequirement = {
   heldItemReason?: Reason
   /** Masuda — origin language must differ from the other parent. */
   mustOriginateFromDifferentLanguage?: boolean
-  acquisition?: RuleFlag[]
+  acquisition?: AcquisitionFlag[]
+}
+
+export type AcquisitionFlag = Reason & {
+  severity: 'info' | 'warning' | 'blocking'
 }
 
 export type PairingStrategy = {
@@ -185,13 +189,19 @@ function isKnownSpecies(game: GameData, name: string): boolean {
 function eggGroupMembershipWarning(
   game: GameData,
   name: string,
-): RuleFlag | undefined {
+): AcquisitionFlag | undefined {
   if (eggGroupsForSpecies(game, name).length > 0) return undefined
+  if (isKnownSpecies(game, name)) {
+    return {
+      severity: 'warning',
+      code: 'egg-group-catalogued-empty',
+      species: name,
+    }
+  }
   return {
     severity: 'warning',
-    message: isKnownSpecies(game, name)
-      ? `${name} is in the catalog but has no egg-group membership recorded`
-      : `no egg-group data is held for ${name}`,
+    code: 'egg-group-unknown',
+    species: name,
   }
 }
 
@@ -336,17 +346,18 @@ function finalizeSteps(drafts: StepDraft[]): PlanStep[] {
   }))
 }
 
-function pushAcquisition(parent: ParentRequirement, flag: RuleFlag) {
+function pushAcquisition(parent: ParentRequirement, flag: AcquisitionFlag) {
   parent.acquisition = [...(parent.acquisition ?? []), flag]
 }
 
-function masudaAcquisitionFlag(game: GameData): RuleFlag {
+function masudaAcquisitionFlag(game: GameData): AcquisitionFlag {
   const how =
     game.masudaAcquisition?.how ??
     'You may already have one — a pair from different-language games would count. Otherwise trade for one, or import from a cartridge saved in another language.'
   return {
     severity: 'info',
-    message: how,
+    code: 'acquire-masuda',
+    how,
   }
 }
 
@@ -411,19 +422,20 @@ function eggMovePasserSpecies(
   return [...passers]
 }
 
-function natureAcquisitionFlags(game: GameData, nature: string): RuleFlag[] {
-  const flags: RuleFlag[] = []
+function natureAcquisitionFlags(game: GameData, nature: string): AcquisitionFlag[] {
+  const flags: AcquisitionFlag[] = []
   if (game.natureAcquisition?.how) {
     flags.push({
       severity: 'info',
-      message: `Acquire a ${nature} parent first: ${game.natureAcquisition.how}`,
+      code: 'acquire-nature',
+      nature,
+      how: game.natureAcquisition.how,
     })
   }
   if (game.mintsAvailable) {
     flags.push({
       severity: 'warning',
-      message:
-        "Nature Mints only change battle stats — a minted Pokémon still passes its original nature. An item that fixes a Pokémon for battle does not fix it for the daycare.",
+      code: 'mints-dont-pass',
     })
   }
   return flags
@@ -434,7 +446,7 @@ function abilityAcquisitionFlag(
   ruleset: Ruleset,
   species: SpeciesEggData,
   ability: string,
-): RuleFlag | undefined {
+): AcquisitionFlag | undefined {
   if (!ruleset.abilitiesExist) return undefined
 
   if (isAbilityHidden(species, ability)) {
@@ -442,18 +454,27 @@ function abilityAcquisitionFlag(
       game.abilityAcquisition?.hidden ??
       'Obtain a parent that already has this hidden ability, or use an Ability Patch where available.'
     const canPass = ruleset.abilityInheritance.hiddenAbilityViaEggs
-    return {
-      severity: canPass ? 'info' : 'blocking',
-      message: canPass
-        ? `${ability} is a hidden ability — ${how}`
-        : `${ability} cannot be passed via eggs here. ${how}`,
-    }
+    return canPass
+      ? {
+          severity: 'info',
+          code: 'acquire-hidden-can-pass',
+          ability,
+          how,
+        }
+      : {
+          severity: 'blocking',
+          code: 'acquire-hidden-cannot-pass',
+          ability,
+          how,
+        }
   }
 
   if (game.abilityAcquisition?.standard) {
     return {
       severity: 'info',
-      message: `Acquire ${ability}: ${game.abilityAcquisition.standard}`,
+      code: 'acquire-standard-ability',
+      ability,
+      how: game.abilityAcquisition.standard,
     }
   }
   return undefined
@@ -694,22 +715,16 @@ function buildSpeciesPairStrategy(
 
   if (target.eggMoves.length > 0) {
     parentB.mustKnow = [...target.eggMoves]
-    const passerList =
-      externalPassers.length === 0
-        ? null
-        : externalPassers.length <= 3
-          ? externalPassers.join(', ')
-          : `${externalPassers.slice(0, 3).join(', ')} (+${externalPassers.length - 3} more)`
-    const moveList = target.eggMoves.join(', ')
     const how =
       game.eggMoveAcquisition?.how ??
       "Catch or hatch a parent that already knows the move, or copy it with this game's egg-move alternative."
-    const passerNote = passerList
-      ? ` Concrete passers in this game: ${passerList}.`
-      : ''
     pushAcquisition(parentB, {
       severity: 'info',
-      message: `Egg moves are not level-up moves for ${target.species}.${passerNote} ${how} Need: ${moveList}.`,
+      code: 'acquire-egg-move-pair',
+      species: target.species,
+      moves: [...target.eggMoves],
+      how,
+      passers: externalPassers,
     })
     applyEggGroupLookupWarnings(game, parentB, target.species, target.eggMoves)
   }
@@ -789,25 +804,31 @@ function buildDittoPairStrategy(
     parentA.mustKnow = [...target.eggMoves]
     const alt = game.eggMoveAlternative
     const passers = eggMovePasserSpecies(game, target.species, target.eggMoves)
-    const passerList =
-      passers.length === 0
-        ? null
-        : passers.length <= 3
-          ? passers.join(', ')
-          : `${passers.slice(0, 3).join(', ')} (+${passers.length - 3} more)`
-    const picnicPartner = passerList
-      ? ` Picnic with a partner that already knows the move — in this game that includes ${passerList}.`
-      : ''
-    const how =
-      alt != null
-        ? `Consolidate ${target.eggMoves.join(', ')} onto ${target.species} first using ${alt.name}: ${alt.howItWorks}${picnicPartner} Ditto only knows Transform and cannot pass egg moves.`
-        : fatherOnlyMoves
-          ? `This route needs a male ${target.species} that already knows ${target.eggMoves.join(', ')}. In this game that usually means hatching one from the species-pair route first (only the father passes egg moves); there is no separate teach-onto-the-line mechanic. Ditto only knows Transform and cannot pass egg moves.`
-          : `This route needs a ${target.species} that already knows ${target.eggMoves.join(', ')}. In this game that usually means getting the moves via the species-pair route first; there is no separate teach-onto-the-line mechanic. Ditto only knows Transform and cannot pass egg moves.`
-    pushAcquisition(parentA, {
-      severity: 'info',
-      message: how,
-    })
+    if (alt != null) {
+      pushAcquisition(parentA, {
+        severity: 'info',
+        code: 'acquire-egg-move-ditto-alternative',
+        species: target.species,
+        moves: [...target.eggMoves],
+        alternativeName: alt.name,
+        alternativeHow: alt.howItWorks,
+        passers,
+      })
+    } else if (fatherOnlyMoves) {
+      pushAcquisition(parentA, {
+        severity: 'info',
+        code: 'acquire-egg-move-ditto-father-only',
+        species: target.species,
+        moves: [...target.eggMoves],
+      })
+    } else {
+      pushAcquisition(parentA, {
+        severity: 'info',
+        code: 'acquire-egg-move-ditto-bootstrap',
+        species: target.species,
+        moves: [...target.eggMoves],
+      })
+    }
     applyEggGroupLookupWarnings(game, parentA, target.species, target.eggMoves)
   }
 
@@ -825,7 +846,8 @@ function buildDittoPairStrategy(
   ) {
     pushAcquisition(parentB, {
       severity: 'info',
-      message: `Obtain Ditto: ${game.ditto.obtainedAt.replace(/\.+$/, '')}.`,
+      code: 'acquire-ditto',
+      obtainedAt: game.ditto.obtainedAt,
     })
   }
 
@@ -896,7 +918,8 @@ function buildDittoOnlyStrategy(
   if (!wantsMasuda(target, ruleset) && game.ditto.obtainedAt) {
     pushAcquisition(parentB, {
       severity: 'info',
-      message: `Obtain Ditto: ${game.ditto.obtainedAt.replace(/\.+$/, '')}.`,
+      code: 'acquire-ditto',
+      obtainedAt: game.ditto.obtainedAt,
     })
   }
 

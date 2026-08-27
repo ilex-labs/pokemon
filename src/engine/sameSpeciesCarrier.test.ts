@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { GameData, Ruleset } from '../data/schema'
 import gen9Json from '../data/rulesets/gen9.json'
+import { formatReason } from '../lib/reason'
 import { planDaycare, type DaycareTarget } from './daycareEngine'
 
 const gen9 = gen9Json as Ruleset
@@ -114,13 +115,13 @@ describe('same-species egg-move carrier slot', () => {
     expect(carriers[0]?.species).toEqual(['FixtureMon'])
     expect(
       carriers[0]?.acquisition?.some((flag) =>
-        /FixtureMove/.test(flag.message),
+        /FixtureMove/.test(formatReason(flag)),
       ),
     ).toBe(true)
     expect(
       carriers[0]?.acquisition?.some((flag) =>
         /Catch or hatch a parent that already knows FixtureMove/.test(
-          flag.message,
+          formatReason(flag),
         ),
       ),
     ).toBe(true)

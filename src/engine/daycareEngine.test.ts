@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { GameData, Ruleset } from '../data/schema'
 import gen9Json from '../data/rulesets/gen9.json'
 import scarletVioletJson from '../data/games/scarlet-violet.json'
-import { formatReasons, type Reason } from '../lib/reason'
+import { formatReason, formatReasons, type Reason } from '../lib/reason'
 import { planDaycare, type DaycareTarget } from './daycareEngine'
 
 const gen9 = gen9Json as Ruleset
@@ -31,6 +31,10 @@ function recommendedParents(plan: ReturnType<typeof planDaycare>) {
 
 function genderProse(parent: { genderReason?: Reason[] } | undefined): string {
   return formatReasons(parent?.genderReason ?? [])
+}
+
+function flagProse(flag: Reason): string {
+  return formatReason(flag)
 }
 
 describe('daycareEngine acceptance cases', () => {
@@ -184,34 +188,34 @@ describe('daycareEngine acceptance cases', () => {
     expect(dittoParent?.mustOriginateFromDifferentLanguage).toBe(true)
     expect(
       dittoParent?.acquisition?.some((flag) =>
-        /already have one/i.test(flag.message),
+        /already have one/i.test(flagProse(flag)),
       ),
     ).toBe(true)
     expect(
       dittoParent?.acquisition?.some((flag) =>
-        /Japanese Charmander with an English Ditto/i.test(flag.message),
+        /Japanese Charmander with an English Ditto/i.test(flagProse(flag)),
       ),
     ).toBe(true)
     expect(
       dittoParent?.acquisition?.some((flag) =>
-        /any two parents from different-language/i.test(flag.message),
+        /any two parents from different-language/i.test(flagProse(flag)),
       ),
     ).toBe(false)
     expect(
       dittoParent?.acquisition?.some((flag) =>
-        /Must originate from a different-language/i.test(flag.message),
+        /Must originate from a different-language/i.test(flagProse(flag)),
       ),
     ).toBe(false)
     expect(
       dittoParent?.acquisition?.some((flag) =>
         /Masuda Method needs a parent from a different-language/i.test(
-          flag.message,
+          flagProse(flag),
         ),
       ),
     ).toBe(false)
     expect(
       dittoParent?.acquisition?.some((flag) =>
-        /trade|import|cartridge/i.test(flag.message),
+        /trade|import|cartridge/i.test(flagProse(flag)),
       ),
     ).toBe(true)
 
@@ -336,7 +340,7 @@ describe('daycareEngine acceptance cases', () => {
     expect(dittoParent).toBeDefined()
     expect(
       charmander?.acquisition?.some((flag) =>
-        /Mirror Herb|Transform|consolidat/i.test(flag.message),
+        /Mirror Herb|Transform|consolidat/i.test(flagProse(flag)),
       ),
     ).toBe(true)
   })
@@ -428,7 +432,7 @@ describe('daycareEngine acceptance cases', () => {
       (parent) => parent.mustHaveNature === 'Timid',
     )
     expect(natureParent?.acquisition?.some((flag) =>
-      /Acquire a Timid parent/i.test(flag.message),
+      /Acquire a Timid parent/i.test(flagProse(flag)),
     )).toBe(true)
   })
 
@@ -453,7 +457,7 @@ describe('daycareEngine acceptance cases', () => {
     )
     expect(
       abilityParent?.acquisition?.some((flag) =>
-        /hidden ability/i.test(flag.message),
+        /hidden ability/i.test(flagProse(flag)),
       ),
     ).toBe(true)
   })
@@ -597,7 +601,7 @@ describe('daycareEngine acceptance cases', () => {
     expect(dittoParent?.mustOriginateFromDifferentLanguage).toBe(true)
     expect(
       dittoParent?.acquisition?.some((flag) =>
-        /already have one/i.test(flag.message),
+        /already have one/i.test(flagProse(flag)),
       ),
     ).toBe(true)
 
