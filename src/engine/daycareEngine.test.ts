@@ -74,10 +74,9 @@ describe('daycareEngine acceptance cases', () => {
       heldItem: 'Everstone',
     })
     expect(natureParent?.mustHaveAbility).toBeUndefined()
-    expect(natureParent?.heldItemReason).toEqual({
-      code: 'everstone-guaranteed',
-      nature: 'Timid',
-    })
+    expect(natureParent?.heldItemReason).toEqual([
+      { code: 'everstone-guaranteed', nature: 'Timid' },
+    ])
     expect(genderProse(natureParent)).toMatch(
       /female because the female parent determines/i,
     )
@@ -97,14 +96,20 @@ describe('daycareEngine acceptance cases', () => {
       expect.arrayContaining(['Salamence', 'Dragapult', 'Gyarados']),
     )
     expect(moveParent?.heldItem).toBe('Destiny Knot')
-    expect(moveParent?.heldItemReason).toEqual({
-      code: 'destiny-knot-iv',
-      baseCountInherited: 3,
-      destinyKnotBoostedCount: 5,
-    })
+    expect(moveParent?.heldItemReason).toEqual([
+      {
+        code: 'destiny-knot-iv',
+        baseCountInherited: 3,
+        destinyKnotBoostedCount: 5,
+      },
+    ])
     for (const strategy of plan.strategies) {
       for (const parent of strategy.parents) {
-        expect(parent.heldItemReason?.code).not.toBe('everstone-chance')
+        expect(
+          parent.heldItemReason?.some(
+            (reason) => reason.code === 'everstone-chance',
+          ),
+        ).not.toBe(true)
       }
     }
 
@@ -498,10 +503,9 @@ describe('daycareEngine acceptance cases', () => {
     const natureParent = plan.strategies
       .flatMap((strategy) => strategy.parents)
       .find((parent) => parent.heldItem === 'Everstone')
-    expect(natureParent?.heldItemReason).toEqual({
-      code: 'everstone-chance',
-      nature: 'Timid',
-    })
+    expect(natureParent?.heldItemReason).toEqual([
+      { code: 'everstone-chance', nature: 'Timid' },
+    ])
   })
 
   it('opt-in power item without Everstone assigns power-item-iv', () => {
@@ -514,9 +518,9 @@ describe('daycareEngine acceptance cases', () => {
       wantsPowerItem: true,
     })
     for (const strategy of plan.strategies) {
-      const reasons = strategy.parents
-        .map((parent) => parent.heldItemReason)
-        .filter((reason) => reason != null)
+      const reasons = strategy.parents.flatMap(
+        (parent) => parent.heldItemReason ?? [],
+      )
       expect(reasons).toEqual(
         expect.arrayContaining([
           {

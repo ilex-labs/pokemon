@@ -38,7 +38,7 @@ export type ParentRequirement = {
   mustHaveNature?: string
   heldItem?: string
   /** Why this held item is assigned — required whenever heldItem is set. */
-  heldItemReason?: Reason
+  heldItemReason?: Reason[]
   /** Masuda — origin language must differ from the other parent. */
   mustOriginateFromDifferentLanguage?: boolean
   acquisition?: AcquisitionFlag[]
@@ -111,8 +111,8 @@ type HeldItemDemand = {
   id: HeldItemId
   label: string
   placement: 'either' | 'female-or-ditto'
-  /** One line naming the target attribute this item serves. */
-  reason: Reason
+  /** Item effect, plus an independent holder restriction when one applies. */
+  reasons: Reason[]
 }
 
 /** True when this ruleset has any held item that can change egg outcomes. */
@@ -516,15 +516,20 @@ function collectHeldItemDemands(
     (lock.method === 'everstone-guaranteed' ||
       lock.method === 'everstone-chance')
   ) {
+    const reasons: Reason[] = [
+      lock.method === 'everstone-guaranteed'
+        ? { code: 'everstone-guaranteed', nature: target.nature }
+        : { code: 'everstone-chance', nature: target.nature },
+    ]
+    if (lock.holder === 'female-or-ditto') {
+      reasons.push({ code: 'holder-female-or-ditto' })
+    }
     demands.push({
       id: 'everstone',
       label: 'Everstone',
       placement:
         lock.holder === 'female-or-ditto' ? 'female-or-ditto' : 'either',
-      reason:
-        lock.method === 'everstone-guaranteed'
-          ? { code: 'everstone-guaranteed', nature: target.nature }
-          : { code: 'everstone-chance', nature: target.nature },
+      reasons,
     })
   }
 
@@ -534,11 +539,13 @@ function collectHeldItemDemands(
       id: 'destiny-knot',
       label: 'Destiny Knot',
       placement: 'either',
-      reason: {
-        code: 'destiny-knot-iv',
-        baseCountInherited,
-        destinyKnotBoostedCount,
-      },
+      reasons: [
+        {
+          code: 'destiny-knot-iv',
+          baseCountInherited,
+          destinyKnotBoostedCount,
+        },
+      ],
     })
   }
 
@@ -551,7 +558,7 @@ function collectHeldItemDemands(
       id: 'power-item',
       label: 'a power item',
       placement: 'either',
-      reason: { code: 'power-item-iv' },
+      reasons: [{ code: 'power-item-iv' }],
     })
   }
 
@@ -578,7 +585,7 @@ function allocateHeldItems(
   ) {
     if (!parent || parent.heldItem) return false
     parent.heldItem = demand.label
-    parent.heldItemReason = demand.reason
+    parent.heldItemReason = [...demand.reasons]
     return true
   }
 

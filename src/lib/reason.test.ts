@@ -65,6 +65,12 @@ describe('formatReason', () => {
     ).toBe('Gives a 50% chance the hatch inherits Timid.')
   })
 
+  it('holder-female-or-ditto names the holder rule, not the item', () => {
+    expect(formatReason({ code: 'holder-female-or-ditto' })).toBe(
+      'The holder must be a female parent or a Ditto.',
+    )
+  })
+
   it('destiny-knot-iv names the inherited counts', () => {
     expect(
       formatReason({

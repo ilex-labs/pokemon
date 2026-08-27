@@ -12,6 +12,7 @@ export type Reason =
   | { code: 'male-egg-move-eligible' }
   | { code: 'everstone-guaranteed'; nature: string }
   | { code: 'everstone-chance'; nature: string }
+  | { code: 'holder-female-or-ditto' }
   | {
       code: 'destiny-knot-iv'
       baseCountInherited: number
@@ -141,6 +142,7 @@ function genderReasonParts(reason: Reason): GenderedParts | undefined {
       }
     case 'everstone-guaranteed':
     case 'everstone-chance':
+    case 'holder-female-or-ditto':
     case 'destiny-knot-iv':
     case 'power-item-iv':
     case 'acquire-nature':
@@ -208,6 +210,8 @@ export function formatReason(reason: Reason): string {
       return `Guarantees the hatch inherits ${reason.nature}.`
     case 'everstone-chance':
       return `Gives a 50% chance the hatch inherits ${reason.nature}.`
+    case 'holder-female-or-ditto':
+      return 'The holder must be a female parent or a Ditto.'
     case 'destiny-knot-iv':
       return `Serves the IV target — raises inherited IVs from ${reason.baseCountInherited} to ${reason.destinyKnotBoostedCount}.`
     case 'power-item-iv':

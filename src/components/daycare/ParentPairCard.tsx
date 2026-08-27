@@ -93,9 +93,9 @@ function ParentBlock({
               <span className="text-muted"> — after you have this parent</span>
             ) : null}
           </p>
-          {parent.heldItemReason ? (
+          {parent.heldItemReason && parent.heldItemReason.length > 0 ? (
             <p className="mt-1 text-meta text-muted">
-              {withNums(formatReason(parent.heldItemReason))}
+              {withNums(formatReasons(parent.heldItemReason))}
             </p>
           ) : null}
         </div>

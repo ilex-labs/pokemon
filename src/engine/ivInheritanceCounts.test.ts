@@ -39,9 +39,11 @@ describe('ivInheritance synthetic counts', () => {
   it('destiny-knot-iv params are 2 and 4, not the shipped 3 and 5', () => {
     const plan = planDaycare(scarletViolet, fixtureIvCounts24, ivTarget)
     const reasons = plan.strategies.flatMap((strategy) =>
-      strategy.parents
-        .map((parent) => parent.heldItemReason)
-        .filter((reason) => reason?.code === 'destiny-knot-iv'),
+      strategy.parents.flatMap((parent) =>
+        (parent.heldItemReason ?? []).filter(
+          (reason) => reason.code === 'destiny-knot-iv',
+        ),
+      ),
     )
 
     expect(reasons.length).toBeGreaterThan(0)

@@ -1,13 +1,12 @@
 /**
  * natureLock.holder female-or-ditto vs either-parent. Placement and
- * held-item reason must both name the restriction; gen 9 is the
- * unrestricted positive control.
+ * held-item reasons are independent: item effect is one code, holder
+ * restriction is another. Gen 9 either-parent is the one-reason control.
  */
 import { describe, expect, it } from 'vitest'
 import type { GameData, Ruleset } from '../data/schema'
 import gen9Json from '../data/rulesets/gen9.json'
 import scarletVioletJson from '../data/games/scarlet-violet.json'
-import { formatReason } from '../lib/reason'
 import { planDaycare, type DaycareTarget } from './daycareEngine'
 
 const gen9 = gen9Json as Ruleset
@@ -33,6 +32,11 @@ const natureOnly: DaycareTarget = {
   },
 }
 
+const everstoneChanceAndHolder = [
+  { code: 'everstone-chance', nature: 'Timid' },
+  { code: 'holder-female-or-ditto' },
+] as const
+
 function dittoPair(plan: ReturnType<typeof planDaycare>) {
   return plan.strategies.find((strategy) => strategy.id === 'ditto-pair')
 }
@@ -46,20 +50,20 @@ function everstoneParent(
 }
 
 describe('natureLock.holder', () => {
-  it('female-or-ditto on everstone-chance: Everstone on female-or-Ditto, reason names the holder restriction', () => {
+  it('female-or-ditto on everstone-chance: both routes place the stone and emit effect plus holder restriction', () => {
     const plan = planDaycare(scarletViolet, fixtureHolderFemaleOrDitto, natureOnly)
 
     const onDitto = everstoneParent(plan, 'ditto-pair')
     expect(onDitto?.species).toEqual(['Ditto'])
-    expect(formatReason(onDitto!.heldItemReason!)).toMatch(/female or Ditto/i)
+    expect(onDitto?.heldItemReason).toEqual([...everstoneChanceAndHolder])
 
     const onSpecies = everstoneParent(plan, 'species-pair')
     expect(onSpecies?.gender).toBe('female')
     expect(onSpecies?.species).toEqual(['Charmander'])
-    expect(formatReason(onSpecies!.heldItemReason!)).toMatch(/female or Ditto/i)
+    expect(onSpecies?.heldItemReason).toEqual([...everstoneChanceAndHolder])
   })
 
-  it('gen 9 either-parent: Everstone placement is not restricted to female-or-Ditto', () => {
+  it('gen 9 either-parent: Everstone placement is not restricted; exactly one reason', () => {
     const plan = planDaycare(scarletViolet, gen9, natureOnly)
     expect(gen9.natureLock).toEqual({
       method: 'everstone-guaranteed',
@@ -70,6 +74,10 @@ describe('natureLock.holder', () => {
     expect(onDittoRoute?.species).toEqual(['Charmander'])
     expect(onDittoRoute?.species).not.toContain('Ditto')
     expect(onDittoRoute?.gender).toBeUndefined()
+    expect(onDittoRoute?.heldItemReason).toEqual([
+      { code: 'everstone-guaranteed', nature: 'Timid' },
+    ])
+    expect(onDittoRoute?.heldItemReason).toHaveLength(1)
 
     const ditto = dittoPair(plan)?.parents.find((parent) =>
       parent.species.includes('Ditto'),
