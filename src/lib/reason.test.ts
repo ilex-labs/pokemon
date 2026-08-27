@@ -119,6 +119,26 @@ describe('formatReasons', () => {
       'Male because a female of that species (Salamence, Dragapult, or Gyarados) would produce its own eggs instead, and because only the father passes egg moves in this game.',
     )
   })
+
+  it('composes three reasons as a series, not and-because twice', () => {
+    const reasons: Reason[] = [
+      {
+        code: 'male-external-carrier',
+        carrierSpecies: ['FixtureCarrier'],
+      },
+      { code: 'male-egg-move-eligible' },
+      {
+        code: 'male-external-carrier',
+        carrierSpecies: ['Salamence'],
+      },
+    ]
+    const sentence = formatReasons(reasons)
+    expect(sentence).toBe(
+      'Male because a female FixtureCarrier would produce FixtureCarrier eggs instead, only the father passes egg moves in this game, and a female Salamence would produce Salamence eggs instead.',
+    )
+    expect(sentence.match(/Male because/g)).toEqual(['Male because'])
+    expect(sentence).not.toMatch(/and because.*and because/)
+  })
 })
 
 describe('formatReason acquisition', () => {
