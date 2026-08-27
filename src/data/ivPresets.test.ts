@@ -6,13 +6,25 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import type { IvPreset } from './schema'
-import { filterIvPresets, gamesCatalog } from './loadGame'
+import type { IvPreset, Ruleset } from './schema'
+import gen9Json from './rulesets/gen9.json'
+import { filterIvPresets, gamesCatalog, resolvePresetValues } from './loadGame'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../..')
 const sharedPresets = JSON.parse(
   readFileSync(join(ROOT, 'src/data/shared/iv-presets.json'), 'utf8'),
 ) as IvPreset[]
+
+const gen9 = gen9Json as Ruleset
+
+/** Ceiling that neither shipped ruleset uses — 31 would not distinguish a hardcoded max. */
+const fixtureRulesetMaxIv15: Ruleset = {
+  ...gen9,
+  ivInheritance: {
+    ...gen9.ivInheritance,
+    maxIv: 15,
+  },
+}
 
 describe('filterIvPresets', () => {
   it('returns only presets available in each catalogued game\'s generation', () => {
@@ -41,5 +53,28 @@ describe('filterIvPresets', () => {
         }
       }
     }
+  })
+})
+
+describe('resolvePresetValues', () => {
+  it('fixtureRulesetMaxIv15: symbolic max resolves to 15, not 31', () => {
+    const allMax = sharedPresets.find((preset) => preset.id === 'all-max')
+    expect(allMax).toBeDefined()
+
+    const resolved = resolvePresetValues(
+      allMax!.values,
+      fixtureRulesetMaxIv15.ivInheritance.maxIv,
+    )
+
+    expect(fixtureRulesetMaxIv15.ivInheritance.maxIv).toBe(15)
+    expect(resolved).toEqual({
+      hp: 15,
+      atk: 15,
+      def: 15,
+      spa: 15,
+      spd: 15,
+      spe: 15,
+    })
+    expect(Object.values(resolved)).not.toContain(31)
   })
 })
