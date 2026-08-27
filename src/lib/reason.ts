@@ -206,11 +206,10 @@ export function formatReason(reason: Reason): string {
       return "Nature Mints only change battle stats — a minted Pokémon still passes its original nature. An item that fixes a Pokémon for battle does not fix it for the daycare."
     case 'acquire-hidden-can-pass':
       return `${reason.ability} is a hidden ability — ${reason.how}`
-    case 'acquire-hidden-cannot-pass':
-      if (reason.how) {
-        return `${reason.ability} cannot be passed via eggs here. ${reason.how}`
-      }
-      return `${reason.ability} is a hidden ability and cannot be passed via eggs here.`
+    case 'acquire-hidden-cannot-pass': {
+      const line = `${reason.ability} cannot be passed via eggs here.`
+      return reason.how ? `${line} ${reason.how}` : line
+    }
     case 'acquire-standard-ability':
       return `Acquire ${reason.ability}: ${reason.how}`
     case 'acquire-egg-move-pair': {

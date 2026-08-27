@@ -295,15 +295,13 @@ describe('formatReason step flags', () => {
     ).toBe('Omitting the incense silently yields Marill instead of Azurill.')
   })
 
-  it('acquire-hidden-cannot-pass without how keeps the step sentence', () => {
+  it('acquire-hidden-cannot-pass without how does not restate hidden ability', () => {
     expect(
       formatReason({
         code: 'acquire-hidden-cannot-pass',
         ability: 'Solar Power',
       }),
-    ).toBe(
-      'Solar Power is a hidden ability and cannot be passed via eggs here.',
-    )
+    ).toBe('Solar Power cannot be passed via eggs here.')
   })
 
   it('hidden-ability-lower-rate', () => {
