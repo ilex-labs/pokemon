@@ -15,6 +15,10 @@ import type {
   SpeciesEggData,
 } from '../data/schema'
 import type { Reason } from '../lib/reason'
+import {
+  deriveAcquisitionCost,
+  formatAcquisitionCost,
+} from '../lib/acquisitionCost.ts'
 
 export type DaycareTarget = {
   species: string
@@ -379,28 +383,11 @@ function applyMasudaConstraint(
   pushAcquisition(holder, masudaAcquisitionFlag(game))
 }
 
-function withMasudaAcquisitionCost(
-  cost: string,
+function routeAcquisitionCost(
   parents: ParentRequirement[],
+  game: GameData,
 ): string {
-  const foreign = parents.find(
-    (parent) => parent.mustOriginateFromDifferentLanguage,
-  )
-  if (!foreign) return cost
-  if (foreign.species.includes('Ditto')) {
-    if (/plus a Ditto$/.test(cost)) {
-      return cost.replace(
-        /plus a Ditto$/,
-        'plus a Ditto whose origin language differs from its partner',
-      )
-    }
-    return `${cost}; Ditto whose origin language differs from its partner`
-  }
-  if (/^two /.test(cost)) {
-    return `${cost}; one whose origin language differs from its partner`
-  }
-  const name = foreign.species[0] ?? 'parent'
-  return `${cost}; the ${name} whose origin language differs from its partner`
+  return formatAcquisitionCost(deriveAcquisitionCost(parents, game))
 }
 
 function eggMovePasserSpecies(
@@ -753,18 +740,6 @@ function buildSpeciesPairStrategy(
   allocateHeldItems(parents, collectHeldItemDemands(ruleset, target), false)
   applyMasudaConstraint(parents, game, target, ruleset)
 
-  let acquisitionCost: string
-  if (useExternalCarrier) {
-    acquisitionCost = natureWanted
-      ? `one ${target.species} with the target nature, plus a male ${target.eggMoves.join('/')} carrier`
-      : `one ${target.species}, plus a male ${target.eggMoves.join('/')} carrier`
-  } else {
-    acquisitionCost = natureWanted
-      ? `two ${target.species}, one with the target nature`
-      : `two ${target.species}`
-  }
-  acquisitionCost = withMasudaAcquisitionCost(acquisitionCost, parents)
-
   const tradeoff = useExternalCarrier
     ? 'No consolidation prerequisite, but the egg-move carrier must be male or eggs hatch as that species.'
     : 'Pairs two of the target line — held items and hatching match the Ditto route.'
@@ -773,7 +748,7 @@ function buildSpeciesPairStrategy(
     id: 'species-pair',
     label: 'Species pair',
     parents,
-    acquisitionCost,
+    acquisitionCost: routeAcquisitionCost(parents, game),
     tradeoff,
   }
 }
@@ -784,7 +759,6 @@ function buildDittoPairStrategy(
   target: DaycareTarget,
   species: SpeciesEggData,
 ): PairingStrategy {
-  const natureWanted = wantsNature(target, ruleset)
   const unconstrained = isUnconstrainedTarget(target, ruleset, species)
   const fatherOnlyMoves =
     target.eggMoves.length > 0 &&
@@ -857,28 +831,6 @@ function buildDittoPairStrategy(
   allocateHeldItems(parents, collectHeldItemDemands(ruleset, target), true)
   applyMasudaConstraint(parents, game, target, ruleset)
 
-  let acquisitionCost: string
-  if (target.eggMoves.length > 0) {
-    if (hasMoveAlternative) {
-      acquisitionCost = natureWanted
-        ? `one ${target.species} with the target nature and ${target.eggMoves.join('/')} consolidated, plus a Ditto`
-        : `one ${target.species} with ${target.eggMoves.join('/')} consolidated, plus a Ditto`
-    } else if (fatherOnlyMoves) {
-      acquisitionCost = natureWanted
-        ? `one male ${target.species} with the target nature that already knows ${target.eggMoves.join('/')}, plus a Ditto`
-        : `one male ${target.species} that already knows ${target.eggMoves.join('/')}, plus a Ditto`
-    } else {
-      acquisitionCost = natureWanted
-        ? `one ${target.species} with the target nature that already knows ${target.eggMoves.join('/')}, plus a Ditto`
-        : `one ${target.species} that already knows ${target.eggMoves.join('/')}, plus a Ditto`
-    }
-  } else {
-    acquisitionCost = natureWanted
-      ? `one ${target.species} with the target nature, plus a Ditto`
-      : `one ${target.species}, plus a Ditto`
-  }
-  acquisitionCost = withMasudaAcquisitionCost(acquisitionCost, parents)
-
   const moveNote =
     target.eggMoves.length === 0
       ? `${target.species} covers the spread; Ditto pairs with anything.`
@@ -890,7 +842,7 @@ function buildDittoPairStrategy(
     id: 'ditto-pair',
     label: 'Ditto pair',
     parents,
-    acquisitionCost,
+    acquisitionCost: routeAcquisitionCost(parents, game),
     tradeoff: `${moveNote} Ditto cannot carry egg moves itself.`,
   }
 }
@@ -901,8 +853,6 @@ function buildDittoOnlyStrategy(
   target: DaycareTarget,
   species: SpeciesEggData,
 ): PairingStrategy {
-  const natureWanted = wantsNature(target, ruleset)
-
   const parentA: ParentRequirement = {
     role: 'A',
     species: [target.species],
@@ -929,18 +879,11 @@ function buildDittoOnlyStrategy(
   allocateHeldItems(parents, collectHeldItemDemands(ruleset, target), true)
   applyMasudaConstraint(parents, game, target, ruleset)
 
-  const acquisitionCost = withMasudaAcquisitionCost(
-    natureWanted
-      ? `one ${target.species} with the target nature, plus a Ditto`
-      : `one ${target.species}, plus a Ditto`,
-    parents,
-  )
-
   return {
     id: 'ditto-only',
     label: 'Ditto pair',
     parents,
-    acquisitionCost,
+    acquisitionCost: routeAcquisitionCost(parents, game),
     tradeoff: `${target.species} can only pair with Ditto in this game.`,
   }
 }
