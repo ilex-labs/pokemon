@@ -113,7 +113,7 @@ function eggMoveTarget(game: GameData): DaycareTarget | null {
 }
 
 function hasDaycareGate(game: GameData): boolean {
-  return (game.featureGates ?? []).some((gate) => gate.feature === 'daycare')
+  return (game.featureGates ?? []).some((gate) => gate.id === 'daycare')
 }
 
 function printPlan(title: string, plan: DaycarePlan) {

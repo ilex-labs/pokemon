@@ -67,7 +67,6 @@ export interface FeatureGate {
   id: string
   /** Player-facing name in the banner — "Day Care", not a schema token. */
   noun: string
-  feature: 'daycare' | 'move-reminder' | 'hidden-ability-access' | string
   unlockedAfter: string
 }
 
