@@ -159,6 +159,24 @@ describe('FireRed/LeafGreen — ruleset branches never exercised by gen 9', () =
         /species-pair route first/i.test(flagProse(flag)),
       ),
     ).toBe(true)
+
+    expect(plan.routeComparison).toBeUndefined()
+    const speciesPair = plan.strategies.find(
+      (strategy) => strategy.id === 'species-pair',
+    )
+    expect(speciesPair?.recommended).toBe(true)
+    expect(speciesPair?.recommendReason).toEqual({
+      code: 'recommend-start-from-hatch',
+    })
+    expect(ditto?.recommended).toBeUndefined()
+    expect(ditto?.requiresRoute).toEqual({
+      id: 'species-pair',
+      reason: {
+        code: 'requires-hatch-from-route',
+        fromLabel: 'Species pair',
+        moves: ['Dragon Dance'],
+      },
+    })
   })
 
   it('wantsShiny adds no Masuda constraint and names the absent shiny mechanics', () => {
@@ -200,10 +218,18 @@ describe('FireRed/LeafGreen — ruleset branches never exercised by gen 9', () =
     expect(plan.steps.some((step) => step.id === 'masuda')).toBe(false)
     expect(plan.steps.some((step) => step.id === 'shiny-charm')).toBe(false)
     expect(JSON.stringify(plan.steps)).not.toMatch(/Obtain the Shiny Charm/i)
-    expect(plan.routesEquivalent).toBe(true)
-    expect(
-      plan.strategies.find((strategy) => strategy.id === 'ditto-pair')
-        ?.recommended,
-    ).toBeUndefined()
+    expect(plan.routeComparison).toBeUndefined()
+    const speciesPair = plan.strategies.find(
+      (strategy) => strategy.id === 'species-pair',
+    )
+    const dittoPair = plan.strategies.find(
+      (strategy) => strategy.id === 'ditto-pair',
+    )
+    expect(speciesPair?.recommended).toBe(true)
+    expect(speciesPair?.recommendReason).toEqual({
+      code: 'recommend-start-from-hatch',
+    })
+    expect(dittoPair?.recommended).toBeUndefined()
+    expect(dittoPair?.requiresRoute?.id).toBe('species-pair')
   })
 })

@@ -16,8 +16,10 @@ import type {
 } from '../data/schema'
 import type { Reason } from '../lib/reason'
 import {
+  compareRouteCosts,
   deriveAcquisitionCost,
   formatAcquisitionCost,
+  type AcquisitionCost,
 } from '../lib/acquisitionCost.ts'
 
 export type DaycareTarget = {
@@ -59,8 +61,16 @@ export type PairingStrategy = {
   /** Longer trade-off note for detail / dumps; not the chooser. */
   tradeoff: string
   recommended?: boolean
-  /** Required whenever recommended — e.g. "Fewer parents to obtain". */
+  /** Required whenever recommended — e.g. easier gender hunt. */
   recommendReason?: Reason
+  /**
+   * This pairing needs a parent produced by another route in this plan.
+   * Present only on the later strategy, and only when that supplier is offered.
+   */
+  requiresRoute?: {
+    id: string
+    reason: Reason
+  }
 }
 
 export type ShinyOddsTier = {
@@ -80,13 +90,15 @@ export type ShinyOdds = {
   determinedOnReceive: string
 }
 
+export type RouteComparison = 'cheaper' | 'equivalent' | 'incomparable'
+
 export type DaycarePlan = {
   strategies: PairingStrategy[]
   /**
-   * When multiple routes exist and none is recommended — they cost the same
-   * number of parents to acquire.
+   * When multiple routes exist: one is cheaper, they match, or they
+   * differ on axes with no shared scale. Omitted for a single route.
    */
-  routesEquivalent?: boolean
+  routeComparison?: RouteComparison
   /**
    * Routes that would otherwise appear but cannot produce this target —
    * always explained, never silently dropped.
@@ -888,30 +900,31 @@ function buildDittoOnlyStrategy(
   }
 }
 
-/** Parents you must obtain for the route — each ParentRequirement counts as one. */
-function acquisitionParentCount(strategy: PairingStrategy): number {
-  return strategy.parents.length
-}
-
 function isDittoRoute(strategy: PairingStrategy): boolean {
   return strategy.id === 'ditto-pair' || strategy.id === 'ditto-only'
 }
 
+function alreadyKnowsMoves(cost: AcquisitionCost): string[] | undefined {
+  const parent = cost.parents.find(
+    (entry) => entry.eggMoveRole === 'already-knows',
+  )
+  return parent ? parent.moves : undefined
+}
+
 /**
- * Recommend the route with fewest parents to acquire. When tied, recommend
- * neither — a badge without a real edge is just first position.
- * Masuda flips this: a Ditto works with any species, so you can reuse it
- * for other hatches — strictly better than a foreign parent of the line.
+ * Gender-product Pareto, unless one route's already-knows parent is a hatch
+ * from another route in this plan — then skip Pareto and recommend the earlier.
  */
 function applyRouteRecommendations(
   strategies: PairingStrategy[],
+  game: GameData,
   preferForeignDitto = false,
 ): {
   strategies: PairingStrategy[]
-  routesEquivalent: boolean
+  routeComparison?: RouteComparison
 } {
   if (strategies.length === 0) {
-    return { strategies, routesEquivalent: false }
+    return { strategies }
   }
 
   if (preferForeignDitto) {
@@ -931,7 +944,6 @@ function applyRouteRecommendations(
                 recommendReason: undefined,
               },
         ),
-        routesEquivalent: false,
       }
     }
   }
@@ -946,43 +958,117 @@ function applyRouteRecommendations(
           recommendReason: { code: 'recommend-only-viable-route' },
         },
       ],
-      routesEquivalent: false,
     }
   }
 
-  const counts = strategies.map(acquisitionParentCount)
-  const min = Math.min(...counts)
-  const winners = strategies.filter(
-    (_, index) => counts[index] === min,
+  const costs = strategies.map((strategy) =>
+    deriveAcquisitionCost(strategy.parents, game),
   )
 
-  if (winners.length !== 1) {
+  const laterIndex = costs.findIndex(
+    (cost) => alreadyKnowsMoves(cost) !== undefined,
+  )
+  const earlierIndex =
+    laterIndex >= 0
+      ? strategies.findIndex(
+          (strategy, index) =>
+            index !== laterIndex && strategy.id === 'species-pair',
+        )
+      : -1
+
+  if (laterIndex >= 0 && earlierIndex >= 0) {
+    const earlier = strategies[earlierIndex]!
+    const moves = alreadyKnowsMoves(costs[laterIndex]!) ?? []
+    return {
+      strategies: strategies.map((strategy, index) => {
+        if (index === earlierIndex) {
+          return {
+            ...strategy,
+            recommended: true,
+            recommendReason: { code: 'recommend-start-from-hatch' },
+            requiresRoute: undefined,
+          }
+        }
+        if (index === laterIndex) {
+          return {
+            ...strategy,
+            recommended: undefined,
+            recommendReason: undefined,
+            requiresRoute: {
+              id: earlier.id,
+              reason: {
+                code: 'requires-hatch-from-route',
+                fromLabel: earlier.label,
+                moves,
+              },
+            },
+          }
+        }
+        return {
+          ...strategy,
+          recommended: undefined,
+          recommendReason: undefined,
+          requiresRoute: undefined,
+        }
+      }),
+    }
+  }
+
+  const beatsAll = strategies
+    .map((_, index) => index)
+    .filter((index) =>
+      strategies.every((_, other) => {
+        if (other === index) return true
+        const result = compareRouteCosts(costs[index]!, costs[other]!)
+        return result.outcome === 'cheaper' && result.winner === 'a'
+      }),
+    )
+
+  if (beatsAll.length === 1) {
+    const winnerId = strategies[beatsAll[0]!]!.id
+    return {
+      strategies: strategies.map((strategy) =>
+        strategy.id === winnerId
+          ? {
+              ...strategy,
+              recommended: true,
+              recommendReason: { code: 'recommend-easier-gender' },
+            }
+          : {
+              ...strategy,
+              recommended: undefined,
+              recommendReason: undefined,
+            },
+      ),
+      routeComparison: 'cheaper',
+    }
+  }
+
+  const allEquivalent = strategies.every((_, index) =>
+    strategies.every((__, other) => {
+      if (other === index) return true
+      return compareRouteCosts(costs[index]!, costs[other]!).outcome === 'equivalent'
+    }),
+  )
+
+  if (allEquivalent) {
     return {
       strategies: strategies.map((strategy) => ({
         ...strategy,
         recommended: undefined,
         recommendReason: undefined,
       })),
-      routesEquivalent: true,
+      routeComparison: 'equivalent',
     }
   }
 
-  const winnerId = winners[0]!.id
   return {
-    strategies: strategies.map((strategy) =>
-      strategy.id === winnerId
-        ? {
-            ...strategy,
-            recommended: true,
-            recommendReason: { code: 'recommend-fewer-parents' },
-          }
-        : {
-            ...strategy,
-            recommended: undefined,
-            recommendReason: undefined,
-          },
-    ),
-    routesEquivalent: false,
+    strategies: strategies.map((strategy) => ({
+      ...strategy,
+      recommended: undefined,
+      recommendReason: undefined,
+    })),
+    routeComparison: 'incomparable',
   }
 }
 
@@ -1001,7 +1087,7 @@ function resolveStrategies(
   dittoOnly: boolean,
 ): {
   strategies: PairingStrategy[]
-  routesEquivalent: boolean
+  routeComparison?: RouteComparison
   excludedStrategies: Array<{ id: string; label: string; reason: Reason }>
 } {
   const excludedStrategies: Array<{
@@ -1034,6 +1120,7 @@ function resolveStrategies(
     }
     const recommended = applyRouteRecommendations(
       [buildDittoOnlyStrategy(game, ruleset, target, species)],
+      game,
       wantsMasuda(target, ruleset),
     )
     return { ...recommended, excludedStrategies }
@@ -1061,6 +1148,7 @@ function resolveStrategies(
 
   const recommended = applyRouteRecommendations(
     strategies,
+    game,
     wantsMasuda(target, ruleset),
   )
   return { ...recommended, excludedStrategies }
@@ -1464,7 +1552,7 @@ export function planDaycare(
     }
   }
 
-  const { strategies, routesEquivalent, excludedStrategies } =
+  const { strategies, routeComparison, excludedStrategies } =
     resolveStrategies(game, ruleset, target, species, dittoOnly)
   const recommended =
     strategies.find((strategy) => strategy.recommended) ?? strategies[0]
@@ -1477,7 +1565,7 @@ export function planDaycare(
 
   return {
     strategies,
-    routesEquivalent: routesEquivalent || undefined,
+    routeComparison,
     excludedStrategies:
       excludedStrategies.length > 0 ? excludedStrategies : undefined,
     featureGates,

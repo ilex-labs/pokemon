@@ -11,7 +11,7 @@ import RuleFlag from './RuleFlag'
 type ParentPairCardProps = {
   strategies: PairingStrategy[]
   selectedStrategyId: string
-  routesEquivalent?: boolean
+  routeComparison?: 'cheaper' | 'equivalent' | 'incomparable'
   excludedStrategies?: Array<{ id: string; label: string; reason: Reason }>
   ruleset: Ruleset
   onSelectStrategy: (id: string) => void
@@ -107,7 +107,7 @@ function ParentBlock({
 export default function ParentPairCard({
   strategies,
   selectedStrategyId,
-  routesEquivalent = false,
+  routeComparison,
   excludedStrategies = [],
   ruleset,
   onSelectStrategy,
@@ -124,6 +124,9 @@ export default function ParentPairCard({
   const recommendReason = strategies.find(
     (strategy) => strategy.recommended && strategy.recommendReason,
   )?.recommendReason
+  const followOnReason = strategies.find(
+    (strategy) => strategy.requiresRoute,
+  )?.requiresRoute?.reason
 
   return (
     <div className="space-y-[var(--spacing-section)]">
@@ -157,7 +160,9 @@ export default function ParentPairCard({
                 aria-describedby={
                   strategy.recommended && recommendReason
                     ? 'route-recommend-reason'
-                    : undefined
+                    : strategy.requiresRoute
+                      ? 'route-follow-on-reason'
+                      : undefined
                 }
                 onClick={() => onSelectStrategy(strategy.id)}
                 className={
@@ -177,6 +182,11 @@ export default function ParentPairCard({
                     Recommended
                   </p>
                 ) : null}
+                {strategy.requiresRoute ? (
+                  <p className="mt-2 text-meta font-medium text-muted">
+                    Follow-on
+                  </p>
+                ) : null}
               </button>
             )
           })}
@@ -188,9 +198,21 @@ export default function ParentPairCard({
           </p>
         ) : null}
 
-        {routesEquivalent && strategies.length > 1 ? (
+        {followOnReason ? (
+          <p id="route-follow-on-reason" className="text-sm text-muted">
+            {formatReason(followOnReason)}
+          </p>
+        ) : null}
+
+        {routeComparison === 'equivalent' && strategies.length > 1 ? (
           <p className="text-sm text-muted">
-            These routes are equivalent — same number of parents to obtain.
+            These routes are equivalent — neither is easier to assemble.
+          </p>
+        ) : null}
+
+        {routeComparison === 'incomparable' && strategies.length > 1 ? (
+          <p className="text-sm text-muted">
+            {formatReason({ code: 'incomparable-routes' })}
           </p>
         ) : null}
 

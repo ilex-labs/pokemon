@@ -389,9 +389,33 @@ describe('formatReason recommend and exclude', () => {
     )
   })
 
-  it('recommend-fewer-parents is the current parent-count sentence', () => {
-    expect(formatReason({ code: 'recommend-fewer-parents' })).toBe(
-      'Fewer parents to obtain',
+  it('recommend-easier-gender names the uncommon female hunt', () => {
+    expect(formatReason({ code: 'recommend-easier-gender' })).toBe(
+      "This route needs less hunting for a female parent of a species that's rarely female.",
+    )
+  })
+
+  it('recommend-start-from-hatch names the starting pairing', () => {
+    expect(formatReason({ code: 'recommend-start-from-hatch' })).toBe(
+      'Start here — the other pairing needs a hatch from this route that already knows the egg move.',
+    )
+  })
+
+  it('requires-hatch-from-route names the supplier and the move', () => {
+    expect(
+      formatReason({
+        code: 'requires-hatch-from-route',
+        fromLabel: 'Species pair',
+        moves: ['Dragon Dance'],
+      }),
+    ).toBe(
+      'This pairing is a follow-on — it needs a hatch from Species pair that already knows Dragon Dance.',
+    )
+  })
+
+  it('incomparable-routes names the missing shared scale', () => {
+    expect(formatReason({ code: 'incomparable-routes' })).toBe(
+      "These routes aren't comparable — a gender constraint and a required move or different-language parent aren't the same kind of cost.",
     )
   })
 

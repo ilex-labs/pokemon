@@ -56,10 +56,11 @@ describe('daycareEngine acceptance cases', () => {
     const dittoPair = plan.strategies.find(
       (strategy) => strategy.id === 'ditto-pair',
     )
-    // Both routes need two parents — recommend neither.
-    expect(plan.routesEquivalent).toBe(true)
-    expect(speciesPair?.recommended).toBeUndefined()
+    // Carrier vs Mirror Herb consolidation — same move, different facts.
+    expect(plan.routeComparison).toBe('incomparable')
     expect(dittoPair?.recommended).toBeUndefined()
+    expect(dittoPair?.requiresRoute).toBeUndefined()
+    expect(speciesPair?.recommended).toBeUndefined()
     expect(speciesPair?.acquisitionCost).toMatch(/Charmander/i)
     expect(dittoPair?.acquisitionCost).toMatch(/Ditto/i)
     expect(speciesPair?.parents).toHaveLength(2)
@@ -172,7 +173,7 @@ describe('daycareEngine acceptance cases', () => {
     )
     expect(stacked?.context).toBeUndefined()
 
-    expect(plan.routesEquivalent).toBeUndefined()
+    expect(plan.routeComparison).toBeUndefined()
     const dittoPair = plan.strategies.find(
       (strategy) => strategy.id === 'ditto-pair',
     )
@@ -324,7 +325,6 @@ describe('daycareEngine acceptance cases', () => {
     const ditto = plan.strategies.find((strategy) => strategy.id === 'ditto-pair')
 
     expect(ditto).toBeDefined()
-    expect(ditto?.recommended).toBeUndefined()
     expect(ditto?.acquisitionCost).toMatch(/Ditto/i)
     expect(ditto?.tradeoff).toMatch(/Mirror Herb|consolidat/i)
     expect(ditto?.tradeoff).toMatch(/Ditto cannot carry egg moves/i)
@@ -405,16 +405,27 @@ describe('daycareEngine acceptance cases', () => {
     expect(charmander?.genderReason).toBeUndefined()
   })
 
-  it('recommendReason is stated when a single route wins on parent count', () => {
-    const plan = planDaycare(scarletViolet, gen9, baseTarget)
-    // Tied at two parents each → equivalent, no badge.
-    expect(plan.routesEquivalent).toBe(true)
+  it('recommendReason is stated when one route wins on an uncommon female hunt', () => {
+    const plan = planDaycare(scarletViolet, gen9, {
+      ...baseTarget,
+      eggMoves: [],
+    })
+    expect(plan.routeComparison).toBe('cheaper')
+    const dittoPair = plan.strategies.find(
+      (strategy) => strategy.id === 'ditto-pair',
+    )
+    expect(dittoPair?.recommended).toBe(true)
+    expect(dittoPair?.recommendReason).toEqual({
+      code: 'recommend-easier-gender',
+    })
     expect(
-      plan.strategies.every(
-        (strategy) =>
-          strategy.recommended === undefined &&
-          strategy.recommendReason === undefined,
-      ),
+      plan.strategies
+        .filter((strategy) => strategy.id !== 'ditto-pair')
+        .every(
+          (strategy) =>
+            strategy.recommended === undefined &&
+            strategy.recommendReason === undefined,
+        ),
     ).toBe(true)
 
     const blockedDitto = planDaycare(
@@ -577,6 +588,10 @@ describe('daycareEngine acceptance cases', () => {
 
     expect(plan.blocked).toBe(false)
     expect(plan.shiny).toBeDefined()
+    expect(plan.routeComparison).toBe('equivalent')
+    expect(plan.strategies.every((strategy) => !strategy.recommended)).toBe(
+      true,
+    )
 
     for (const strategy of plan.strategies) {
       for (const parent of strategy.parents) {
@@ -612,7 +627,7 @@ describe('daycareEngine acceptance cases', () => {
 
     expect(plan.blocked).toBe(false)
     expect(plan.shiny).toBeDefined()
-    expect(plan.routesEquivalent).toBeUndefined()
+    expect(plan.routeComparison).toBeUndefined()
 
     const dittoPair = plan.strategies.find(
       (strategy) => strategy.id === 'ditto-pair',

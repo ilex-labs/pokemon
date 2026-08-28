@@ -121,7 +121,7 @@ function printPlan(title: string, plan: DaycarePlan) {
   console.log(title)
   console.log(
     `blocked: ${plan.blocked} | strategies: ${plan.strategies.length} | steps: ${plan.steps.length}${
-      plan.routesEquivalent ? ' | routes equivalent' : ''
+      plan.routeComparison ? ` | routes ${plan.routeComparison}` : ''
     }`,
   )
   console.log('='.repeat(72))
@@ -140,7 +140,9 @@ function printPlan(title: string, plan: DaycarePlan) {
         `\n  [${strategy.id}] ${strategy.label}${
           strategy.recommended
             ? ` (recommended — ${strategy.recommendReason ? formatReason(strategy.recommendReason) : 'no reason'})`
-            : ''
+            : strategy.requiresRoute
+              ? ` (follow-on — ${formatReason(strategy.requiresRoute.reason)})`
+              : ''
         }`,
       )
       console.log(`   acquisition: ${strategy.acquisitionCost}`)

@@ -166,3 +166,80 @@ export function formatAcquisitionCost(cost: AcquisitionCost): string {
   }
   return body
 }
+
+function genderEncounterFraction(
+  gender: 'male' | 'female',
+  ratio: SpeciesEggData['genderRatio'],
+): number {
+  if (ratio === 'genderless') return 0
+  if (ratio === 'male-only') return gender === 'male' ? 1 : 0
+  if (ratio === 'female-only') return gender === 'female' ? 1 : 0
+  const male = ratio.malePercent / 100
+  return gender === 'male' ? male : 1 - male
+}
+
+/** Product of encounter fractions. Higher is easier. Empty product is 1. Never rendered. */
+export function genderProduct(cost: AcquisitionCost): number {
+  let product = 1
+  for (const parent of cost.parents) {
+    if (!parent.genderConstrained || parent.gender == null) continue
+    if (parent.cataloguedGenderRatio.length === 0) continue
+    const fractions = parent.cataloguedGenderRatio.map((entry) =>
+      genderEncounterFraction(parent.gender!, entry.ratio),
+    )
+    product *= Math.max(...fractions)
+  }
+  return product
+}
+
+function qualitativeKeys(cost: AcquisitionCost): string[] {
+  const keys = new Set<string>()
+  for (const parent of cost.parents) {
+    if (parent.hasTargetNature) keys.add('nature')
+    if (parent.mustOriginateFromDifferentLanguage) keys.add('masuda')
+    if (parent.eggMoveRole === 'none' || parent.moves.length === 0) continue
+    for (const move of parent.moves) {
+      keys.add(`moves:${parent.eggMoveRole}:${move}`)
+    }
+  }
+  return [...keys].sort()
+}
+
+function isSubset(left: string[], right: string[]): boolean {
+  return left.every((key) => right.includes(key))
+}
+
+export type RouteComparisonOutcome =
+  | { outcome: 'equivalent' }
+  | { outcome: 'cheaper'; winner: 'a' | 'b' }
+  | { outcome: 'incomparable' }
+
+/**
+ * Pareto: easier gender product and qualitative extras a subset.
+ * Partner identity is not in Q. Egg-move roles are: carrier and
+ * already-knows are different facts, not a subset relation.
+ */
+export function compareRouteCosts(
+  a: AcquisitionCost,
+  b: AcquisitionCost,
+): RouteComparisonOutcome {
+  const genderA = genderProduct(a)
+  const genderB = genderProduct(b)
+  const qualA = qualitativeKeys(a)
+  const qualB = qualitativeKeys(b)
+  const sameQual = qualA.join('\0') === qualB.join('\0')
+  const aQualSubset = isSubset(qualA, qualB)
+  const bQualSubset = isSubset(qualB, qualA)
+  const aQualStrict = aQualSubset && !sameQual
+  const bQualStrict = bQualSubset && !sameQual
+
+  const aDominates =
+    genderA >= genderB && aQualSubset && (genderA > genderB || aQualStrict)
+  const bDominates =
+    genderB >= genderA && bQualSubset && (genderB > genderA || bQualStrict)
+
+  if (aDominates && !bDominates) return { outcome: 'cheaper', winner: 'a' }
+  if (bDominates && !aDominates) return { outcome: 'cheaper', winner: 'b' }
+  if (genderA === genderB && sameQual) return { outcome: 'equivalent' }
+  return { outcome: 'incomparable' }
+}

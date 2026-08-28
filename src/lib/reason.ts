@@ -77,7 +77,14 @@ export type Reason =
   | { code: 'unknown-species'; species: string }
   | { code: 'recommend-masuda-ditto-reuse' }
   | { code: 'recommend-only-viable-route' }
-  | { code: 'recommend-fewer-parents' }
+  | { code: 'recommend-easier-gender' }
+  | { code: 'recommend-start-from-hatch' }
+  | {
+      code: 'requires-hatch-from-route'
+      fromLabel: string
+      moves: string[]
+    }
+  | { code: 'incomparable-routes' }
   | { code: 'exclude-pair-hidden-needs-ditto'; ability: string }
   | { code: 'exclude-pair-ability-needs-ditto'; ability: string }
   | { code: 'exclude-pair-ditto-only-species'; species: string }
@@ -167,7 +174,10 @@ function genderReasonParts(reason: Reason): GenderedParts | undefined {
     case 'unknown-species':
     case 'recommend-masuda-ditto-reuse':
     case 'recommend-only-viable-route':
-    case 'recommend-fewer-parents':
+    case 'recommend-easier-gender':
+    case 'recommend-start-from-hatch':
+    case 'requires-hatch-from-route':
+    case 'incomparable-routes':
     case 'exclude-pair-hidden-needs-ditto':
     case 'exclude-pair-ability-needs-ditto':
     case 'exclude-pair-ditto-only-species':
@@ -287,8 +297,19 @@ export function formatReason(reason: Reason): string {
       return 'A Ditto works with any species, so you can reuse it for other hatches.'
     case 'recommend-only-viable-route':
       return 'Only viable pairing route in this game.'
-    case 'recommend-fewer-parents':
-      return 'Fewer parents to obtain'
+    case 'recommend-easier-gender':
+      return "This route needs less hunting for a female parent of a species that's rarely female."
+    case 'recommend-start-from-hatch':
+      return 'Start here — the other pairing needs a hatch from this route that already knows the egg move.'
+    case 'requires-hatch-from-route': {
+      const known =
+        reason.moves.length > 0
+          ? ` that already knows ${reason.moves.join(', ')}`
+          : ' that already knows the egg move'
+      return `This pairing is a follow-on — it needs a hatch from ${reason.fromLabel}${known}.`
+    }
+    case 'incomparable-routes':
+      return "These routes aren't comparable — a gender constraint and a required move or different-language parent aren't the same kind of cost."
     case 'exclude-pair-hidden-needs-ditto':
       return `${reason.ability} can't be passed on a species pair — a male or genderless parent only passes its hidden ability when paired with Ditto.`
     case 'exclude-pair-ability-needs-ditto':
