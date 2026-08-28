@@ -106,6 +106,8 @@ describe('FireRed/LeafGreen — ruleset branches never exercised by gen 9', () =
     expect(plan.featureGates).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
+          id: 'daycare',
+          noun: 'Day Care',
           feature: 'daycare',
           unlockedAfter: expect.stringMatching(/Four Island|Rainbow Pass/i),
         }),

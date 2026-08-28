@@ -64,6 +64,9 @@ export interface Ruleset {
 }
 
 export interface FeatureGate {
+  id: string
+  /** Player-facing name in the banner — "Day Care", not a schema token. */
+  noun: string
   feature: 'daycare' | 'move-reminder' | 'hidden-ability-access' | string
   unlockedAfter: string
 }
@@ -215,6 +218,8 @@ export interface GameData {
     available: boolean
     obtainedAt?: string
     universalParent: boolean
+    /** Id of a game.featureGates entry. Omit when Ditto is not gated. */
+    gate?: string
   }
   /** Present when ruleset.hyperTraining.available — how hard caps are to get here. */
   hyperTrainingAccess?: {

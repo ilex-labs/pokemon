@@ -1,36 +1,11 @@
 import type { FeatureGate } from '../../data/schema'
 
-/**
- * Enums select which sentence to write — they never appear in the sentence.
- * Unknown features fall back to player language, not the raw id.
- */
-function gateCopy(feature: string): { noun: string; collapsed: string } {
-  switch (feature) {
-    case 'daycare':
-      return {
-        noun: 'Day Care',
-        collapsed: 'Day Care unlocks after completing certain points of the story — tap to expand',
-      }
-    case 'move-reminder':
-      return {
-        noun: 'Move Reminder',
-        collapsed: 'Move Reminder unlocks later — tap to expand',
-      }
-    case 'hidden-ability-access':
-      return {
-        noun: 'hidden-ability access',
-        collapsed: 'Hidden abilities unlock later — tap to expand',
-      }
-    default:
-      return {
-        noun: 'feature',
-        collapsed: 'A feature unlocks later — tap to expand',
-      }
-  }
+function collapsedChip(noun: string): string {
+  return `${noun} unlocks after completing certain points of the story — tap to expand`
 }
 
-export function gateStorageKey(gameId: string, feature: string): string {
-  return `${gameId}:${feature}`
+export function gateStorageKey(gameId: string, gateId: string): string {
+  return `${gameId}:${gateId}`
 }
 
 export type GateDismissals = Record<string, boolean>
@@ -55,35 +30,34 @@ export default function GateBanner({
 }: GateBannerProps) {
   if (gates.length === 0) return null
 
-  function dismiss(feature: string) {
+  function dismiss(gateId: string) {
     onDismissedChange({
       ...dismissed,
-      [gateStorageKey(gameId, feature)]: true,
+      [gateStorageKey(gameId, gateId)]: true,
     })
   }
 
-  function restore(feature: string) {
+  function restore(gateId: string) {
     const next = { ...dismissed }
-    delete next[gateStorageKey(gameId, feature)]
+    delete next[gateStorageKey(gameId, gateId)]
     onDismissedChange(next)
   }
 
   return (
     <div className="min-w-0 space-y-2">
       {gates.map((gate) => {
-        const key = gateStorageKey(gameId, gate.feature)
+        const key = gateStorageKey(gameId, gate.id)
         const isDismissed = Boolean(dismissed[key])
-        const copy = gateCopy(gate.feature)
 
         if (isDismissed) {
           return (
             <button
               key={key}
               type="button"
-              onClick={() => restore(gate.feature)}
+              onClick={() => restore(gate.id)}
               className="max-w-full rounded border border-brass px-2 py-1 text-left text-meta text-brass hover:bg-raised"
             >
-              {copy.collapsed}
+              {collapsedChip(gate.noun)}
             </button>
           )
         }
@@ -96,12 +70,12 @@ export default function GateBanner({
           >
             <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
               <p className="min-w-0 flex-1 break-words text-sm text-bright">
-                The {copy.noun} in this game unlocks after:{' '}
+                The {gate.noun} in this game unlocks after:{' '}
                 {gate.unlockedAfter}
               </p>
               <button
                 type="button"
-                onClick={() => dismiss(gate.feature)}
+                onClick={() => dismiss(gate.id)}
                 className="shrink-0 self-start text-sm text-muted hover:text-bright"
               >
                 Dismiss

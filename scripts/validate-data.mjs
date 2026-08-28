@@ -25,6 +25,24 @@ function isNonEmptyString(value) {
   return typeof value === 'string' && value.trim().length > 0
 }
 
+/** Visit every object key in a JSON value. jsonPath is dotted, arrays use [i]. */
+function walkJson(value, visit, jsonPath = '') {
+  if (Array.isArray(value)) {
+    for (const [index, item] of value.entries()) {
+      const next = jsonPath ? `${jsonPath}[${index}]` : `[${index}]`
+      walkJson(item, visit, next)
+    }
+    return
+  }
+  if (value && typeof value === 'object') {
+    for (const [key, child] of Object.entries(value)) {
+      const next = jsonPath ? `${jsonPath}.${key}` : key
+      visit(key, child, next, value)
+      walkJson(child, visit, next)
+    }
+  }
+}
+
 /** Independent lineages from section 12 — aggregators are not valid second sources. */
 const ALLOWED_SOURCES = new Set([
   'pokeapi',
@@ -366,6 +384,58 @@ function validateGame(filePath, game, natures) {
       `${label}: games without Masuda and without a Shiny Charm must set noEggShinyBoostsReason (name the absent mechanics)`,
     )
   }
+
+  const declaredGateIds = new Set()
+  if (game.featureGates !== undefined) {
+    if (!Array.isArray(game.featureGates)) {
+      fail(`${label}: featureGates must be an array`)
+    } else {
+      for (const [index, gate] of game.featureGates.entries()) {
+        if (!gate || typeof gate !== 'object') {
+          fail(`${label}: featureGates[${index}] must be an object`)
+          continue
+        }
+        if (!isNonEmptyString(gate.id)) {
+          fail(`${label}: featureGates[${index}].id is required`)
+          continue
+        }
+        if (declaredGateIds.has(gate.id)) {
+          fail(`${label}: featureGates id "${gate.id}" is duplicated`)
+        }
+        declaredGateIds.add(gate.id)
+        if (!isNonEmptyString(gate.noun)) {
+          fail(`${label}: featureGates[${index}].noun is required`)
+        }
+        if (!isNonEmptyString(gate.unlockedAfter)) {
+          fail(`${label}: featureGates[${index}].unlockedAfter is required`)
+        }
+      }
+    }
+  }
+
+  walkJson(game, (key, value, jsonPath, parent) => {
+    if (key !== 'gate') return
+    if (!isNonEmptyString(value)) {
+      fail(`${label}: ${jsonPath} must be a non-empty string gate id`)
+      return
+    }
+    if (!declaredGateIds.has(value)) {
+      fail(
+        `${label}: ${jsonPath} references gate "${value}", which is not a declared featureGates id`,
+      )
+    }
+    if (!parent || typeof parent !== 'object' || Array.isArray(parent)) return
+    if (parent.available === false) {
+      fail(
+        `${label}: ${jsonPath} gates a capability that is not available (available: false)`,
+      )
+      return
+    }
+    const otherKeys = Object.keys(parent).filter((name) => name !== 'gate')
+    if (otherKeys.length === 0) {
+      fail(`${label}: ${jsonPath} gates an omitted capability`)
+    }
+  })
 
   // Natures: shared catalog is what the form offers when naturesExist.
   const natureNames = new Set(Object.keys(natures ?? {}))

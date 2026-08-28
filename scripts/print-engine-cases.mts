@@ -129,7 +129,7 @@ function printPlan(title: string, plan: DaycarePlan) {
   if (plan.featureGates.length > 0) {
     console.log('\n--- Feature gates ---')
     for (const gate of plan.featureGates) {
-      console.log(`   ${gate.feature}: unlocked after ${gate.unlockedAfter}`)
+      console.log(`   ${gate.noun}: unlocked after ${gate.unlockedAfter}`)
     }
   }
 
