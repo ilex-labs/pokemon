@@ -395,9 +395,14 @@ describe('formatReason recommend and exclude', () => {
     )
   })
 
-  it('recommend-start-from-hatch names the starting pairing', () => {
-    expect(formatReason({ code: 'recommend-start-from-hatch' })).toBe(
-      'Start here — the other pairing needs a hatch from this route that already knows the egg move.',
+  it('recommend-start-from-hatch names the consuming pairing', () => {
+    expect(
+      formatReason({
+        code: 'recommend-start-from-hatch',
+        laterLabel: 'Ditto pair',
+      }),
+    ).toBe(
+      'Start here — Ditto pair needs a hatch from this route that already knows the egg move.',
     )
   })
 

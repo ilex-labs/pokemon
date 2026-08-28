@@ -167,6 +167,7 @@ describe('FireRed/LeafGreen — ruleset branches never exercised by gen 9', () =
     expect(speciesPair?.recommended).toBe(true)
     expect(speciesPair?.recommendReason).toEqual({
       code: 'recommend-start-from-hatch',
+      laterLabel: 'Ditto pair',
     })
     expect(ditto?.recommended).toBeUndefined()
     expect(ditto?.requiresRoute).toEqual({
@@ -228,6 +229,7 @@ describe('FireRed/LeafGreen — ruleset branches never exercised by gen 9', () =
     expect(speciesPair?.recommended).toBe(true)
     expect(speciesPair?.recommendReason).toEqual({
       code: 'recommend-start-from-hatch',
+      laterLabel: 'Ditto pair',
     })
     expect(dittoPair?.recommended).toBeUndefined()
     expect(dittoPair?.requiresRoute?.id).toBe('species-pair')

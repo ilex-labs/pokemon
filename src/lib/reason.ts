@@ -78,7 +78,7 @@ export type Reason =
   | { code: 'recommend-masuda-ditto-reuse' }
   | { code: 'recommend-only-viable-route' }
   | { code: 'recommend-easier-gender' }
-  | { code: 'recommend-start-from-hatch' }
+  | { code: 'recommend-start-from-hatch'; laterLabel: string }
   | {
       code: 'requires-hatch-from-route'
       fromLabel: string
@@ -300,7 +300,7 @@ export function formatReason(reason: Reason): string {
     case 'recommend-easier-gender':
       return "This route needs less hunting for a female parent of a species that's rarely female."
     case 'recommend-start-from-hatch':
-      return 'Start here — the other pairing needs a hatch from this route that already knows the egg move.'
+      return `Start here — ${reason.laterLabel} needs a hatch from this route that already knows the egg move.`
     case 'requires-hatch-from-route': {
       const known =
         reason.moves.length > 0

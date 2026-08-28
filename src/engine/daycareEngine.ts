@@ -985,7 +985,10 @@ function applyRouteRecommendations(
           return {
             ...strategy,
             recommended: true,
-            recommendReason: { code: 'recommend-start-from-hatch' },
+            recommendReason: {
+              code: 'recommend-start-from-hatch',
+              laterLabel: strategies[laterIndex]!.label,
+            },
             requiresRoute: undefined,
           }
         }
