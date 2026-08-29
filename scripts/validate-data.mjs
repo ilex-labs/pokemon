@@ -156,6 +156,13 @@ function validateRuleset(filePath, ruleset) {
   } else if (ruleset.masudaMethod) {
     fail(`${rel}: masudaMethod must be omitted before generation 4`)
   }
+
+  walkJson(ruleset, (key, _value, jsonPath) => {
+    if (key !== 'gate') return
+    fail(
+      `${rel}: ${jsonPath} cannot appear on a generation ruleset — gates belong on the game file; a game-specific gate on a generation-level capability goes in rulesetOverrides`,
+    )
+  })
 }
 
 function validateGame(filePath, game, natures) {
