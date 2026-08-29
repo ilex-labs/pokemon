@@ -204,7 +204,38 @@ describe('daycareEngine acceptance cases', () => {
     )
     expect(stacked?.context).toBeUndefined()
 
-    expect(plan.routeComparisons).toBeUndefined()
+    expect(plan.routeComparisons).toEqual([
+      {
+        a: 'species-pair',
+        b: 'ditto-pair',
+        outcome: 'incomparable',
+        gDiffers: true,
+        qOnlyA: ['moves:carrier:Dragon Dance'],
+        qOnlyB: ['moves:consolidated:Dragon Dance'],
+        alternativeName: 'Mirror Herb',
+      },
+    ])
+    const comparisonCopy = chooserComparisonCopy(
+      plan.routeComparisons,
+      plan.strategies,
+    )
+    expect(comparisonCopy).toEqual({
+      kind: 'incomparable',
+      reason: {
+        code: 'incomparable-routes',
+        gVersusExtra: false,
+        left: ['carrier'],
+        right: ['consolidated'],
+        alternativeName: 'Mirror Herb',
+      },
+    })
+    expect(
+      comparisonCopy?.kind === 'incomparable'
+        ? formatReason(comparisonCopy.reason)
+        : null,
+    ).toBe(
+      "These routes aren't comparable — using another species as a carrier and copying the move with Mirror Herb aren't the same kind of work.",
+    )
     const dittoPair = plan.strategies.find(
       (strategy) => strategy.id === 'ditto-pair',
     )
@@ -675,7 +706,16 @@ describe('daycareEngine acceptance cases', () => {
 
     expect(plan.blocked).toBe(false)
     expect(plan.shiny).toBeDefined()
-    expect(plan.routeComparisons).toBeUndefined()
+    expect(plan.routeComparisons).toEqual([
+      {
+        a: 'species-pair',
+        b: 'ditto-pair',
+        outcome: 'equivalent',
+      },
+    ])
+    expect(chooserComparisonCopy(plan.routeComparisons, plan.strategies)).toEqual({
+      kind: 'equivalent',
+    })
 
     const dittoPair = plan.strategies.find(
       (strategy) => strategy.id === 'ditto-pair',

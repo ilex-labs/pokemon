@@ -1102,7 +1102,8 @@ function computeRouteComparisons(
 /**
  * Pairwise cost comparison always. Follow-on is a separate relation: those
  * pairs do not compete for Recommended or cost copy, but they stay in the
- * matrix. Masuda still short-circuits and omits the matrix.
+ * matrix. Masuda is an overlay on the badge only — the pair still gets
+ * cost copy.
  */
 export function applyRouteRecommendations(
   strategies: PairingStrategy[],
@@ -1116,29 +1117,19 @@ export function applyRouteRecommendations(
     return { strategies }
   }
 
-  if (preferForeignDitto) {
-    const dittoRoute = strategies.find(isDittoRoute)
-    if (dittoRoute) {
-      return {
-        strategies: strategies.map((strategy) =>
-          strategy.id === dittoRoute.id
-            ? {
-                ...strategy,
-                recommended: true,
-                recommendReason: { code: 'recommend-masuda-ditto-reuse' },
-              }
-            : {
-                ...strategy,
-                recommended: undefined,
-                recommendReason: undefined,
-              },
-        ),
-      }
-    }
-  }
-
   if (strategies.length === 1) {
     const only = strategies[0]!
+    if (preferForeignDitto && isDittoRoute(only)) {
+      return {
+        strategies: [
+          {
+            ...only,
+            recommended: true,
+            recommendReason: { code: 'recommend-masuda-ditto-reuse' },
+          },
+        ],
+      }
+    }
     return {
       strategies: [
         {
@@ -1223,6 +1214,25 @@ export function applyRouteRecommendations(
         requiresRoute: undefined,
       }
     })
+  }
+
+  if (preferForeignDitto) {
+    const dittoRoute = annotated.find(isDittoRoute)
+    if (dittoRoute) {
+      annotated = annotated.map((strategy) =>
+        strategy.id === dittoRoute.id
+          ? {
+              ...strategy,
+              recommended: true,
+              recommendReason: { code: 'recommend-masuda-ditto-reuse' },
+            }
+          : {
+              ...strategy,
+              recommended: undefined,
+              recommendReason: undefined,
+            },
+      )
+    }
   }
 
   const alreadyRecommended = annotated.some((strategy) => strategy.recommended)
