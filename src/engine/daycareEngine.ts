@@ -66,9 +66,11 @@ export type PairingStrategy = {
   /**
    * This pairing needs a parent produced by another route in this plan.
    * Present only on the later strategy, and only when that supplier is offered.
+   * One id when cost picks a supplier; several when they tie or are
+   * incomparable — the reason names them rather than inventing a winner.
    */
   requiresRoute?: {
-    id: string
+    ids: string[]
     reason: Reason
   }
 }
@@ -90,15 +92,21 @@ export type ShinyOdds = {
   determinedOnReceive: string
 }
 
-export type RouteComparison = 'cheaper' | 'equivalent' | 'incomparable'
+export type RoutePairComparison = {
+  a: string
+  b: string
+  outcome: 'cheaper' | 'equivalent' | 'incomparable'
+  /** Strategy id of the cheaper route. Present only when outcome is cheaper. */
+  winner?: string
+}
 
 export type DaycarePlan = {
   strategies: PairingStrategy[]
   /**
-   * When multiple routes exist: one is cheaper, they match, or they
-   * differ on axes with no shared scale. Omitted for a single route.
+   * Pairwise cost comparison. Omitted for a single route. Always includes
+   * every pair when two or more routes exist — including follow-on pairs.
    */
-  routeComparison?: RouteComparison
+  routeComparisons?: RoutePairComparison[]
   /**
    * Routes that would otherwise appear but cannot produce this target —
    * always explained, never silently dropped.
@@ -969,14 +977,106 @@ function isHatchSupplier(cost: AcquisitionCost): boolean {
     if (!parent.mustKnowMoves) return false
     const partner = cost.parents.find((other) => other !== parent)
     if (!partner || partner.isDitto) return false
-    if (parent.eggMoveRole === 'carrier') return true
-    return parent.species.some((name) => partner.species.includes(name))
+    return (
+      parent.eggMoveRole === 'carrier' || parent.eggMoveRole === 'same-species'
+    )
   })
 }
 
+function pairKey(a: string, b: string): string {
+  return a < b ? `${a}\0${b}` : `${b}\0${a}`
+}
+
+function sequencedPairKeys(
+  strategies: Array<{ id: string; requiresRoute?: { ids: string[] } }>,
+): Set<string> {
+  const keys = new Set<string>()
+  for (const strategy of strategies) {
+    for (const id of strategy.requiresRoute?.ids ?? []) {
+      keys.add(pairKey(strategy.id, id))
+    }
+  }
+  return keys
+}
+
+export type ChooserComparisonCopy =
+  | { kind: 'equivalent' }
+  | { kind: 'incomparable'; reason: Reason }
+  | null
+
 /**
- * Gender-product Pareto, unless one route's already-knows parent is a hatch
- * from another route in this plan — then skip Pareto and recommend the earlier.
+ * Cost copy for the chooser. Sequenced (supplier-consumer) pairs are excluded
+ * — the follow-on sentence is that pair's copy. Two routes keep the unnamed
+ * incomparable sentence; three or more name the pair.
+ */
+export function chooserComparisonCopy(
+  comparisons: RoutePairComparison[] | undefined,
+  strategies: Array<{
+    id: string
+    label: string
+    requiresRoute?: { ids: string[] }
+  }>,
+): ChooserComparisonCopy {
+  if (!comparisons || comparisons.length === 0 || strategies.length < 2) {
+    return null
+  }
+  const sequenced = sequencedPairKeys(strategies)
+  const competing = comparisons.filter(
+    (pair) => !sequenced.has(pairKey(pair.a, pair.b)),
+  )
+  if (competing.length === 0) return null
+  if (competing.every((pair) => pair.outcome === 'equivalent')) {
+    return { kind: 'equivalent' }
+  }
+  const incomparable = competing.filter(
+    (pair) => pair.outcome === 'incomparable',
+  )
+  if (incomparable.length === 0) return null
+  if (strategies.length === 2) {
+    return { kind: 'incomparable', reason: { code: 'incomparable-routes' } }
+  }
+  const labels = (id: string) =>
+    strategies.find((strategy) => strategy.id === id)?.label ?? id
+  const pair = incomparable[0]!
+  return {
+    kind: 'incomparable',
+    reason: {
+      code: 'incomparable-routes',
+      aLabel: labels(pair.a),
+      bLabel: labels(pair.b),
+    },
+  }
+}
+
+function computeRouteComparisons(
+  strategies: PairingStrategy[],
+  costs: AcquisitionCost[],
+): RoutePairComparison[] {
+  const comparisons: RoutePairComparison[] = []
+  for (let i = 0; i < strategies.length; i++) {
+    for (let j = i + 1; j < strategies.length; j++) {
+      const result = compareRouteCosts(costs[i]!, costs[j]!)
+      const a = strategies[i]!.id
+      const b = strategies[j]!.id
+      if (result.outcome === 'cheaper') {
+        comparisons.push({
+          a,
+          b,
+          outcome: 'cheaper',
+          winner: result.winner === 'a' ? a : b,
+        })
+      } else {
+        comparisons.push({ a, b, outcome: result.outcome })
+      }
+    }
+  }
+  return comparisons
+}
+
+/**
+ * Pairwise cost comparison always. Follow-on is a separate relation: those
+ * pairs do not compete for Recommended or cost copy, but they stay in the
+ * matrix. Masuda still short-circuits and omits the matrix.
  */
 export function applyRouteRecommendations(
   strategies: PairingStrategy[],
@@ -984,7 +1084,7 @@ export function applyRouteRecommendations(
   preferForeignDitto = false,
 ): {
   strategies: PairingStrategy[]
-  routeComparison?: RouteComparison
+  routeComparisons?: RoutePairComparison[]
 } {
   if (strategies.length === 0) {
     return { strategies }
@@ -1027,72 +1127,101 @@ export function applyRouteRecommendations(
   const costs = strategies.map((strategy) =>
     deriveAcquisitionCost(strategy.parents, game),
   )
+  const routeComparisons = computeRouteComparisons(strategies, costs)
 
   const laterIndex = costs.findIndex(
     (cost) => alreadyKnowsMoves(cost) !== undefined,
   )
-  const earlierIndex =
+  const supplierIndexes =
     laterIndex >= 0
-      ? costs.findIndex(
-          (cost, index) => index !== laterIndex && isHatchSupplier(cost),
-        )
-      : -1
+      ? costs
+          .map((_, index) => index)
+          .filter(
+            (index) =>
+              index !== laterIndex && isHatchSupplier(costs[index]!),
+          )
+      : []
 
-  if (laterIndex >= 0 && earlierIndex >= 0) {
-    const earlier = strategies[earlierIndex]!
-    const moves = alreadyKnowsMoves(costs[laterIndex]!) ?? []
-    return {
-      strategies: strategies.map((strategy, index) => {
-        if (index === earlierIndex) {
-          return {
-            ...strategy,
-            recommended: true,
-            recommendReason: {
-              code: 'recommend-start-from-hatch',
-              laterLabel: strategies[laterIndex]!.label,
-            },
-            requiresRoute: undefined,
-          }
-        }
-        if (index === laterIndex) {
-          return {
-            ...strategy,
-            recommended: undefined,
-            recommendReason: undefined,
-            requiresRoute: {
-              id: earlier.id,
-              reason: {
-                code: 'requires-hatch-from-route',
-                fromLabel: earlier.label,
-                moves,
-              },
-            },
-          }
-        }
-        return {
-          ...strategy,
-          recommended: undefined,
-          recommendReason: undefined,
-          requiresRoute: undefined,
-        }
-      }),
-    }
-  }
+  let annotated: PairingStrategy[] = strategies.map((strategy) => ({
+    ...strategy,
+    recommended: undefined,
+    recommendReason: undefined,
+    requiresRoute: undefined,
+  }))
 
-  const beatsAll = strategies
-    .map((_, index) => index)
-    .filter((index) =>
-      strategies.every((_, other) => {
+  if (laterIndex >= 0 && supplierIndexes.length > 0) {
+    const cheaperIndexes = supplierIndexes.filter((index) =>
+      supplierIndexes.every((other) => {
         if (other === index) return true
         const result = compareRouteCosts(costs[index]!, costs[other]!)
         return result.outcome === 'cheaper' && result.winner === 'a'
       }),
     )
+    const chosenIndexes =
+      cheaperIndexes.length === 1 ? cheaperIndexes : supplierIndexes
+    const recommendIndex = cheaperIndexes.length === 1 ? cheaperIndexes[0]! : -1
+    const fromLabels = chosenIndexes.map((index) => strategies[index]!.label)
+    const chosenIds = chosenIndexes.map((index) => strategies[index]!.id)
+    const moves = alreadyKnowsMoves(costs[laterIndex]!) ?? []
+    annotated = strategies.map((strategy, index) => {
+      if (index === recommendIndex) {
+        return {
+          ...strategy,
+          recommended: true,
+          recommendReason: {
+            code: 'recommend-start-from-hatch',
+            laterLabel: strategies[laterIndex]!.label,
+          },
+          requiresRoute: undefined,
+        }
+      }
+      if (index === laterIndex) {
+        return {
+          ...strategy,
+          recommended: undefined,
+          recommendReason: undefined,
+          requiresRoute: {
+            ids: chosenIds,
+            reason: {
+              code: 'requires-hatch-from-route',
+              fromLabels,
+              moves,
+            },
+          },
+        }
+      }
+      return {
+        ...strategy,
+        recommended: undefined,
+        recommendReason: undefined,
+        requiresRoute: undefined,
+      }
+    })
+  }
 
-  if (beatsAll.length === 1) {
-    const winnerId = strategies[beatsAll[0]!]!.id
-    return {
-      strategies: strategies.map((strategy) =>
+  const alreadyRecommended = annotated.some((strategy) => strategy.recommended)
+  const consumerIds = new Set(
+    annotated
+      .filter((strategy) => strategy.requiresRoute)
+      .map((strategy) => strategy.id),
+  )
+  const competingIds = annotated
+    .map((strategy) => strategy.id)
+    .filter((id) => !consumerIds.has(id))
+
+  if (!alreadyRecommended && competingIds.length >= 2) {
+    const beatsAll = competingIds.filter((id) =>
+      competingIds.every((other) => {
+        if (other === id) return true
+        const pair = routeComparisons.find(
+          (entry) => pairKey(entry.a, entry.b) === pairKey(id, other),
+        )
+        return pair?.outcome === 'cheaper' && pair.winner === id
+      }),
+    )
+    if (beatsAll.length === 1) {
+      const winnerId = beatsAll[0]!
+      annotated = annotated.map((strategy) =>
         strategy.id === winnerId
           ? {
               ...strategy,
@@ -1104,37 +1233,11 @@ export function applyRouteRecommendations(
               recommended: undefined,
               recommendReason: undefined,
             },
-      ),
-      routeComparison: 'cheaper',
+      )
     }
   }
 
-  const allEquivalent = strategies.every((_, index) =>
-    strategies.every((__, other) => {
-      if (other === index) return true
-      return compareRouteCosts(costs[index]!, costs[other]!).outcome === 'equivalent'
-    }),
-  )
-
-  if (allEquivalent) {
-    return {
-      strategies: strategies.map((strategy) => ({
-        ...strategy,
-        recommended: undefined,
-        recommendReason: undefined,
-      })),
-      routeComparison: 'equivalent',
-    }
-  }
-
-  return {
-    strategies: strategies.map((strategy) => ({
-      ...strategy,
-      recommended: undefined,
-      recommendReason: undefined,
-    })),
-    routeComparison: 'incomparable',
-  }
+  return { strategies: annotated, routeComparisons }
 }
 
 function canOfferDittoPair(game: GameData, _target: DaycareTarget): boolean {
@@ -1152,7 +1255,7 @@ function resolveStrategies(
   dittoOnly: boolean,
 ): {
   strategies: PairingStrategy[]
-  routeComparison?: RouteComparison
+  routeComparisons?: RoutePairComparison[]
   excludedStrategies: Array<{ id: string; label: string; reason: Reason }>
 } {
   const excludedStrategies: Array<{
@@ -1619,7 +1722,7 @@ export function planDaycare(
     }
   }
 
-  const { strategies, routeComparison, excludedStrategies } =
+  const { strategies, routeComparisons, excludedStrategies } =
     resolveStrategies(game, ruleset, target, species, dittoOnly)
   const recommended =
     strategies.find((strategy) => strategy.recommended) ?? strategies[0]
@@ -1632,7 +1735,7 @@ export function planDaycare(
 
   return {
     strategies,
-    routeComparison,
+    routeComparisons,
     excludedStrategies:
       excludedStrategies.length > 0 ? excludedStrategies : undefined,
     featureGates,

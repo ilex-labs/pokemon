@@ -11,6 +11,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { GameData, Ruleset } from '../src/data/schema.ts'
 import {
+  chooserComparisonCopy,
   planDaycare,
   type DaycarePlan,
   type DaycareTarget,
@@ -119,10 +120,25 @@ function hasDaycareGate(game: GameData): boolean {
 function printPlan(title: string, plan: DaycarePlan) {
   console.log('='.repeat(72))
   console.log(title)
+  const comparison = chooserComparisonCopy(
+    plan.routeComparisons,
+    plan.strategies,
+  )
+  const comparisonNote =
+    comparison?.kind === 'equivalent'
+      ? ' | competing routes equivalent'
+      : comparison?.kind === 'incomparable'
+        ? ` | ${formatReason(comparison.reason)}`
+        : plan.routeComparisons
+          ? ` | ${plan.routeComparisons
+              .map(
+                (pair) =>
+                  `${pair.a}/${pair.b}:${pair.outcome}${pair.winner ? `:${pair.winner}` : ''}`,
+              )
+              .join('; ')}`
+          : ''
   console.log(
-    `blocked: ${plan.blocked} | strategies: ${plan.strategies.length} | steps: ${plan.steps.length}${
-      plan.routeComparison ? ` | routes ${plan.routeComparison}` : ''
-    }`,
+    `blocked: ${plan.blocked} | strategies: ${plan.strategies.length} | steps: ${plan.steps.length}${comparisonNote}`,
   )
   console.log('='.repeat(72))
 

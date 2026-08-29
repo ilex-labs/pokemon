@@ -4,6 +4,7 @@ import gen9Json from '../data/rulesets/gen9.json'
 import { formatReason } from '../lib/reason'
 import {
   applyRouteRecommendations,
+  chooserComparisonCopy,
   planDaycare,
   type DaycareTarget,
   type PairingStrategy,
@@ -281,10 +282,10 @@ describe('same-species egg-move carrier slot', () => {
     )
     const ditto = strategies.find((strategy) => strategy.id === 'ditto-pair')
     expect(ditto?.requiresRoute).toEqual({
-      id: 'same-line-pair',
+      ids: ['same-line-pair'],
       reason: {
         code: 'requires-hatch-from-route',
-        fromLabel: 'Same-line pair',
+        fromLabels: ['Same-line pair'],
         moves: ['FixtureMove'],
       },
     })
@@ -361,5 +362,167 @@ describe('same-species egg-move carrier slot', () => {
       },
       { code: 'male-egg-move-eligible' },
     ])
+  })
+
+  it('union catalog names both hatch suppliers when cost cannot pick one', () => {
+    const plan = planDaycare(fixtureGameUnion, gen9, fixtureTarget)
+    const same = plan.strategies.find(
+      (strategy) => strategy.id === 'species-pair-same',
+    )
+    const external = plan.strategies.find(
+      (strategy) => strategy.id === 'species-pair-external',
+    )
+    const ditto = plan.strategies.find((strategy) => strategy.id === 'ditto-pair')
+
+    expect(same?.recommended).toBeUndefined()
+    expect(external?.recommended).toBeUndefined()
+    expect(ditto?.recommended).toBeUndefined()
+    expect(ditto?.requiresRoute).toEqual({
+      ids: ['species-pair-same', 'species-pair-external'],
+      reason: {
+        code: 'requires-hatch-from-route',
+        fromLabels: ['Same-species pair', 'External carrier'],
+        moves: ['FixtureMove'],
+      },
+    })
+    expect(formatReason(ditto!.requiresRoute!.reason)).toBe(
+      'This pairing is a follow-on — it needs a hatch from Same-species pair or External carrier that already knows FixtureMove.',
+    )
+    expect(plan.routeComparisons).toEqual([
+      {
+        a: 'species-pair-same',
+        b: 'species-pair-external',
+        outcome: 'incomparable',
+      },
+      {
+        a: 'species-pair-same',
+        b: 'ditto-pair',
+        outcome: 'incomparable',
+      },
+      {
+        a: 'species-pair-external',
+        b: 'ditto-pair',
+        outcome: 'incomparable',
+      },
+    ])
+    const comparisonCopy = chooserComparisonCopy(
+      plan.routeComparisons,
+      plan.strategies,
+    )
+    expect(comparisonCopy).toEqual({
+      kind: 'incomparable',
+      reason: {
+        code: 'incomparable-routes',
+        aLabel: 'Same-species pair',
+        bLabel: 'External carrier',
+      },
+    })
+    expect(
+      comparisonCopy?.kind === 'incomparable'
+        ? formatReason(comparisonCopy.reason)
+        : null,
+    ).toBe(
+      "Same-species pair and External carrier aren't comparable — a gender constraint and a required move or different-language parent aren't the same kind of cost.",
+    )
+  })
+
+  it('picks the cheaper hatch supplier even when it is not first in the array', () => {
+    const expensive: PairingStrategy = {
+      id: 'expensive-pair',
+      label: 'Expensive pair',
+      acquisitionCost: 'two FixtureMon',
+      tradeoff: 'Genders constrained.',
+      parents: [
+        {
+          role: 'A',
+          species: ['FixtureMon'],
+          gender: 'female',
+        },
+        {
+          role: 'B',
+          species: ['FixtureMon'],
+          gender: 'male',
+          mustKnow: ['FixtureMove'],
+          acquisition: [
+            {
+              severity: 'info',
+              code: 'acquire-egg-move-pair',
+              species: 'FixtureMon',
+              moves: ['FixtureMove'],
+              how: 'Catch or hatch a parent that already knows FixtureMove.',
+              passers: [],
+            },
+          ],
+        },
+      ],
+    }
+    const cheaper: PairingStrategy = {
+      id: 'cheaper-pair',
+      label: 'Cheaper pair',
+      acquisitionCost: 'two FixtureMon',
+      tradeoff: 'No gender hunt.',
+      parents: [
+        { role: 'A', species: ['FixtureMon'] },
+        {
+          role: 'B',
+          species: ['FixtureMon'],
+          mustKnow: ['FixtureMove'],
+          acquisition: [
+            {
+              severity: 'info',
+              code: 'acquire-egg-move-pair',
+              species: 'FixtureMon',
+              moves: ['FixtureMove'],
+              how: 'Catch or hatch a parent that already knows FixtureMove.',
+              passers: [],
+            },
+          ],
+        },
+      ],
+    }
+    const consumer: PairingStrategy = {
+      id: 'ditto-pair',
+      label: 'Ditto pair',
+      acquisitionCost:
+        'one FixtureMon that already knows FixtureMove, plus a Ditto',
+      tradeoff: 'Depends on already having the move.',
+      parents: [
+        {
+          role: 'A',
+          species: ['FixtureMon'],
+          mustKnow: ['FixtureMove'],
+          acquisition: [
+            {
+              severity: 'info',
+              code: 'acquire-egg-move-ditto-bootstrap',
+              species: 'FixtureMon',
+              moves: ['FixtureMove'],
+            },
+          ],
+        },
+        { role: 'B', species: ['Ditto'] },
+      ],
+    }
+
+    const { strategies } = applyRouteRecommendations(
+      [expensive, cheaper, consumer],
+      fixtureGameSameSpecies,
+    )
+    expect(strategies.find((strategy) => strategy.id === 'cheaper-pair')?.recommended).toBe(
+      true,
+    )
+    expect(
+      strategies.find((strategy) => strategy.id === 'expensive-pair')?.recommended,
+    ).toBeUndefined()
+    expect(
+      strategies.find((strategy) => strategy.id === 'ditto-pair')?.requiresRoute,
+    ).toEqual({
+      ids: ['cheaper-pair'],
+      reason: {
+        code: 'requires-hatch-from-route',
+        fromLabels: ['Cheaper pair'],
+        moves: ['FixtureMove'],
+      },
+    })
   })
 })

@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import {
   compareRouteCosts,
+  deriveAcquisitionCost,
+  formatAcquisitionCost,
   genderProduct,
   type AcquisitionCost,
   type ParentAcquisitionFact,
 } from './acquisitionCost'
+import type { GameData } from '../data/schema'
 
 const CHARMANDER_RATIO = { malePercent: 87.5 }
 
@@ -159,5 +162,81 @@ describe('compareRouteCosts', () => {
     expect(compareRouteCosts(pairCarrier, dittoConsolidated)).toEqual({
       outcome: 'incomparable',
     })
+  })
+
+  it('does not treat same-species as a subset of carrier for the same move', () => {
+    const sameSpecies = cost([
+      parent({ species: ['Charmander'] }),
+      parent({
+        species: ['Charmander'],
+        mustKnowMoves: true,
+        moves: ['Dragon Dance'],
+        eggMoveRole: 'same-species',
+      }),
+    ])
+    const externalCarrier = cost([
+      parent({
+        species: ['Charmander'],
+        genderConstrained: true,
+        gender: 'female',
+        cataloguedGenderRatio: [
+          { species: 'Charmander', ratio: CHARMANDER_RATIO },
+        ],
+      }),
+      parent({
+        species: ['Gyarados'],
+        genderConstrained: true,
+        gender: 'male',
+        cataloguedGenderRatio: [{ species: 'Gyarados', ratio: { malePercent: 50 } }],
+        mustKnowMoves: true,
+        moves: ['Dragon Dance'],
+        eggMoveRole: 'carrier',
+      }),
+    ])
+    expect(compareRouteCosts(sameSpecies, externalCarrier)).toEqual({
+      outcome: 'incomparable',
+    })
+  })
+})
+
+const fixtureGame = {
+  species: {
+    FixtureMon: { genderRatio: { malePercent: 50 } },
+    FixtureCarrier: { genderRatio: { malePercent: 50 } },
+  },
+} as unknown as GameData
+
+describe('deriveAcquisitionCost egg-move roles', () => {
+  it('records same-species passing when the pair share a species and mustKnow', () => {
+    const derived = deriveAcquisitionCost(
+      [
+        { species: ['FixtureMon'] },
+        {
+          species: ['FixtureMon'],
+          mustKnow: ['FixtureMove'],
+          acquisition: [{ code: 'acquire-egg-move-pair' }],
+        },
+      ],
+      fixtureGame,
+    )
+    expect(derived.parents[1]?.eggMoveRole).toBe('same-species')
+    expect(formatAcquisitionCost(derived)).toBe(
+      'two FixtureMon, one that knows FixtureMove',
+    )
+  })
+
+  it('still records an external passer as carrier', () => {
+    const derived = deriveAcquisitionCost(
+      [
+        { species: ['FixtureMon'] },
+        {
+          species: ['FixtureCarrier'],
+          mustKnow: ['FixtureMove'],
+          acquisition: [{ code: 'acquire-egg-move-pair' }],
+        },
+      ],
+      fixtureGame,
+    )
+    expect(derived.parents[1]?.eggMoveRole).toBe('carrier')
   })
 })

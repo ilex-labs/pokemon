@@ -1,8 +1,10 @@
 import type { Ruleset } from '../../data/schema'
 import {
+  chooserComparisonCopy,
   eggAffectingHeldItemsExist,
   type PairingStrategy,
   type ParentRequirement,
+  type RoutePairComparison,
 } from '../../engine/daycareEngine'
 import { withNums } from '../../lib/withNums'
 import { formatReason, formatReasons, type Reason } from '../../lib/reason'
@@ -11,7 +13,7 @@ import RuleFlag from './RuleFlag'
 type ParentPairCardProps = {
   strategies: PairingStrategy[]
   selectedStrategyId: string
-  routeComparison?: 'cheaper' | 'equivalent' | 'incomparable'
+  routeComparisons?: RoutePairComparison[]
   excludedStrategies?: Array<{ id: string; label: string; reason: Reason }>
   ruleset: Ruleset
   onSelectStrategy: (id: string) => void
@@ -107,7 +109,7 @@ function ParentBlock({
 export default function ParentPairCard({
   strategies,
   selectedStrategyId,
-  routeComparison,
+  routeComparisons,
   excludedStrategies = [],
   ruleset,
   onSelectStrategy,
@@ -127,6 +129,7 @@ export default function ParentPairCard({
   const followOnReason = strategies.find(
     (strategy) => strategy.requiresRoute,
   )?.requiresRoute?.reason
+  const comparisonCopy = chooserComparisonCopy(routeComparisons, strategies)
 
   return (
     <div className="space-y-[var(--spacing-section)]">
@@ -204,15 +207,15 @@ export default function ParentPairCard({
           </p>
         ) : null}
 
-        {routeComparison === 'equivalent' && strategies.length > 1 ? (
+        {comparisonCopy?.kind === 'equivalent' ? (
           <p className="text-sm text-muted">
             These routes are equivalent — neither is easier to assemble.
           </p>
         ) : null}
 
-        {routeComparison === 'incomparable' && strategies.length > 1 ? (
+        {comparisonCopy?.kind === 'incomparable' ? (
           <p className="text-sm text-muted">
-            {formatReason({ code: 'incomparable-routes' })}
+            {formatReason(comparisonCopy.reason)}
           </p>
         ) : null}
 

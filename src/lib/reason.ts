@@ -81,10 +81,14 @@ export type Reason =
   | { code: 'recommend-start-from-hatch'; laterLabel: string }
   | {
       code: 'requires-hatch-from-route'
-      fromLabel: string
+      fromLabels: string[]
       moves: string[]
     }
-  | { code: 'incomparable-routes' }
+  | {
+      code: 'incomparable-routes'
+      aLabel?: string
+      bLabel?: string
+    }
   | { code: 'exclude-pair-hidden-needs-ditto'; ability: string }
   | { code: 'exclude-pair-ability-needs-ditto'; ability: string }
   | { code: 'exclude-pair-ditto-only-species'; species: string }
@@ -306,10 +310,17 @@ export function formatReason(reason: Reason): string {
         reason.moves.length > 0
           ? ` that already knows ${reason.moves.join(', ')}`
           : ' that already knows the egg move'
-      return `This pairing is a follow-on — it needs a hatch from ${reason.fromLabel}${known}.`
+      const from = formatSpeciesList(reason.fromLabels)
+      return `This pairing is a follow-on — it needs a hatch from ${from}${known}.`
     }
-    case 'incomparable-routes':
-      return "These routes aren't comparable — a gender constraint and a required move or different-language parent aren't the same kind of cost."
+    case 'incomparable-routes': {
+      const clause =
+        "a gender constraint and a required move or different-language parent aren't the same kind of cost."
+      if (reason.aLabel && reason.bLabel) {
+        return `${reason.aLabel} and ${reason.bLabel} aren't comparable — ${clause}`
+      }
+      return `These routes aren't comparable — ${clause}`
+    }
     case 'exclude-pair-hidden-needs-ditto':
       return `${reason.ability} can't be passed on a species pair — a male or genderless parent only passes its hidden ability when paired with Ditto.`
     case 'exclude-pair-ability-needs-ditto':

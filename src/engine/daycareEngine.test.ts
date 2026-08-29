@@ -3,7 +3,7 @@ import type { GameData, Ruleset } from '../data/schema'
 import gen9Json from '../data/rulesets/gen9.json'
 import scarletVioletJson from '../data/games/scarlet-violet.json'
 import { formatReason, formatReasons, type Reason } from '../lib/reason'
-import { planDaycare, type DaycareTarget } from './daycareEngine'
+import { chooserComparisonCopy, planDaycare, type DaycareTarget } from './daycareEngine'
 
 const gen9 = gen9Json as Ruleset
 const scarletViolet = scarletVioletJson as GameData
@@ -57,7 +57,17 @@ describe('daycareEngine acceptance cases', () => {
       (strategy) => strategy.id === 'ditto-pair',
     )
     // Carrier vs Mirror Herb consolidation — same move, different facts.
-    expect(plan.routeComparison).toBe('incomparable')
+    expect(plan.routeComparisons).toEqual([
+      {
+        a: 'species-pair',
+        b: 'ditto-pair',
+        outcome: 'incomparable',
+      },
+    ])
+    expect(chooserComparisonCopy(plan.routeComparisons, plan.strategies)).toEqual({
+      kind: 'incomparable',
+      reason: { code: 'incomparable-routes' },
+    })
     expect(dittoPair?.recommended).toBeUndefined()
     expect(dittoPair?.requiresRoute).toBeUndefined()
     expect(speciesPair?.recommended).toBeUndefined()
@@ -173,7 +183,7 @@ describe('daycareEngine acceptance cases', () => {
     )
     expect(stacked?.context).toBeUndefined()
 
-    expect(plan.routeComparison).toBeUndefined()
+    expect(plan.routeComparisons).toBeUndefined()
     const dittoPair = plan.strategies.find(
       (strategy) => strategy.id === 'ditto-pair',
     )
@@ -410,7 +420,15 @@ describe('daycareEngine acceptance cases', () => {
       ...baseTarget,
       eggMoves: [],
     })
-    expect(plan.routeComparison).toBe('cheaper')
+    expect(plan.routeComparisons).toEqual([
+      {
+        a: 'species-pair',
+        b: 'ditto-pair',
+        outcome: 'cheaper',
+        winner: 'ditto-pair',
+      },
+    ])
+    expect(chooserComparisonCopy(plan.routeComparisons, plan.strategies)).toBeNull()
     const dittoPair = plan.strategies.find(
       (strategy) => strategy.id === 'ditto-pair',
     )
@@ -588,7 +606,16 @@ describe('daycareEngine acceptance cases', () => {
 
     expect(plan.blocked).toBe(false)
     expect(plan.shiny).toBeDefined()
-    expect(plan.routeComparison).toBe('equivalent')
+    expect(plan.routeComparisons).toEqual([
+      {
+        a: 'species-pair',
+        b: 'ditto-pair',
+        outcome: 'equivalent',
+      },
+    ])
+    expect(chooserComparisonCopy(plan.routeComparisons, plan.strategies)).toEqual({
+      kind: 'equivalent',
+    })
     expect(plan.strategies.every((strategy) => !strategy.recommended)).toBe(
       true,
     )
@@ -627,7 +654,7 @@ describe('daycareEngine acceptance cases', () => {
 
     expect(plan.blocked).toBe(false)
     expect(plan.shiny).toBeDefined()
-    expect(plan.routeComparison).toBeUndefined()
+    expect(plan.routeComparisons).toBeUndefined()
 
     const dittoPair = plan.strategies.find(
       (strategy) => strategy.id === 'ditto-pair',

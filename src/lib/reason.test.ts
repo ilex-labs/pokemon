@@ -410,7 +410,7 @@ describe('formatReason recommend and exclude', () => {
     expect(
       formatReason({
         code: 'requires-hatch-from-route',
-        fromLabel: 'Species pair',
+        fromLabels: ['Species pair'],
         moves: ['Dragon Dance'],
       }),
     ).toBe(
@@ -418,9 +418,33 @@ describe('formatReason recommend and exclude', () => {
     )
   })
 
+  it('requires-hatch-from-route names both suppliers when cost cannot pick one', () => {
+    expect(
+      formatReason({
+        code: 'requires-hatch-from-route',
+        fromLabels: ['Same-species pair', 'External carrier'],
+        moves: ['FixtureMove'],
+      }),
+    ).toBe(
+      'This pairing is a follow-on — it needs a hatch from Same-species pair or External carrier that already knows FixtureMove.',
+    )
+  })
+
   it('incomparable-routes names the missing shared scale', () => {
     expect(formatReason({ code: 'incomparable-routes' })).toBe(
       "These routes aren't comparable — a gender constraint and a required move or different-language parent aren't the same kind of cost.",
+    )
+  })
+
+  it('incomparable-routes names the pair when labels are given', () => {
+    expect(
+      formatReason({
+        code: 'incomparable-routes',
+        aLabel: 'Same-species pair',
+        bLabel: 'External carrier',
+      }),
+    ).toBe(
+      "Same-species pair and External carrier aren't comparable — a gender constraint and a required move or different-language parent aren't the same kind of cost.",
     )
   })
 

@@ -5,6 +5,7 @@ import frlgJson from '../data/games/firered-leafgreen.json'
 import { speciesAbilityGroups } from '../data/loadGame'
 import { formatReason, formatReasons, type Reason } from '../lib/reason'
 import {
+  chooserComparisonCopy,
   eggAffectingHeldItemsExist,
   planDaycare,
   type DaycareTarget,
@@ -161,7 +162,14 @@ describe('FireRed/LeafGreen — ruleset branches never exercised by gen 9', () =
       ),
     ).toBe(true)
 
-    expect(plan.routeComparison).toBeUndefined()
+    expect(plan.routeComparisons).toEqual([
+      {
+        a: 'species-pair',
+        b: 'ditto-pair',
+        outcome: 'incomparable',
+      },
+    ])
+    expect(chooserComparisonCopy(plan.routeComparisons, plan.strategies)).toBeNull()
     const speciesPair = plan.strategies.find(
       (strategy) => strategy.id === 'species-pair',
     )
@@ -172,10 +180,10 @@ describe('FireRed/LeafGreen — ruleset branches never exercised by gen 9', () =
     })
     expect(ditto?.recommended).toBeUndefined()
     expect(ditto?.requiresRoute).toEqual({
-      id: 'species-pair',
+      ids: ['species-pair'],
       reason: {
         code: 'requires-hatch-from-route',
-        fromLabel: 'Species pair',
+        fromLabels: ['Species pair'],
         moves: ['Dragon Dance'],
       },
     })
@@ -220,7 +228,7 @@ describe('FireRed/LeafGreen — ruleset branches never exercised by gen 9', () =
     expect(plan.steps.some((step) => step.id === 'masuda')).toBe(false)
     expect(plan.steps.some((step) => step.id === 'shiny-charm')).toBe(false)
     expect(JSON.stringify(plan.steps)).not.toMatch(/Obtain the Shiny Charm/i)
-    expect(plan.routeComparison).toBeUndefined()
+    expect(chooserComparisonCopy(plan.routeComparisons, plan.strategies)).toBeNull()
     const speciesPair = plan.strategies.find(
       (strategy) => strategy.id === 'species-pair',
     )
@@ -233,6 +241,6 @@ describe('FireRed/LeafGreen — ruleset branches never exercised by gen 9', () =
       laterLabel: 'Ditto pair',
     })
     expect(dittoPair?.recommended).toBeUndefined()
-    expect(dittoPair?.requiresRoute?.id).toBe('species-pair')
+    expect(dittoPair?.requiresRoute?.ids).toEqual(['species-pair'])
   })
 })

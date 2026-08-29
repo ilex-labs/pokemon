@@ -6,7 +6,12 @@
 
 import type { GameData, SpeciesEggData } from '../data/schema'
 
-export type EggMoveRole = 'none' | 'carrier' | 'consolidated' | 'already-knows'
+export type EggMoveRole =
+  | 'none'
+  | 'carrier'
+  | 'same-species'
+  | 'consolidated'
+  | 'already-knows'
 
 export type ParentAcquisitionFact = {
   species: string[]
@@ -60,6 +65,7 @@ function eggMoveRoleFor(
     (other) => other !== parent && speciesKey(other) !== speciesKey(parent),
   )
   if (codes.has('acquire-egg-move-pair') && differs) return 'carrier'
+  if (codes.has('acquire-egg-move-pair')) return 'same-species'
   return 'none'
 }
 
@@ -157,7 +163,21 @@ export function formatAcquisitionCost(cost: AcquisitionCost): string {
     return body
   }
 
+  const sameSpecies = facts.find(
+    (parent) => parent.eggMoveRole === 'same-species',
+  )
   const name = facts[0]?.species[0] ?? 'parent'
+  if (sameSpecies && sameSpecies.moves.length > 0) {
+    const moveList = joinMoves(sameSpecies.moves)
+    const body = hasNature
+      ? `two ${name}, one with the target nature; one that knows ${moveList}`
+      : `two ${name}, one that knows ${moveList}`
+    if (foreign) {
+      return `${body}; one whose origin language differs from its partner`
+    }
+    return body
+  }
+
   const body = hasNature
     ? `two ${name}, one with the target nature`
     : `two ${name}`
@@ -216,8 +236,9 @@ export type RouteComparisonOutcome =
 
 /**
  * Pareto: easier gender product and qualitative extras a subset.
- * Partner identity is not in Q. Egg-move roles are: carrier and
- * already-knows are different facts, not a subset relation.
+ * Partner identity is not in Q. Egg-move roles are distinct facts
+ * (carrier, same-species, consolidated, already-knows), not a subset
+ * relation.
  */
 export function compareRouteCosts(
   a: AcquisitionCost,

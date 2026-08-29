@@ -419,7 +419,7 @@ export default function Daycare() {
                 <ParentPairCard
                   strategies={strategies}
                   selectedStrategyId={activeStrategy?.id ?? ''}
-                  routeComparison={plan.routeComparison}
+                  routeComparisons={plan.routeComparisons}
                   excludedStrategies={plan.excludedStrategies}
                   ruleset={ruleset}
                   onSelectStrategy={selectStrategy}
