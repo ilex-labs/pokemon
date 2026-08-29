@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest'
 import type { GameData, Ruleset } from '../data/schema'
 import gen9Json from '../data/rulesets/gen9.json'
 import { formatReason } from '../lib/reason'
-import { planDaycare, type DaycareTarget } from './daycareEngine'
+import {
+  applyRouteRecommendations,
+  planDaycare,
+  type DaycareTarget,
+  type PairingStrategy,
+} from './daycareEngine'
 
 const gen9 = gen9Json as Ruleset
 const maleOnly = {
@@ -181,5 +186,69 @@ describe('same-species egg-move carrier slot', () => {
       })
       .map((strategy) => strategy.id)
     expect(violations).toEqual([])
+  })
+
+  it('requiresRoute supplier is the hatch route by parent facts, not by id', () => {
+    const supplier: PairingStrategy = {
+      id: 'same-line-pair',
+      label: 'Same-line pair',
+      acquisitionCost: 'two FixtureMon',
+      tradeoff: 'Pairs two of the target line.',
+      parents: [
+        { role: 'A', species: ['FixtureMon'] },
+        {
+          role: 'B',
+          species: ['FixtureMon'],
+          mustKnow: ['FixtureMove'],
+          acquisition: [
+            {
+              severity: 'info',
+              code: 'acquire-egg-move-pair',
+              species: 'FixtureMon',
+              moves: ['FixtureMove'],
+              how: 'Catch or hatch a parent that already knows FixtureMove.',
+              passers: [],
+            },
+          ],
+        },
+      ],
+    }
+    const consumer: PairingStrategy = {
+      id: 'ditto-pair',
+      label: 'Ditto pair',
+      acquisitionCost: 'one FixtureMon that already knows FixtureMove, plus a Ditto',
+      tradeoff: 'Depends on already having the move.',
+      parents: [
+        {
+          role: 'A',
+          species: ['FixtureMon'],
+          gender: 'male',
+          mustKnow: ['FixtureMove'],
+          acquisition: [
+            {
+              severity: 'info',
+              code: 'acquire-egg-move-ditto-father-only',
+              species: 'FixtureMon',
+              moves: ['FixtureMove'],
+            },
+          ],
+        },
+        { role: 'B', species: ['Ditto'] },
+      ],
+    }
+
+    const { strategies } = applyRouteRecommendations(
+      [supplier, consumer],
+      fixtureGameSameSpecies,
+    )
+    const ditto = strategies.find((strategy) => strategy.id === 'ditto-pair')
+    expect(ditto?.requiresRoute).toEqual({
+      id: 'same-line-pair',
+      reason: {
+        code: 'requires-hatch-from-route',
+        fromLabel: 'Same-line pair',
+        moves: ['FixtureMove'],
+      },
+    })
   })
 })

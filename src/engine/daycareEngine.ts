@@ -911,11 +911,23 @@ function alreadyKnowsMoves(cost: AcquisitionCost): string[] | undefined {
   return parent ? parent.moves : undefined
 }
 
+/** Species-pair hatch that can supply an already-knows parent — not the Ditto route. */
+function isHatchSupplier(cost: AcquisitionCost): boolean {
+  if (alreadyKnowsMoves(cost) !== undefined) return false
+  return cost.parents.some((parent) => {
+    if (!parent.mustKnowMoves) return false
+    const partner = cost.parents.find((other) => other !== parent)
+    if (!partner || partner.isDitto) return false
+    if (parent.eggMoveRole === 'carrier') return true
+    return parent.species.some((name) => partner.species.includes(name))
+  })
+}
+
 /**
  * Gender-product Pareto, unless one route's already-knows parent is a hatch
  * from another route in this plan — then skip Pareto and recommend the earlier.
  */
-function applyRouteRecommendations(
+export function applyRouteRecommendations(
   strategies: PairingStrategy[],
   game: GameData,
   preferForeignDitto = false,
@@ -970,9 +982,8 @@ function applyRouteRecommendations(
   )
   const earlierIndex =
     laterIndex >= 0
-      ? strategies.findIndex(
-          (strategy, index) =>
-            index !== laterIndex && strategy.id === 'species-pair',
+      ? costs.findIndex(
+          (cost, index) => index !== laterIndex && isHatchSupplier(cost),
         )
       : -1
 
