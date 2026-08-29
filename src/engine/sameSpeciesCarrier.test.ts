@@ -101,6 +101,44 @@ const fixtureGameExternalCarrier: GameData = {
   ],
 }
 
+/** Catalog lists the target and another species — union case. */
+const fixtureGameUnion: GameData = {
+  id: 'fixture-union-passers',
+  displayName: 'Fixture union passers',
+  generation: 9,
+  eggGroups: {
+    field: ['FixtureMon'],
+    dragon: ['FixtureCarrier'],
+  },
+  species: {
+    FixtureMon: fixtureSpecies('FixtureMon'),
+    FixtureCarrier: fixtureSpecies('FixtureCarrier'),
+  },
+  ditto: {
+    available: true,
+    universalParent: true,
+    obtainedAt: 'Fixture Ditto location.',
+  },
+  eggMoves: {
+    FixtureMon: [
+      {
+        move: 'FixtureMove',
+        parentSpecies: ['FixtureMon', 'FixtureCarrier'],
+      },
+    ],
+  },
+  eggMoveAcquisition: {
+    how: 'Catch or hatch a parent that already knows FixtureMove.',
+  },
+  hatchRoutes: [
+    {
+      routeName: 'Fixture walk',
+      cycleCount: 'medium',
+      method: 'Walk.',
+    },
+  ],
+}
+
 function speciesPairParents(game: GameData, ruleset: Ruleset) {
   const plan = planDaycare(game, ruleset, fixtureTarget)
   const speciesPair = plan.strategies.find(
@@ -250,5 +288,78 @@ describe('same-species egg-move carrier slot', () => {
         moves: ['FixtureMove'],
       },
     })
+  })
+
+  it('union catalog emits same-species and external species-pair routes', () => {
+    const plan = planDaycare(fixtureGameUnion, gen9, fixtureTarget)
+    expect(plan.strategies.map((strategy) => strategy.id)).toEqual([
+      'species-pair-same',
+      'species-pair-external',
+      'ditto-pair',
+    ])
+
+    const same = plan.strategies.find(
+      (strategy) => strategy.id === 'species-pair-same',
+    )
+    const external = plan.strategies.find(
+      (strategy) => strategy.id === 'species-pair-external',
+    )
+    const sameB = same?.parents.find((parent) => parent.role === 'B')
+    const externalB = external?.parents.find((parent) => parent.role === 'B')
+    const sameA = same?.parents.find((parent) => parent.role === 'A')
+
+    expect(sameB?.species).toEqual(['FixtureMon'])
+    expect(sameB?.mustKnow).toEqual(['FixtureMove'])
+    expect(
+      sameB?.acquisition?.find((flag) => flag.code === 'acquire-egg-move-pair'),
+    ).toMatchObject({
+      code: 'acquire-egg-move-pair',
+      passers: [],
+    })
+    expect(sameA?.gender).toBeUndefined()
+    expect(sameA?.genderReason?.some((reason) => reason.code === 'female-species-holder')).not.toBe(
+      true,
+    )
+
+    expect(externalB?.species).toEqual(['FixtureCarrier'])
+    expect(externalB?.mustKnow).toEqual(['FixtureMove'])
+    expect(
+      externalB?.acquisition?.find((flag) => flag.code === 'acquire-egg-move-pair'),
+    ).toMatchObject({
+      code: 'acquire-egg-move-pair',
+      passers: ['FixtureCarrier'],
+    })
+    expect(externalB?.gender).toBe('male')
+    expect(externalB?.genderReason).toEqual([
+      {
+        code: 'male-external-carrier',
+        carrierSpecies: ['FixtureCarrier'],
+      },
+    ])
+    expect(
+      external?.parents
+        .find((parent) => parent.role === 'A')
+        ?.genderReason?.some((reason) => reason.code === 'female-species-holder'),
+    ).toBe(true)
+  })
+
+  it('union catalog on male-only keeps egg-move eligibility on both pair routes', () => {
+    const plan = planDaycare(fixtureGameUnion, maleOnly, fixtureTarget)
+    const sameB = plan.strategies
+      .find((strategy) => strategy.id === 'species-pair-same')
+      ?.parents.find((parent) => parent.role === 'B')
+    const externalB = plan.strategies
+      .find((strategy) => strategy.id === 'species-pair-external')
+      ?.parents.find((parent) => parent.role === 'B')
+
+    expect(sameB?.gender).toBe('male')
+    expect(sameB?.genderReason).toEqual([{ code: 'male-egg-move-eligible' }])
+    expect(externalB?.genderReason).toEqual([
+      {
+        code: 'male-external-carrier',
+        carrierSpecies: ['FixtureCarrier'],
+      },
+      { code: 'male-egg-move-eligible' },
+    ])
   })
 })

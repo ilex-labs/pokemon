@@ -680,6 +680,8 @@ function buildSpeciesPairStrategy(
   ruleset: Ruleset,
   target: DaycareTarget,
   species: SpeciesEggData,
+  useExternalCarrier: boolean,
+  route: { id: string; label: string },
 ): PairingStrategy {
   const natureWanted = wantsNature(target, ruleset)
   const abilityWanted = wantsAbility(target, ruleset, species)
@@ -687,8 +689,6 @@ function buildSpeciesPairStrategy(
     abilityWanted && ruleset.abilityInheritance.maleOrGenderlessNeedsDitto
   const passers = eggMovePasserSpecies(game, target.species, target.eggMoves)
   const externalPassers = passers.filter((name) => name !== target.species)
-  const useExternalCarrier =
-    target.eggMoves.length > 0 && externalPassers.length > 0
 
   const parentA: ParentRequirement = {
     role: 'A',
@@ -725,7 +725,7 @@ function buildSpeciesPairStrategy(
       species: target.species,
       moves: [...target.eggMoves],
       how,
-      passers: externalPassers,
+      passers: useExternalCarrier ? externalPassers : [],
     })
     applyEggGroupLookupWarnings(game, parentB, target.species, target.eggMoves)
   }
@@ -757,12 +757,63 @@ function buildSpeciesPairStrategy(
     : 'Pairs two of the target line — held items and hatching match the Ditto route.'
 
   return {
-    id: 'species-pair',
-    label: 'Species pair',
+    id: route.id,
+    label: route.label,
     parents,
     acquisitionCost: routeAcquisitionCost(parents, game),
     tradeoff,
   }
+}
+
+const SPECIES_PAIR_ROUTE = { id: 'species-pair', label: 'Species pair' }
+
+function buildSpeciesPairStrategies(
+  game: GameData,
+  ruleset: Ruleset,
+  target: DaycareTarget,
+  species: SpeciesEggData,
+): PairingStrategy[] {
+  const passers = eggMovePasserSpecies(game, target.species, target.eggMoves)
+  const targetIsPasser = passers.includes(target.species)
+  const externalPassers = passers.filter((name) => name !== target.species)
+  const wantsMoves = target.eggMoves.length > 0
+  const hasExternal = wantsMoves && externalPassers.length > 0
+  const hasSame = wantsMoves && targetIsPasser
+
+  if (hasSame && hasExternal) {
+    return [
+      buildSpeciesPairStrategy(game, ruleset, target, species, false, {
+        id: 'species-pair-same',
+        label: 'Same-species pair',
+      }),
+      buildSpeciesPairStrategy(game, ruleset, target, species, true, {
+        id: 'species-pair-external',
+        label: 'External carrier',
+      }),
+    ]
+  }
+  if (hasExternal) {
+    return [
+      buildSpeciesPairStrategy(
+        game,
+        ruleset,
+        target,
+        species,
+        true,
+        SPECIES_PAIR_ROUTE,
+      ),
+    ]
+  }
+  return [
+    buildSpeciesPairStrategy(
+      game,
+      ruleset,
+      target,
+      species,
+      false,
+      SPECIES_PAIR_ROUTE,
+    ),
+  ]
 }
 
 function buildDittoPairStrategy(
@@ -1153,7 +1204,9 @@ function resolveStrategies(
       reason: abilityExclusion,
     })
   } else {
-    strategies.push(buildSpeciesPairStrategy(game, ruleset, target, species))
+    strategies.push(
+      ...buildSpeciesPairStrategies(game, ruleset, target, species),
+    )
   }
 
   if (canOfferDittoPair(game, target)) {
