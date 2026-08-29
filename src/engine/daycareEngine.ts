@@ -19,6 +19,7 @@ import {
   compareRouteCosts,
   deriveAcquisitionCost,
   formatAcquisitionCost,
+  workKindsFromQualitativeKeys,
   type AcquisitionCost,
 } from '../lib/acquisitionCost.ts'
 
@@ -98,6 +99,11 @@ export type RoutePairComparison = {
   outcome: 'cheaper' | 'equivalent' | 'incomparable'
   /** Strategy id of the cheaper route. Present only when outcome is cheaper. */
   winner?: string
+  /** Present when outcome is incomparable. */
+  gDiffers?: boolean
+  qOnlyA?: string[]
+  qOnlyB?: string[]
+  alternativeName?: string
 }
 
 export type DaycarePlan = {
@@ -1006,8 +1012,8 @@ export type ChooserComparisonCopy =
 
 /**
  * Cost copy for the chooser. Sequenced (supplier-consumer) pairs are excluded
- * — the follow-on sentence is that pair's copy. Two routes keep the unnamed
- * incomparable sentence; three or more name the pair.
+ * — the follow-on sentence is that pair's copy. Two routes omit pair labels;
+ * three or more name the pair. The clause is the pair's Q/G axis.
  */
 export function chooserComparisonCopy(
   comparisons: RoutePairComparison[] | undefined,
@@ -1032,18 +1038,25 @@ export function chooserComparisonCopy(
     (pair) => pair.outcome === 'incomparable',
   )
   if (incomparable.length === 0) return null
-  if (strategies.length === 2) {
-    return { kind: 'incomparable', reason: { code: 'incomparable-routes' } }
-  }
+  const pair = incomparable[0]!
+  const left = workKindsFromQualitativeKeys(pair.qOnlyA ?? [])
+  const right = workKindsFromQualitativeKeys(pair.qOnlyB ?? [])
   const labels = (id: string) =>
     strategies.find((strategy) => strategy.id === id)?.label ?? id
-  const pair = incomparable[0]!
+  const named = strategies.length >= 3
   return {
     kind: 'incomparable',
     reason: {
       code: 'incomparable-routes',
-      aLabel: labels(pair.a),
-      bLabel: labels(pair.b),
+      ...(named
+        ? { aLabel: labels(pair.a), bLabel: labels(pair.b) }
+        : {}),
+      gVersusExtra: (left.length === 0) !== (right.length === 0),
+      left,
+      right,
+      ...(pair.alternativeName
+        ? { alternativeName: pair.alternativeName }
+        : {}),
     },
   }
 }
@@ -1065,8 +1078,21 @@ function computeRouteComparisons(
           outcome: 'cheaper',
           winner: result.winner === 'a' ? a : b,
         })
+      } else if (result.outcome === 'equivalent') {
+        comparisons.push({ a, b, outcome: 'equivalent' })
       } else {
-        comparisons.push({ a, b, outcome: result.outcome })
+        const alternativeName =
+          costs[i]!.eggMoveAlternativeName ??
+          costs[j]!.eggMoveAlternativeName
+        comparisons.push({
+          a,
+          b,
+          outcome: 'incomparable',
+          gDiffers: result.gDiffers,
+          qOnlyA: result.onlyA,
+          qOnlyB: result.onlyB,
+          ...(alternativeName ? { alternativeName } : {}),
+        })
       }
     }
   }

@@ -32,6 +32,8 @@ export type ParentAcquisitionFact = {
 
 export type AcquisitionCost = {
   parents: ParentAcquisitionFact[]
+  /** From game.eggMoveAlternative — for incomparable copy, not Q. */
+  eggMoveAlternativeName?: string
 }
 
 type ParentSnapshot = {
@@ -74,6 +76,7 @@ export function deriveAcquisitionCost(
   game: GameData,
 ): AcquisitionCost {
   return {
+    eggMoveAlternativeName: game.eggMoveAlternative?.name,
     parents: parents.map((parent) => {
       const moves = parent.mustKnow ? [...parent.mustKnow] : []
       const cataloguedGenderRatio: ParentAcquisitionFact['cataloguedGenderRatio'] =
@@ -225,6 +228,43 @@ function qualitativeKeys(cost: AcquisitionCost): string[] {
   return [...keys].sort()
 }
 
+export type IncomparableWorkKind =
+  | 'nature'
+  | 'masuda'
+  | 'carrier'
+  | 'same-species'
+  | 'consolidated'
+  | 'already-knows'
+
+const MOVE_ROLE_IN_KEY =
+  /^moves:(carrier|same-species|consolidated|already-knows):/
+
+/** Q keys exclusive to one side, collapsed to work kinds for the sentence. */
+export function workKindsFromQualitativeKeys(
+  keys: string[],
+): IncomparableWorkKind[] {
+  const kinds: IncomparableWorkKind[] = []
+  const seen = new Set<string>()
+  for (const key of keys) {
+    if (key === 'nature' || key === 'masuda') {
+      if (!seen.has(key)) {
+        seen.add(key)
+        kinds.push(key)
+      }
+      continue
+    }
+    const match = MOVE_ROLE_IN_KEY.exec(key)
+    if (match) {
+      const role = match[1] as IncomparableWorkKind
+      if (!seen.has(role)) {
+        seen.add(role)
+        kinds.push(role)
+      }
+    }
+  }
+  return kinds
+}
+
 function isSubset(left: string[], right: string[]): boolean {
   return left.every((key) => right.includes(key))
 }
@@ -232,7 +272,12 @@ function isSubset(left: string[], right: string[]): boolean {
 export type RouteComparisonOutcome =
   | { outcome: 'equivalent' }
   | { outcome: 'cheaper'; winner: 'a' | 'b' }
-  | { outcome: 'incomparable' }
+  | {
+      outcome: 'incomparable'
+      gDiffers: boolean
+      onlyA: string[]
+      onlyB: string[]
+    }
 
 /**
  * Pareto: easier gender product and qualitative extras a subset.
@@ -262,5 +307,10 @@ export function compareRouteCosts(
   if (aDominates && !bDominates) return { outcome: 'cheaper', winner: 'a' }
   if (bDominates && !aDominates) return { outcome: 'cheaper', winner: 'b' }
   if (genderA === genderB && sameQual) return { outcome: 'equivalent' }
-  return { outcome: 'incomparable' }
+  return {
+    outcome: 'incomparable',
+    gDiffers: genderA !== genderB,
+    onlyA: qualA.filter((key) => !qualB.includes(key)),
+    onlyB: qualB.filter((key) => !qualA.includes(key)),
+  }
 }

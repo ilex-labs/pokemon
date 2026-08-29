@@ -62,12 +62,33 @@ describe('daycareEngine acceptance cases', () => {
         a: 'species-pair',
         b: 'ditto-pair',
         outcome: 'incomparable',
+        gDiffers: true,
+        qOnlyA: ['moves:carrier:Dragon Dance'],
+        qOnlyB: ['moves:consolidated:Dragon Dance'],
+        alternativeName: 'Mirror Herb',
       },
     ])
-    expect(chooserComparisonCopy(plan.routeComparisons, plan.strategies)).toEqual({
+    const comparisonCopy = chooserComparisonCopy(
+      plan.routeComparisons,
+      plan.strategies,
+    )
+    expect(comparisonCopy).toEqual({
       kind: 'incomparable',
-      reason: { code: 'incomparable-routes' },
+      reason: {
+        code: 'incomparable-routes',
+        gVersusExtra: false,
+        left: ['carrier'],
+        right: ['consolidated'],
+        alternativeName: 'Mirror Herb',
+      },
     })
+    expect(
+      comparisonCopy?.kind === 'incomparable'
+        ? formatReason(comparisonCopy.reason)
+        : null,
+    ).toBe(
+      "These routes aren't comparable — using another species as a carrier and copying the move with Mirror Herb aren't the same kind of work.",
+    )
     expect(dittoPair?.recommended).toBeUndefined()
     expect(dittoPair?.requiresRoute).toBeUndefined()
     expect(speciesPair?.recommended).toBeUndefined()

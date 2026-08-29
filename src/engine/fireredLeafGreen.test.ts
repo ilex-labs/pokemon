@@ -167,6 +167,9 @@ describe('FireRed/LeafGreen — ruleset branches never exercised by gen 9', () =
         a: 'species-pair',
         b: 'ditto-pair',
         outcome: 'incomparable',
+        gDiffers: true,
+        qOnlyA: ['moves:carrier:Dragon Dance'],
+        qOnlyB: ['moves:already-knows:Dragon Dance'],
       },
     ])
     expect(chooserComparisonCopy(plan.routeComparisons, plan.strategies)).toBeNull()

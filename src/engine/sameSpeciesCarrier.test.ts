@@ -393,16 +393,25 @@ describe('same-species egg-move carrier slot', () => {
         a: 'species-pair-same',
         b: 'species-pair-external',
         outcome: 'incomparable',
+        gDiffers: true,
+        qOnlyA: ['moves:same-species:FixtureMove'],
+        qOnlyB: ['moves:carrier:FixtureMove'],
       },
       {
         a: 'species-pair-same',
         b: 'ditto-pair',
         outcome: 'incomparable',
+        gDiffers: false,
+        qOnlyA: ['moves:same-species:FixtureMove'],
+        qOnlyB: ['moves:already-knows:FixtureMove'],
       },
       {
         a: 'species-pair-external',
         b: 'ditto-pair',
         outcome: 'incomparable',
+        gDiffers: true,
+        qOnlyA: ['moves:carrier:FixtureMove'],
+        qOnlyB: ['moves:already-knows:FixtureMove'],
       },
     ])
     const comparisonCopy = chooserComparisonCopy(
@@ -415,6 +424,9 @@ describe('same-species egg-move carrier slot', () => {
         code: 'incomparable-routes',
         aLabel: 'Same-species pair',
         bLabel: 'External carrier',
+        gVersusExtra: false,
+        left: ['same-species'],
+        right: ['carrier'],
       },
     })
     expect(
@@ -422,7 +434,7 @@ describe('same-species egg-move carrier slot', () => {
         ? formatReason(comparisonCopy.reason)
         : null,
     ).toBe(
-      "Same-species pair and External carrier aren't comparable — a gender constraint and a required move or different-language parent aren't the same kind of cost.",
+      "Same-species pair and External carrier aren't comparable — passing the move on the line and using another species as a carrier aren't the same kind of work.",
     )
   })
 

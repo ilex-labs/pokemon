@@ -430,21 +430,45 @@ describe('formatReason recommend and exclude', () => {
     )
   })
 
-  it('incomparable-routes names the missing shared scale', () => {
-    expect(formatReason({ code: 'incomparable-routes' })).toBe(
-      "These routes aren't comparable — a gender constraint and a required move or different-language parent aren't the same kind of cost.",
+  it('incomparable-routes names conflicting egg-move work, not a menu of axes', () => {
+    expect(
+      formatReason({
+        code: 'incomparable-routes',
+        gVersusExtra: false,
+        left: ['carrier'],
+        right: ['consolidated'],
+        alternativeName: 'Mirror Herb',
+      }),
+    ).toBe(
+      "These routes aren't comparable — using another species as a carrier and copying the move with Mirror Herb aren't the same kind of work.",
     )
   })
 
-  it('incomparable-routes names the pair when labels are given', () => {
+  it('incomparable-routes names the pair and on-the-line passing versus a carrier', () => {
     expect(
       formatReason({
         code: 'incomparable-routes',
         aLabel: 'Same-species pair',
         bLabel: 'External carrier',
+        gVersusExtra: false,
+        left: ['same-species'],
+        right: ['carrier'],
       }),
     ).toBe(
-      "Same-species pair and External carrier aren't comparable — a gender constraint and a required move or different-language parent aren't the same kind of cost.",
+      "Same-species pair and External carrier aren't comparable — passing the move on the line and using another species as a carrier aren't the same kind of work.",
+    )
+  })
+
+  it('incomparable-routes mentions gender only when it is the conflict', () => {
+    expect(
+      formatReason({
+        code: 'incomparable-routes',
+        gVersusExtra: true,
+        left: [],
+        right: ['masuda'],
+      }),
+    ).toBe(
+      "These routes aren't comparable — a rarer gender hunt and a different-language parent aren't the same kind of cost.",
     )
   })
 

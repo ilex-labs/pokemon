@@ -88,6 +88,24 @@ export type Reason =
       code: 'incomparable-routes'
       aLabel?: string
       bLabel?: string
+      gVersusExtra: boolean
+      left: Array<
+        | 'nature'
+        | 'masuda'
+        | 'carrier'
+        | 'same-species'
+        | 'consolidated'
+        | 'already-knows'
+      >
+      right: Array<
+        | 'nature'
+        | 'masuda'
+        | 'carrier'
+        | 'same-species'
+        | 'consolidated'
+        | 'already-knows'
+      >
+      alternativeName?: string
     }
   | { code: 'exclude-pair-hidden-needs-ditto'; ability: string }
   | { code: 'exclude-pair-ability-needs-ditto'; ability: string }
@@ -103,6 +121,49 @@ function formatSpeciesList(names: string[]): string {
   if (names.length === 1) return names[0]!
   if (names.length === 2) return `${names[0]} or ${names[1]}`
   return `${names.slice(0, -1).join(', ')}, or ${names[names.length - 1]}`
+}
+
+type IncomparableWorkKind =
+  | 'nature'
+  | 'masuda'
+  | 'carrier'
+  | 'same-species'
+  | 'consolidated'
+  | 'already-knows'
+
+function formatIncomparableWork(
+  kind: IncomparableWorkKind,
+  alternativeName?: string,
+): string {
+  switch (kind) {
+    case 'nature':
+      return 'the target nature'
+    case 'masuda':
+      return 'a different-language parent'
+    case 'carrier':
+      return 'using another species as a carrier'
+    case 'same-species':
+      return 'passing the move on the line'
+    case 'consolidated':
+      return alternativeName
+        ? `copying the move with ${alternativeName}`
+        : 'copying the move onto the line'
+    case 'already-knows':
+      return 'needing a parent that already knows the move'
+  }
+}
+
+function formatIncomparableWorkList(
+  kinds: IncomparableWorkKind[],
+  alternativeName?: string,
+): string {
+  const parts = kinds.map((kind) =>
+    formatIncomparableWork(kind, alternativeName),
+  )
+  if (parts.length === 0) return ''
+  if (parts.length === 1) return parts[0]!
+  if (parts.length === 2) return `${parts[0]} and ${parts[1]}`
+  return `${parts.slice(0, -1).join(', ')}, and ${parts[parts.length - 1]}`
 }
 
 function formatPasserPreview(passers: string[]): string | null {
@@ -314,12 +375,36 @@ export function formatReason(reason: Reason): string {
       return `This pairing is a follow-on — it needs a hatch from ${from}${known}.`
     }
     case 'incomparable-routes': {
-      const clause =
-        "a gender constraint and a required move or different-language parent aren't the same kind of cost."
-      if (reason.aLabel && reason.bLabel) {
-        return `${reason.aLabel} and ${reason.bLabel} aren't comparable — ${clause}`
+      const subject =
+        reason.aLabel && reason.bLabel
+          ? `${reason.aLabel} and ${reason.bLabel} aren't comparable`
+          : "These routes aren't comparable"
+      if (reason.gVersusExtra) {
+        const extra = formatIncomparableWorkList(
+          reason.left.length > 0 ? reason.left : reason.right,
+          reason.alternativeName,
+        )
+        return `${subject} — a rarer gender hunt and ${extra} aren't the same kind of cost.`
       }
-      return `These routes aren't comparable — ${clause}`
+      const left = formatIncomparableWorkList(
+        reason.left,
+        reason.alternativeName,
+      )
+      const right = formatIncomparableWorkList(
+        reason.right,
+        reason.alternativeName,
+      )
+      const moveRoles = new Set([
+        'carrier',
+        'same-species',
+        'consolidated',
+        'already-knows',
+      ])
+      const bothWork = [...reason.left, ...reason.right].every((kind) =>
+        moveRoles.has(kind),
+      )
+      const noun = bothWork ? 'work' : 'cost'
+      return `${subject} — ${left} and ${right} aren't the same kind of ${noun}.`
     }
     case 'exclude-pair-hidden-needs-ditto':
       return `${reason.ability} can't be passed on a species pair — a male or genderless parent only passes its hidden ability when paired with Ditto.`

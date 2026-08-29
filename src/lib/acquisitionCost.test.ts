@@ -126,6 +126,9 @@ describe('compareRouteCosts', () => {
     ])
     expect(compareRouteCosts(pairCarrier, dittoAlreadyKnows)).toEqual({
       outcome: 'incomparable',
+      gDiffers: true,
+      onlyA: ['moves:carrier:Dragon Dance'],
+      onlyB: ['moves:already-knows:Dragon Dance'],
     })
   })
 
@@ -161,6 +164,9 @@ describe('compareRouteCosts', () => {
     ])
     expect(compareRouteCosts(pairCarrier, dittoConsolidated)).toEqual({
       outcome: 'incomparable',
+      gDiffers: true,
+      onlyA: ['moves:carrier:Dragon Dance'],
+      onlyB: ['moves:consolidated:Dragon Dance'],
     })
   })
 
@@ -195,6 +201,37 @@ describe('compareRouteCosts', () => {
     ])
     expect(compareRouteCosts(sameSpecies, externalCarrier)).toEqual({
       outcome: 'incomparable',
+      gDiffers: true,
+      onlyA: ['moves:same-species:Dragon Dance'],
+      onlyB: ['moves:carrier:Dragon Dance'],
+    })
+  })
+
+  it('records G-versus-extra-Q when the easier hunt has more qualitative work', () => {
+    const rareFemale = cost([
+      parent({
+        species: ['Charmander'],
+        genderConstrained: true,
+        gender: 'female',
+        cataloguedGenderRatio: [
+          { species: 'Charmander', ratio: CHARMANDER_RATIO },
+        ],
+      }),
+      parent({ species: ['Charmander'] }),
+    ])
+    const dittoMasuda = cost([
+      parent({ species: ['Charmander'] }),
+      parent({
+        species: ['Ditto'],
+        isDitto: true,
+        mustOriginateFromDifferentLanguage: true,
+      }),
+    ])
+    expect(compareRouteCosts(rareFemale, dittoMasuda)).toEqual({
+      outcome: 'incomparable',
+      gDiffers: true,
+      onlyA: [],
+      onlyB: ['masuda'],
     })
   })
 })
