@@ -563,7 +563,11 @@ function collectHeldItemDemands(
     const reasons: Reason[] = [
       lock.method === 'everstone-guaranteed'
         ? { code: 'everstone-guaranteed', nature: target.nature }
-        : { code: 'everstone-chance', nature: target.nature },
+        : {
+            code: 'everstone-chance',
+            nature: target.nature,
+            passOdds: lock.passOdds,
+          },
     ]
     if (lock.holder === 'female-or-ditto') {
       reasons.push({ code: 'holder-female-or-ditto' })

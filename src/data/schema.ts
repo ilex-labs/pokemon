@@ -5,11 +5,21 @@
 
 import type { Reason } from '../lib/reason'
 
+export type NatureLockHolder = 'female-or-ditto' | 'either-parent'
+
 export type NatureLock =
   | { method: 'none' }
   | {
-      method: 'everstone-chance' | 'everstone-guaranteed'
-      holder: 'female-or-ditto' | 'either-parent'
+      method: 'everstone-guaranteed'
+      holder: NatureLockHolder
+      /** Omit, or 1. Never a chance rate. */
+      passOdds?: 1
+    }
+  | {
+      method: 'everstone-chance'
+      holder: NatureLockHolder
+      /** Per-egg pass rate in (0, 1). Not a renderer literal. */
+      passOdds: number
     }
 
 export interface Ruleset {

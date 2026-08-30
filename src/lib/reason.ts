@@ -11,7 +11,7 @@ export type Reason =
   | { code: 'male-egg-move-eligible' }
   | { code: 'pair-opposite-genders' }
   | { code: 'everstone-guaranteed'; nature: string }
-  | { code: 'everstone-chance'; nature: string }
+  | { code: 'everstone-chance'; nature: string; passOdds: number }
   | { code: 'holder-female-or-ditto' }
   | {
       code: 'destiny-knot-iv'
@@ -284,7 +284,7 @@ export function formatReason(reason: Reason): string {
     case 'everstone-guaranteed':
       return `Guarantees the hatch inherits ${reason.nature}.`
     case 'everstone-chance':
-      return `Gives a 50% chance the hatch inherits ${reason.nature}.`
+      return `Gives a ${formatOddsPercent(reason.passOdds)} chance the hatch inherits ${reason.nature}.`
     case 'holder-female-or-ditto':
       return 'The holder must be a female parent or a Ditto.'
     case 'destiny-knot-iv':

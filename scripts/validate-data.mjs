@@ -133,6 +133,26 @@ function validateRuleset(filePath, ruleset) {
     fail(`${rel}: hatchLevel must be an integer >= 1`)
   }
 
+  const lock = ruleset.natureLock
+  if (!lock || typeof lock !== 'object') {
+    fail(`${rel}: natureLock is required`)
+  } else if (lock.method === 'everstone-chance') {
+    if (
+      typeof lock.passOdds !== 'number' ||
+      !(lock.passOdds > 0 && lock.passOdds < 1)
+    ) {
+      fail(
+        `${rel}: natureLock.method "everstone-chance" requires passOdds in (0, 1)`,
+      )
+    }
+  } else if (lock.method === 'everstone-guaranteed') {
+    if ('passOdds' in lock && lock.passOdds !== 1) {
+      fail(
+        `${rel}: natureLock.method "everstone-guaranteed" omits passOdds or sets 1`,
+      )
+    }
+  }
+
   function validateOdds(label, value) {
     if (!value || typeof value !== 'object') {
       fail(`${rel}: ${label} must be an object with odds and approximateEggs`)

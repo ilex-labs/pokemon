@@ -592,7 +592,11 @@ describe('daycareEngine acceptance cases', () => {
   it('everstone-chance is a different code from guaranteed', () => {
     const chanceRuleset: Ruleset = {
       ...gen9,
-      natureLock: { method: 'everstone-chance', holder: 'either-parent' },
+      natureLock: {
+        method: 'everstone-chance',
+        holder: 'either-parent',
+        passOdds: 0.5,
+      },
     }
     const plan = planDaycare(scarletViolet, chanceRuleset, {
       ...baseTarget,
@@ -610,7 +614,7 @@ describe('daycareEngine acceptance cases', () => {
       .flatMap((strategy) => strategy.parents)
       .find((parent) => parent.heldItem === 'Everstone')
     expect(natureParent?.heldItemReason).toEqual([
-      { code: 'everstone-chance', nature: 'Timid' },
+      { code: 'everstone-chance', nature: 'Timid', passOdds: 0.5 },
     ])
   })
 

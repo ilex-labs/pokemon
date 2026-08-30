@@ -14,7 +14,7 @@ const scarletViolet = scarletVioletJson as GameData
 
 const fixtureHolderFemaleOrDitto: Ruleset = {
   ...gen9,
-  natureLock: { method: 'everstone-chance', holder: 'female-or-ditto' },
+  natureLock: { method: 'everstone-chance', holder: 'female-or-ditto', passOdds: 0.5 },
 }
 
 const natureOnly: DaycareTarget = {
@@ -33,7 +33,7 @@ const natureOnly: DaycareTarget = {
 }
 
 const everstoneChanceAndHolder = [
-  { code: 'everstone-chance', nature: 'Timid' },
+  { code: 'everstone-chance', nature: 'Timid', passOdds: 0.5 },
   { code: 'holder-female-or-ditto' },
 ] as const
 

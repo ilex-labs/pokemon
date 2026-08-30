@@ -238,12 +238,20 @@ const hiddenCannotPass: Ruleset = {
 
 const chanceRuleset: Ruleset = {
   ...gen9,
-  natureLock: { method: 'everstone-chance', holder: 'either-parent' },
+  natureLock: {
+    method: 'everstone-chance',
+    holder: 'either-parent',
+    passOdds: 0.5,
+  },
 }
 
 const holderFemaleOrDitto: Ruleset = {
   ...gen9,
-  natureLock: { method: 'everstone-chance', holder: 'female-or-ditto' },
+  natureLock: {
+    method: 'everstone-chance',
+    holder: 'female-or-ditto',
+    passOdds: 0.5,
+  },
 }
 
 const fixtureOdds: Ruleset = {

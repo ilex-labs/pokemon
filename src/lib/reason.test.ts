@@ -59,10 +59,14 @@ describe('formatReason', () => {
     ).toBe('Guarantees the hatch inherits Timid.')
   })
 
-  it('everstone-chance hedges the same nature', () => {
+  it('everstone-chance interpolates passOdds from the reason', () => {
     expect(
-      formatReason({ code: 'everstone-chance', nature: 'Timid' }),
-    ).toBe('Gives a 50% chance the hatch inherits Timid.')
+      formatReason({
+        code: 'everstone-chance',
+        nature: 'Timid',
+        passOdds: 0.25,
+      }),
+    ).toBe('Gives a 25% chance the hatch inherits Timid.')
   })
 
   it('holder-female-or-ditto names the holder rule, not the item', () => {
