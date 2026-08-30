@@ -86,6 +86,13 @@
           "external": true
         }
       ]
+    },
+    {
+      "name": "Ride Koraidon / Miraidon",
+      "affects": ["step-pace"],
+      "type": "other",
+      "effect": "Eggs hatch from steps taken. Cover ground on your ride legendary — that is the fast path.",
+      "availability": "Hatch progress stops while climbing, gliding, or flying, so stay on the ground. Keep at least one non-egg Pokémon in the party."
     }
   ],
   "eggMoves": {
@@ -107,14 +114,7 @@
     "Blaze": "When this Pokémon's HP is at or below one-third, the power of its Fire-type moves is boosted.",
     "Solar Power": "In harsh sunlight, Special Attack rises, but the Pokémon loses some HP at the end of each turn."
   },
-  "hatchRoutes": [
-    {
-      "routeName": "Ride Koraidon / Miraidon",
-      "cycleCount": "fast",
-      "method": "Eggs hatch from steps taken. Cover ground on your ride legendary — that is the fast path.",
-      "notes": "Hatch progress stops while climbing, gliding, or flying, so stay on the ground. Keep at least one non-egg Pokémon in the party."
-    }
-  ],
+  "hatchRoutes": [],
   "hatchMechanicExplainer": "Eggs show up in the picnic basket while two compatible Pokémon are in your party picnic. Egg Power sandwiches raise how often eggs appear and also shorten hatch time — Lv. 2 from shop ingredients is the everyday target; Lv. 3 needs Herba Mystica from 5★+ Tera Raids and is roughly 10× the base find rate. A party Pokémon with Flame Body, Magma Armor, or Steam Engine halves remaining hatch cycles (abilities do not stack with each other). Hatch by covering ground on Koraidon or Miraidon — stay on the ground, and keep at least one non-egg Pokémon in the party.",
   "shinyEggModifiers": {
     "shinyCharmAvailable": true,

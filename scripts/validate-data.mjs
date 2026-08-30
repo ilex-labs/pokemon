@@ -361,10 +361,24 @@ function validateGame(filePath, game, natures) {
     }
   }
 
+  const ALLOWED_AFFECTS = new Set(['egg-rate', 'hatch-speed', 'step-pace'])
   for (const [index, modifier] of (game.eggEfficiencyModifiers ?? []).entries()) {
     if (!modifier || typeof modifier !== 'object') {
       fail(`${label}: eggEfficiencyModifiers[${index}] must be an object`)
       continue
+    }
+    if (!Array.isArray(modifier.affects) || modifier.affects.length === 0) {
+      fail(
+        `${label}: eggEfficiencyModifiers[${index}] ("${modifier.name ?? 'unnamed'}") affects must be a non-empty array`,
+      )
+    } else {
+      for (const [affectIndex, affect] of modifier.affects.entries()) {
+        if (!ALLOWED_AFFECTS.has(affect)) {
+          fail(
+            `${label}: eggEfficiencyModifiers[${index}].affects[${affectIndex}] is "${affect}", which is not one of egg-rate, hatch-speed, step-pace`,
+          )
+        }
+      }
     }
     if (modifier.type === 'ability') {
       if (

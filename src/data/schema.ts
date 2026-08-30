@@ -92,10 +92,18 @@ export type AbilityHolder = {
   external?: true
 }
 
-/** Egg-rate and/or hatch-speed modifiers — one item may pull both levers. */
+/**
+ * Which lever a modifier pulls. One item may pull more than one.
+ * - egg-rate: how often eggs appear
+ * - hatch-speed: how many steps/cycles are needed
+ * - step-pace: how long the same required steps take — does not cut the count
+ */
+export type EggEfficiencyAffect = 'egg-rate' | 'hatch-speed' | 'step-pace'
+
+/** Egg-efficiency modifiers — one item may pull more than one lever. */
 export interface EggEfficiencyModifier {
   name: string
-  affects: Array<'egg-rate' | 'hatch-speed'>
+  affects: EggEfficiencyAffect[]
   type: 'sandwich' | 'item' | 'ability' | 'other'
   effect: string
   availability: string

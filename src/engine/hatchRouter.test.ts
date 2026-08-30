@@ -63,19 +63,29 @@ describe('hatchRouter', () => {
     expect(view.hatchSpeed.some((line) => /Overworld/i.test(line.name))).toBe(
       true,
     )
+    expect(view.stepPace).toEqual([])
   })
 
-  it('SV hatch route is ride-legendary travel, not Lets Go companion mode', () => {
-    const route = scarletViolet.hatchRoutes[0]
-    expect(route?.routeName).toMatch(/Koraidon|Miraidon/)
-    expect(route?.method).toMatch(/ride legendary|steps taken/i)
-    expect(route?.notes).toMatch(/climbing|gliding|flying/i)
-    expect(route?.notes).toMatch(/non-egg/i)
-    expect(JSON.stringify(route)).not.toMatch(/companion|outside its ball|Let.?s Go/i)
+  it('SV ride legendary is step-pace: same steps, less time — not fewer hatch steps', () => {
+    const ride = scarletViolet.eggEfficiencyModifiers?.find((modifier) =>
+      /Koraidon|Miraidon/.test(modifier.name),
+    )
+    expect(ride?.affects).toEqual(['step-pace'])
+    expect(ride?.effect).toMatch(/ride legendary|steps taken/i)
+    expect(ride?.availability).toMatch(/climbing|gliding|flying/i)
+    expect(ride?.availability).toMatch(/non-egg/i)
+    expect(JSON.stringify(ride)).not.toMatch(/companion|outside its ball|Let.?s Go/i)
+    expect(scarletViolet.hatchRoutes).toEqual([])
 
     const view = buildHatchEfficiency(scarletViolet)
-    const ride = view.hatchSpeed.find((line) => /Koraidon|Miraidon/.test(line.name))
-    expect(ride?.effect).toMatch(/stay on the ground/i)
-    expect(ride?.effect).not.toMatch(/companion|outside its ball/i)
+    expect(
+      view.hatchSpeed.some((line) => /Koraidon|Miraidon/.test(line.name)),
+    ).toBe(false)
+    const line = view.stepPace.find((entry) =>
+      /Koraidon|Miraidon/.test(entry.name),
+    )
+    expect(line?.effect).toMatch(/ride legendary|steps taken/i)
+    expect(line?.availability).toMatch(/stay on the ground/i)
+    expect(line?.effect).not.toMatch(/companion|outside its ball/i)
   })
 })

@@ -1,10 +1,12 @@
 /**
- * Group egg-efficiency modifiers and hatch routes by the two levers
- * players care about: getting eggs faster, and hatching them faster.
+ * Group egg-efficiency modifiers and hatch routes by the three levers
+ * players care about: getting eggs faster, fewer steps to hatch, and
+ * covering the same steps in less time.
  */
 
 import type {
   AbilityHolder,
+  EggEfficiencyAffect,
   EggEfficiencyModifier,
   GameData,
   HatchRoute,
@@ -24,6 +26,7 @@ export type EfficiencyLine = {
 export type HatchEfficiencyView = {
   eggRate: EfficiencyLine[]
   hatchSpeed: EfficiencyLine[]
+  stepPace: EfficiencyLine[]
 }
 
 const CYCLE_PACE: Record<HatchRoute['cycleCount'], string> = {
@@ -45,20 +48,21 @@ const CYCLE_ORDER: Record<HatchRoute['cycleCount'], number> = {
  */
 function phraseForLever(
   modifier: EggEfficiencyModifier,
-  lever: 'egg-rate' | 'hatch-speed',
+  lever: EggEfficiencyAffect,
 ): string {
   if (modifier.affects.length === 1) return modifier.effect
 
   const parts = modifier.effect.split(/\s·\s/).map((part) => part.trim())
   if (parts.length >= 2) {
-    return lever === 'egg-rate' ? parts[0]! : parts[1]!
+    if (lever === 'egg-rate') return parts[0]!
+    if (lever === 'hatch-speed') return parts[1]!
   }
   return modifier.effect
 }
 
 function lineFromModifier(
   modifier: EggEfficiencyModifier,
-  lever: 'egg-rate' | 'hatch-speed',
+  lever: EggEfficiencyAffect,
 ): EfficiencyLine {
   return {
     name: modifier.name,
@@ -95,6 +99,10 @@ export function buildHatchEfficiency(game: GameData): HatchEfficiencyView {
     .filter((modifier) => modifier.affects.includes('hatch-speed'))
     .map((modifier) => lineFromModifier(modifier, 'hatch-speed'))
 
+  const stepPace = modifiers
+    .filter((modifier) => modifier.affects.includes('step-pace'))
+    .map((modifier) => lineFromModifier(modifier, 'step-pace'))
+
   const routes = [...game.hatchRoutes]
     .sort(
       (a, b) => CYCLE_ORDER[a.cycleCount] - CYCLE_ORDER[b.cycleCount],
@@ -104,5 +112,6 @@ export function buildHatchEfficiency(game: GameData): HatchEfficiencyView {
   return {
     eggRate,
     hatchSpeed: [...hatchSpeedMods, ...routes],
+    stepPace,
   }
 }

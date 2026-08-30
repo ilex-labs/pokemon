@@ -108,6 +108,8 @@ export default function HatchRouteCard({ game }: HatchRouteCardProps) {
     'No egg-rate boosts recorded for this game yet.'
   const hatchSpeedEmpty =
     'No hatch-speed shortcuts recorded for this game yet.'
+  const stepPaceEmpty =
+    'No faster way to cover the same steps is recorded for this game yet.'
 
   return (
     <section className="space-y-[var(--spacing-within)]">
@@ -125,6 +127,11 @@ export default function HatchRouteCard({ game }: HatchRouteCardProps) {
       <div>
         <h3 className="label-caps">Hatching them faster</h3>
         <EfficiencyList lines={view.hatchSpeed} emptyMessage={hatchSpeedEmpty} />
+      </div>
+
+      <div>
+        <h3 className="label-caps">Covering the steps faster</h3>
+        <EfficiencyList lines={view.stepPace} emptyMessage={stepPaceEmpty} />
       </div>
 
       {game.hatchMechanicExplainer ? (
