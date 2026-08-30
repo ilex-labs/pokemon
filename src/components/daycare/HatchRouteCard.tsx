@@ -70,12 +70,19 @@ function HolderLocations({ holders }: { holders: AbilityHolder[] }) {
 function EfficiencyList({
   lines,
   emptyMessage,
+  emptyIsGap,
 }: {
   lines: ReturnType<typeof buildHatchEfficiency>['eggRate']
   emptyMessage: string
+  /** True when empty copy is our missing data, not a sourced absence. */
+  emptyIsGap: boolean
 }) {
   if (lines.length === 0) {
-    return <p className="mt-2">{withNums(emptyMessage)}</p>
+    return (
+      <p className={emptyIsGap ? 'mt-2 text-muted' : 'mt-2'}>
+        {withNums(emptyMessage)}
+      </p>
+    )
   }
 
   return (
@@ -103,13 +110,14 @@ function EfficiencyList({
 
 export default function HatchRouteCard({ game }: HatchRouteCardProps) {
   const view = buildHatchEfficiency(game)
+  const eggRateSourced = Boolean(game.noEggRateBoostsReason)
   const eggRateEmpty =
     game.noEggRateBoostsReason ??
-    'No egg-rate boosts recorded for this game yet.'
+    'Not recorded yet. No egg-rate boosts for this game.'
   const hatchSpeedEmpty =
-    'No hatch-speed shortcuts recorded for this game yet.'
+    'Not recorded yet. No hatch-speed shortcuts for this game.'
   const stepPaceEmpty =
-    'No faster way to cover the same steps is recorded for this game yet.'
+    'Not recorded yet. No faster way to cover the same steps.'
 
   return (
     <section className="space-y-[var(--spacing-within)]">
@@ -121,17 +129,29 @@ export default function HatchRouteCard({ game }: HatchRouteCardProps) {
 
       <div>
         <h3 className="label-caps">Getting eggs faster</h3>
-        <EfficiencyList lines={view.eggRate} emptyMessage={eggRateEmpty} />
+        <EfficiencyList
+          lines={view.eggRate}
+          emptyMessage={eggRateEmpty}
+          emptyIsGap={!eggRateSourced}
+        />
       </div>
 
       <div>
         <h3 className="label-caps">Hatching them faster</h3>
-        <EfficiencyList lines={view.hatchSpeed} emptyMessage={hatchSpeedEmpty} />
+        <EfficiencyList
+          lines={view.hatchSpeed}
+          emptyMessage={hatchSpeedEmpty}
+          emptyIsGap
+        />
       </div>
 
       <div>
         <h3 className="label-caps">Covering the steps faster</h3>
-        <EfficiencyList lines={view.stepPace} emptyMessage={stepPaceEmpty} />
+        <EfficiencyList
+          lines={view.stepPace}
+          emptyMessage={stepPaceEmpty}
+          emptyIsGap
+        />
       </div>
 
       {game.hatchMechanicExplainer ? (

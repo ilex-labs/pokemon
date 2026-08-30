@@ -44,15 +44,19 @@ describe('HatchRouteCard ability holders', () => {
 })
 
 describe('HatchRouteCard FRLG empty step-pace', () => {
-  it('shows the covering-steps heading empty rather than inventing a bicycle', () => {
+  it('shows a sourced egg-rate absence as body copy and a step-pace gap as muted not-recorded', () => {
     render(<HatchRouteCard game={frlg} />)
 
+    const absence = screen.getByText(
+      /This game has no item or charm that raises how often eggs appear/,
+    )
+    expect(absence.className).not.toMatch(/text-muted/)
+
     expect(screen.getByText('Covering the steps faster')).toBeTruthy()
-    expect(
-      screen.getByText(
-        'No faster way to cover the same steps is recorded for this game yet.',
-      ),
-    ).toBeTruthy()
+    const gap = screen.getByText(
+      'Not recorded yet. No faster way to cover the same steps.',
+    )
+    expect(gap.className).toMatch(/text-muted/)
     expect(screen.queryByText(/bicycle|bike/i)).toBeNull()
     expect(screen.getByText('Overworld walking')).toBeTruthy()
   })
