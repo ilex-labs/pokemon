@@ -180,7 +180,7 @@ describe('same-species egg-move carrier slot', () => {
     expect(carrier?.genderReason).toEqual([{ code: 'male-egg-move-eligible' }])
   })
 
-  it('fixtureGameExternalCarrier on male-only: male, both causes stated', () => {
+  it('fixtureGameExternalCarrier on male-only: male for egg-move eligibility only', () => {
     const { parents } = speciesPairParents(fixtureGameExternalCarrier, maleOnly)
     const carrier = parents.find((parent) =>
       parent.mustKnow?.includes('FixtureMove'),
@@ -188,10 +188,6 @@ describe('same-species egg-move carrier slot', () => {
     expect(carrier?.species).toEqual(['FixtureCarrier'])
     expect(carrier?.gender).toBe('male')
     expect(carrier?.genderReason).toEqual([
-      {
-        code: 'male-external-carrier',
-        carrierSpecies: ['FixtureCarrier'],
-      },
       { code: 'male-egg-move-eligible' },
     ])
   })
@@ -333,18 +329,13 @@ describe('same-species egg-move carrier slot', () => {
       code: 'acquire-egg-move-pair',
       passers: ['FixtureCarrier'],
     })
-    expect(externalB?.gender).toBe('male')
-    expect(externalB?.genderReason).toEqual([
-      {
-        code: 'male-external-carrier',
-        carrierSpecies: ['FixtureCarrier'],
-      },
-    ])
+    expect(externalB?.gender).toBeUndefined()
+    expect(externalB?.genderReason).toBeUndefined()
     expect(
       external?.parents
         .find((parent) => parent.role === 'A')
         ?.genderReason?.some((reason) => reason.code === 'female-species-holder'),
-    ).toBe(true)
+    ).not.toBe(true)
   })
 
   it('union catalog on male-only keeps egg-move eligibility on both pair routes', () => {
@@ -359,10 +350,6 @@ describe('same-species egg-move carrier slot', () => {
     expect(sameB?.gender).toBe('male')
     expect(sameB?.genderReason).toEqual([{ code: 'male-egg-move-eligible' }])
     expect(externalB?.genderReason).toEqual([
-      {
-        code: 'male-external-carrier',
-        carrierSpecies: ['FixtureCarrier'],
-      },
       { code: 'male-egg-move-eligible' },
     ])
   })
@@ -396,7 +383,7 @@ describe('same-species egg-move carrier slot', () => {
         a: 'species-pair-same',
         b: 'species-pair-external',
         outcome: 'incomparable',
-        gDiffers: false,
+        gDiffers: true,
         qOnlyA: ['moves:same-species:FixtureMove'],
         qOnlyB: ['moves:carrier:FixtureMove'],
       },
@@ -412,7 +399,7 @@ describe('same-species egg-move carrier slot', () => {
         a: 'species-pair-external',
         b: 'ditto-pair',
         outcome: 'incomparable',
-        gDiffers: true,
+        gDiffers: false,
         qOnlyA: ['moves:carrier:FixtureMove'],
         qOnlyB: ['moves:already-knows:FixtureMove'],
       },

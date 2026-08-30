@@ -225,6 +225,7 @@ describe('FireRed/LeafGreen — ruleset branches never exercised by gen 9', () =
     expect(plan.shiny?.noBoostsReason).toMatch(
       /Base odds are the only egg shiny odds/i,
     )
+    expect(plan.shiny?.noBoostsIsGap).toBeUndefined()
     expect(plan.shiny?.determinedOnReceive).toMatch(
       /decided the moment you receive the egg/i,
     )
@@ -245,5 +246,18 @@ describe('FireRed/LeafGreen — ruleset branches never exercised by gen 9', () =
     })
     expect(dittoPair?.recommended).toBeUndefined()
     expect(dittoPair?.requiresRoute?.ids).toEqual(['species-pair'])
+  })
+
+  it('omitting noEggShinyBoostsReason is a gap, not an unsourced game fact', () => {
+    const { noEggShinyBoostsReason: _omit, ...unsourced } = frlg
+    const plan = planDaycare(unsourced, gen3, {
+      ...baseTarget,
+      wantsShiny: true,
+    })
+    expect(plan.shiny?.noBoostsReason).toBeUndefined()
+    expect(plan.shiny?.noBoostsIsGap).toBe(true)
+    expect(JSON.stringify(plan.shiny)).not.toMatch(
+      /Nothing in this game improves/,
+    )
   })
 })

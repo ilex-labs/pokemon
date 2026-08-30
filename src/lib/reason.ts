@@ -5,7 +5,12 @@
  */
 
 export type Reason =
-  | { code: 'female-species-holder'; offspringSpecies: string }
+  | {
+      code: 'female-species-holder'
+      offspringSpecies: string
+      /** Sourced `speciesDetermination.femaleDeterminesSpecies` when present. */
+      determinationFact?: string
+    }
   | { code: 'female-ability-needs-ditto' }
   | { code: 'male-external-carrier'; carrierSpecies: string[] }
   | { code: 'male-egg-move-eligible' }
@@ -187,11 +192,16 @@ const HYPER_IV_TRADEOFF =
 /** Clause only — conclusion is applied once in formatGendered. */
 function genderReasonParts(reason: Reason): GenderedParts | undefined {
   switch (reason.code) {
-    case 'female-species-holder':
+    case 'female-species-holder': {
+      if (!reason.determinationFact) return undefined
+      const hatch = `eggs hatch as ${reason.offspringSpecies}`
+      const fact = reason.determinationFact.replace(/\.$/, '')
+      const clause = fact.charAt(0).toLowerCase() + fact.slice(1)
       return {
         gender: 'female',
-        clause: `the female parent determines the offspring's species — eggs hatch as ${reason.offspringSpecies}`,
+        clause: `${clause} — ${hatch}`,
       }
+    }
     case 'female-ability-needs-ditto':
       return {
         gender: 'female',

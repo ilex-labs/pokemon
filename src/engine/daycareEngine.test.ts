@@ -183,6 +183,7 @@ describe('daycareEngine acceptance cases', () => {
     expect(plan.shiny?.tiers[2]?.odds).toBe('6/4096')
     expect(plan.shiny?.tiers[3]?.odds).toBe('8/4096')
     expect(plan.shiny?.noBoostsReason).toBeUndefined()
+    expect(plan.shiny?.noBoostsIsGap).toBeUndefined()
     expect(plan.shiny?.determinedOnReceive).toMatch(
       /decided the moment you receive the egg/i,
     )
@@ -320,13 +321,36 @@ describe('daycareEngine acceptance cases', () => {
     expect(ability).toBeDefined()
     expect(ability?.instruction).toMatch(/Solar Power/)
     expect(ability?.instruction).toMatch(/cannot be passed via eggs/i)
-    expect(ability?.instruction).toMatch(/Ability Patch|Ability Capsule/)
+    expect(ability?.instruction).toMatch(/Ability Patch/)
+    expect(ability?.instruction).not.toMatch(/Ability Capsule/)
 
     const blocking = ability?.ruleFlags?.filter(
       (flag) => flag.severity === 'blocking',
     )
     expect(blocking?.length).toBeGreaterThan(0)
     expect(plan.steps.find((step) => step.id === 'iv-base')).toBeDefined()
+  })
+
+  it('Ability Capsule is not offered as a hidden-ability fix', () => {
+    const ruleset: Ruleset = {
+      ...gen9,
+      abilityInheritance: {
+        ...gen9.abilityInheritance,
+        hiddenAbilityViaEggs: false,
+        abilityPatchAvailable: false,
+        abilityCapsuleAvailable: true,
+      },
+    }
+
+    const plan = planDaycare(scarletViolet, ruleset, {
+      ...baseTarget,
+      ability: 'Solar Power',
+    })
+    const ability = plan.steps.find((step) => step.id === 'ability')
+    expect(ability?.instruction).toMatch(/cannot be passed via eggs/i)
+    expect(ability?.instruction).toMatch(/another acquisition method/i)
+    expect(ability?.instruction).not.toMatch(/Ability Capsule/)
+    expect(ability?.instruction).not.toMatch(/Ability Patch/)
   })
 
   it('Case 4: genderless + no Ditto truncates with blocked: true', () => {
@@ -939,5 +963,50 @@ describe('daycareEngine acceptance cases', () => {
     const blob = JSON.stringify(plan.steps)
     expect(blob).not.toMatch(/80%/)
     expect(blob).not.toMatch(/60%/)
+  })
+
+  it('omitting speciesDetermination drops the species-determination reasons', () => {
+    const { speciesDetermination: _omit, ...unsourced } = scarletViolet
+    const plan = planDaycare(unsourced, gen9, baseTarget)
+    const speciesPair = plan.strategies.find(
+      (strategy) => strategy.id === 'species-pair',
+    )
+    const natureParent = speciesPair?.parents.find(
+      (parent) => parent.mustHaveNature,
+    )
+    const moveParent = speciesPair?.parents.find((parent) =>
+      parent.mustKnow?.includes('Dragon Dance'),
+    )
+    expect(natureParent?.genderReason?.map((reason) => reason.code)).toEqual([
+      'pair-opposite-genders',
+    ])
+    expect(genderProse(natureParent)).toBe(
+      'The pair needs one female and one male — this arrangement is one valid choice.',
+    )
+    expect(moveParent?.genderReason?.map((reason) => reason.code)).toEqual([
+      'pair-opposite-genders',
+    ])
+    expect(genderProse(moveParent)).toBe(
+      'The pair needs one female and one male — this arrangement is one valid choice.',
+    )
+    expect(genderProse(natureParent)).not.toMatch(/female parent determines/i)
+    expect(genderProse(moveParent)).not.toMatch(/would produce/i)
+  })
+
+  it('universalParent false does not claim Ditto pairs with anything', () => {
+    const game: GameData = {
+      ...scarletViolet,
+      ditto: { ...scarletViolet.ditto, universalParent: false },
+    }
+    const plan = planDaycare(game, gen9, {
+      ...baseTarget,
+      eggMoves: [],
+      wantsShiny: true,
+    })
+    const blob = JSON.stringify(plan)
+    expect(blob).not.toMatch(/pairs with anything/)
+    expect(blob).not.toMatch(/works with any species/)
+    const ditto = plan.strategies.find((strategy) => strategy.id === 'ditto-pair')
+    expect(ditto?.recommendReason?.code).not.toBe('recommend-masuda-ditto-reuse')
   })
 })

@@ -472,6 +472,15 @@ const cases: Case[] = [
   },
   { name: 'FRLG base', game: frlg, ruleset: gen3, target: frlgBase },
   {
+    name: 'SV omitting speciesDetermination',
+    game: (() => {
+      const { speciesDetermination: _omit, ...rest } = scarletViolet
+      return rest
+    })(),
+    ruleset: gen9,
+    target: svBase,
+  },
+  {
     name: 'FRLG unconstrained',
     game: frlg,
     ruleset: gen3,

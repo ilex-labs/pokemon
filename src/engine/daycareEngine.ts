@@ -94,8 +94,13 @@ export type ShinyOddsTier = {
 
 export type ShinyOdds = {
   tiers: ShinyOddsTier[]
-  /** Present when this game has no egg-shiny boost (no Masuda, no Charm). */
+  /** Sourced absence when this game has no Masuda and no Shiny Charm. */
   noBoostsReason?: string
+  /**
+   * Boosts are absent and noEggShinyBoostsReason was not sourced —
+   * a data gap, not a game fact.
+   */
+  noBoostsIsGap?: true
   /** Shininess is locked when the egg is received, not when it hatches. */
   determinedOnReceive: string
 }
@@ -525,8 +530,15 @@ function fillSameSpeciesPairGenders(parents: ParentRequirement[]) {
   }
 }
 
-function femaleSpeciesHolder(offspringSpecies: string): Reason {
-  return { code: 'female-species-holder', offspringSpecies }
+function femaleSpeciesHolder(
+  offspringSpecies: string,
+  determinationFact: string,
+): Reason {
+  return {
+    code: 'female-species-holder',
+    offspringSpecies,
+    determinationFact,
+  }
 }
 
 function femaleAbilityNeedsDitto(): Reason {
@@ -747,14 +759,18 @@ function buildSpeciesPairStrategy(
   }
   applyNatureAbility(parentA, game, ruleset, species, target)
 
+  const determinationFact =
+    game.speciesDetermination?.femaleDeterminesSpecies
+
   // Recompute gender from what the target actually forces — do not assert.
-  if (natureWanted || useExternalCarrier) {
+  if (useExternalCarrier && determinationFact) {
     parentA.gender = 'female'
-    if (useExternalCarrier) {
-      parentA.genderReason = [femaleSpeciesHolder(target.species)]
-    } else {
-      parentA.genderReason = [pairOppositeGenders()]
-    }
+    parentA.genderReason = [
+      femaleSpeciesHolder(target.species, determinationFact),
+    ]
+  } else if (natureWanted) {
+    parentA.gender = 'female'
+    parentA.genderReason = [pairOppositeGenders()]
   } else if (abilityNeedsFemale) {
     parentA.gender = 'female'
     parentA.genderReason = [femaleAbilityNeedsDitto()]
@@ -782,7 +798,7 @@ function buildSpeciesPairStrategy(
   }
 
   const carrierGenderReasons: Reason[] = []
-  if (useExternalCarrier) {
+  if (useExternalCarrier && game.speciesDetermination) {
     carrierGenderReasons.push(maleExternalCarrier(externalPassers))
   }
   if (
@@ -958,7 +974,9 @@ function buildDittoPairStrategy(
 
   const moveNote =
     target.eggMoves.length === 0
-      ? `${target.species} covers the spread; Ditto pairs with anything.`
+      ? game.ditto.universalParent
+        ? `${target.species} covers the spread; Ditto pairs with anything.`
+        : `${target.species} covers the spread.`
       : hasMoveAlternative
         ? `Requires consolidating ${target.eggMoves.join(', ')} onto ${target.species} first, then one parent covers nature/ability/moves.`
         : `Depends on already having a ${target.species} with ${target.eggMoves.join(', ')} — usually from the species-pair route first.`
@@ -1175,7 +1193,7 @@ export function applyRouteRecommendations(
 
   if (strategies.length === 1) {
     const only = strategies[0]!
-    if (preferForeignDitto && isDittoRoute(only)) {
+    if (preferForeignDitto && isDittoRoute(only) && game.ditto.universalParent) {
       return {
         strategies: [
           {
@@ -1274,7 +1292,7 @@ export function applyRouteRecommendations(
 
   if (preferForeignDitto) {
     const dittoRoute = annotated.find(isDittoRoute)
-    if (dittoRoute) {
+    if (dittoRoute && game.ditto.universalParent) {
       annotated = annotated.map((strategy) =>
         strategy.id === dittoRoute.id
           ? {
@@ -1462,9 +1480,6 @@ function buildAbilityBlockStep(
   const alternatives: string[] = []
   if (ruleset.abilityInheritance.abilityPatchAvailable) {
     alternatives.push('Ability Patch')
-  }
-  if (ruleset.abilityInheritance.abilityCapsuleAvailable) {
-    alternatives.push('Ability Capsule')
   }
   const altText =
     alternatives.length > 0
@@ -1754,13 +1769,19 @@ function buildShinyPayload(game: GameData, ruleset: Ruleset): ShinyOdds {
 
   const noBoostsReason =
     !ruleset.masudaMethod && !modifiers?.shinyCharmAvailable
-      ? (game.noEggShinyBoostsReason ??
-        'Nothing in this game improves egg shiny odds.')
+      ? game.noEggShinyBoostsReason
+      : undefined
+  const noBoostsIsGap =
+    !ruleset.masudaMethod &&
+    !modifiers?.shinyCharmAvailable &&
+    !game.noEggShinyBoostsReason
+      ? true
       : undefined
 
   return {
     tiers,
     noBoostsReason,
+    noBoostsIsGap,
     determinedOnReceive: SHINY_DETERMINED_ON_RECEIVE,
   }
 }

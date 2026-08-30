@@ -2,15 +2,26 @@ import { describe, expect, it } from 'vitest'
 import { formatReason, formatReasons, type Reason } from './reason'
 
 describe('formatReason', () => {
-  it('female-species-holder names the offspring species', () => {
+  it('female-species-holder names the offspring species from the sourced fact', () => {
     expect(
       formatReason({
         code: 'female-species-holder',
         offspringSpecies: 'Charmander',
+        determinationFact:
+          "The female parent determines the offspring's species.",
       }),
     ).toBe(
       "Female because the female parent determines the offspring's species — eggs hatch as Charmander.",
     )
+  })
+
+  it('female-species-holder without a sourced fact is not a truncated clause', () => {
+    expect(() =>
+      formatReason({
+        code: 'female-species-holder',
+        offspringSpecies: 'Charmander',
+      }),
+    ).toThrow(/missing a clause/)
   })
 
   it('female-ability-needs-ditto', () => {

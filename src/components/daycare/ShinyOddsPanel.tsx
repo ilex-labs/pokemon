@@ -16,6 +16,10 @@ export default function ShinyOddsPanel({ shiny }: ShinyOddsPanelProps) {
       </p>
       {shiny.noBoostsReason ? (
         <p>{withNums(shiny.noBoostsReason)}</p>
+      ) : shiny.noBoostsIsGap ? (
+        <p className="text-muted">
+          Not recorded yet. No egg-shiny boosts for this game.
+        </p>
       ) : (
         <p className="text-muted">
           Approximate eggs until a shiny at each tier that applies in this game.
