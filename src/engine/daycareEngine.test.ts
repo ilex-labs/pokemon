@@ -374,7 +374,7 @@ describe('daycareEngine acceptance cases', () => {
     const conflict = ivBase?.ruleFlags?.find(
       (flag) =>
         flag.severity === 'warning' &&
-        /Destiny Knot spreads five IVs/i.test(flagProse(flag)),
+        /Destiny Knot spreads 5 IVs/i.test(flagProse(flag)),
     )
     expect(conflict).toBeUndefined()
     expect(JSON.stringify(ivBase?.ruleFlags ?? [])).not.toMatch(/power item/i)
@@ -582,7 +582,7 @@ describe('daycareEngine acceptance cases', () => {
     const conflict = ivBase?.ruleFlags?.find(
       (flag) =>
         flag.severity === 'warning' &&
-        /Destiny Knot spreads five IVs/i.test(flagProse(flag)),
+        /Destiny Knot spreads 5 IVs/i.test(flagProse(flag)),
     )
     expect(conflict).toBeDefined()
     expect(conflict?.code).toBe('held-item-conflict')

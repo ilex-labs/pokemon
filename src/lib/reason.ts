@@ -73,6 +73,7 @@ export type Reason =
       assigned: string[]
       unassigned: string[]
       knotVersusPower: boolean
+      destinyKnotBoostedCount: number
     }
   | { code: 'unknown-species'; species: string }
   | { code: 'recommend-masuda-ditto-reuse' }
@@ -352,7 +353,7 @@ export function formatReason(reason: Reason): string {
       let line = `Only two held-item slots exist (one per parent). Assigned: ${assigned}. Could not also fit: ${reason.unassigned.join(', ')}.`
       if (reason.knotVersusPower) {
         line +=
-          ' Destiny Knot spreads five IVs while a power item guarantees one specific stat — which matters more depends on whether you need the spread or a locked stat.'
+          ` Destiny Knot spreads ${reason.destinyKnotBoostedCount} IVs while a power item guarantees one specific stat — which matters more depends on whether you need the spread or a locked stat.`
       }
       return line
     }

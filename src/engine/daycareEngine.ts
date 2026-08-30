@@ -617,6 +617,7 @@ function allocateHeldItems(
   parents: ParentRequirement[],
   demands: HeldItemDemand[],
   dittoPair: boolean,
+  destinyKnotBoostedCount: number,
 ): RuleFlag | undefined {
   if (demands.length === 0 || parents.length === 0) return undefined
 
@@ -696,6 +697,7 @@ function allocateHeldItems(
     unassigned,
     knotVersusPower:
       remaining.has('destiny-knot') || remaining.has('power-item'),
+    destinyKnotBoostedCount,
   }
 }
 
@@ -798,7 +800,12 @@ function buildSpeciesPairStrategy(
   }
 
   const parents = [parentA, parentB]
-  allocateHeldItems(parents, collectHeldItemDemands(ruleset, target), false)
+  allocateHeldItems(
+    parents,
+    collectHeldItemDemands(ruleset, target),
+    false,
+    ruleset.ivInheritance.destinyKnotBoostedCount,
+  )
   applyMasudaConstraint(parents, game, target, ruleset)
   fillSameSpeciesPairGenders(parents)
 
@@ -941,7 +948,12 @@ function buildDittoPairStrategy(
   }
 
   const parents = [parentA, parentB]
-  allocateHeldItems(parents, collectHeldItemDemands(ruleset, target), true)
+  allocateHeldItems(
+    parents,
+    collectHeldItemDemands(ruleset, target),
+    true,
+    ruleset.ivInheritance.destinyKnotBoostedCount,
+  )
   applyMasudaConstraint(parents, game, target, ruleset)
 
   const moveNote =
@@ -989,7 +1001,12 @@ function buildDittoOnlyStrategy(
   }
 
   const parents = [parentA, parentB]
-  allocateHeldItems(parents, collectHeldItemDemands(ruleset, target), true)
+  allocateHeldItems(
+    parents,
+    collectHeldItemDemands(ruleset, target),
+    true,
+    ruleset.ivInheritance.destinyKnotBoostedCount,
+  )
   applyMasudaConstraint(parents, game, target, ruleset)
 
   return {
@@ -1558,6 +1575,7 @@ function hyperTrainingAllMaxFlag(
 function itemConflictFromParents(
   parents: ParentRequirement[],
   demands: HeldItemDemand[],
+  destinyKnotBoostedCount: number,
 ): RuleFlag | undefined {
   if (demands.length <= 2) return undefined
   const held = parents.map((parent) => parent.heldItem).filter(Boolean)
@@ -1571,6 +1589,7 @@ function itemConflictFromParents(
     assigned: held.filter((item): item is string => Boolean(item)),
     unassigned: missing,
     knotVersusPower: true,
+    destinyKnotBoostedCount,
   }
 }
 
@@ -1582,6 +1601,7 @@ function heldItemConflictFlag(
   return itemConflictFromParents(
     parents,
     collectHeldItemDemands(ruleset, target),
+    ruleset.ivInheritance.destinyKnotBoostedCount,
   )
 }
 

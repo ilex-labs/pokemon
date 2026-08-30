@@ -367,9 +367,10 @@ describe('formatReason step flags', () => {
         assigned: ['Everstone', 'Destiny Knot'],
         unassigned: ['a power item'],
         knotVersusPower: true,
+        destinyKnotBoostedCount: 5,
       }),
     ).toBe(
-      'Only two held-item slots exist (one per parent). Assigned: Everstone, Destiny Knot. Could not also fit: a power item. Destiny Knot spreads five IVs while a power item guarantees one specific stat — which matters more depends on whether you need the spread or a locked stat.',
+      'Only two held-item slots exist (one per parent). Assigned: Everstone, Destiny Knot. Could not also fit: a power item. Destiny Knot spreads 5 IVs while a power item guarantees one specific stat — which matters more depends on whether you need the spread or a locked stat.',
     )
   })
 

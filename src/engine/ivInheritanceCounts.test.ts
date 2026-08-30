@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest'
 import type { GameData, Ruleset } from '../data/schema'
 import gen9Json from '../data/rulesets/gen9.json'
 import scarletVioletJson from '../data/games/scarlet-violet.json'
+import { formatReason } from '../lib/reason'
 import { planDaycare, type DaycareTarget } from './daycareEngine'
 
 const gen9 = gen9Json as Ruleset
@@ -57,6 +58,25 @@ describe('ivInheritance synthetic counts', () => {
         baseCountInherited: 3,
         destinyKnotBoostedCount: 5,
       })
+    }
+  })
+
+  it('held-item-conflict names 4 IVs, not five', () => {
+    const plan = planDaycare(scarletViolet, fixtureIvCounts24, {
+      ...ivTarget,
+      nature: 'Timid',
+      wantsPowerItem: true,
+    })
+    const conflicts = plan.steps.flatMap((step) =>
+      (step.ruleFlags ?? []).filter(
+        (flag) => flag.code === 'held-item-conflict',
+      ),
+    )
+    expect(conflicts.length).toBeGreaterThan(0)
+    for (const flag of conflicts) {
+      expect(flag).toMatchObject({ destinyKnotBoostedCount: 4 })
+      expect(formatReason(flag)).toMatch(/spreads 4 IVs/)
+      expect(formatReason(flag)).not.toMatch(/five IVs/)
     }
   })
 })
