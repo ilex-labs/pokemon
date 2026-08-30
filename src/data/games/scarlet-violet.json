@@ -61,10 +61,30 @@
       "effect": "Halves the steps needed to hatch eggs while that Pokémon is in your party.",
       "availability": "Any party slot. These abilities do not stack with each other — one holder is enough.",
       "exampleHolders": [
-        "Larvesta — Asado Desert (Flame Body)",
-        "Fletchinder — South Province (Areas One, Three–Five) and West Province Area Three (Flame Body)",
-        "Carkol — East Province Area Three (Steam Engine or Flame Body)",
-        "Camerupt — Area Zero and North Province Area Two (Magma Armor)"
+        {
+          "species": "Larvesta",
+          "place": "Asado Desert",
+          "abilities": ["Flame Body"],
+          "external": true
+        },
+        {
+          "species": "Fletchinder",
+          "place": "South Province (Areas One, Three–Five) and West Province Area Three",
+          "abilities": ["Flame Body"],
+          "external": true
+        },
+        {
+          "species": "Carkol",
+          "place": "East Province Area Three",
+          "abilities": ["Steam Engine", "Flame Body"],
+          "external": true
+        },
+        {
+          "species": "Camerupt",
+          "place": "Area Zero and North Province Area Two",
+          "abilities": ["Magma Armor"],
+          "external": true
+        }
       ]
     }
   ],

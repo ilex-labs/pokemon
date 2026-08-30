@@ -12,18 +12,44 @@ describe('hatchRouter', () => {
     const ability = scarletViolet.eggEfficiencyModifiers?.find(
       (modifier) => modifier.type === 'ability',
     )
-    expect(ability?.exampleHolders?.length).toBeGreaterThan(0)
-    expect(ability?.exampleHolders?.join(' ')).toMatch(/Larvesta/)
-    expect(ability?.exampleHolders?.join(' ')).toMatch(/Carkol|Steam Engine/)
+    expect(ability?.exampleHolders).toEqual([
+      {
+        species: 'Larvesta',
+        place: 'Asado Desert',
+        abilities: ['Flame Body'],
+        external: true,
+      },
+      {
+        species: 'Fletchinder',
+        place:
+          'South Province (Areas One, Three–Five) and West Province Area Three',
+        abilities: ['Flame Body'],
+        external: true,
+      },
+      {
+        species: 'Carkol',
+        place: 'East Province Area Three',
+        abilities: ['Steam Engine', 'Flame Body'],
+        external: true,
+      },
+      {
+        species: 'Camerupt',
+        place: 'Area Zero and North Province Area Two',
+        abilities: ['Magma Armor'],
+        external: true,
+      },
+    ])
 
     const view = buildHatchEfficiency(scarletViolet)
     const flame = view.hatchSpeed.find((line) =>
       /Flame Body/i.test(line.name),
     )
     expect(flame?.exampleHolders).toEqual(ability?.exampleHolders)
-    expect(flame?.exampleHolders?.some((holder) => /Asado Desert/i.test(holder))).toBe(
-      true,
+    const carkol = flame?.exampleHolders?.find(
+      (holder) => holder.species === 'Carkol',
     )
+    expect(carkol?.abilities).toEqual(['Steam Engine', 'Flame Body'])
+    expect(carkol?.place).toBe('East Province Area Three')
   })
 
   it('FRLG has no egg-rate boosts and states that as a fact, not a data gap', () => {

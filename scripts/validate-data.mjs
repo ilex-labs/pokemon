@@ -356,9 +356,47 @@ function validateGame(filePath, game, natures) {
         )
       } else {
         for (const [holderIndex, holder] of modifier.exampleHolders.entries()) {
-          if (!isNonEmptyString(holder)) {
+          const path = `${label}: eggEfficiencyModifiers[${index}].exampleHolders[${holderIndex}]`
+          if (typeof holder === 'string') {
             fail(
-              `${label}: eggEfficiencyModifiers[${index}].exampleHolders[${holderIndex}] must be a non-empty string`,
+              `${path} must be an object { species, place, abilities }, not a string`,
+            )
+            continue
+          }
+          if (!holder || typeof holder !== 'object' || Array.isArray(holder)) {
+            fail(`${path} must be an object { species, place, abilities }`)
+            continue
+          }
+          if (!isNonEmptyString(holder.species)) {
+            fail(`${path}.species must be a non-empty string`)
+          }
+          if (!isNonEmptyString(holder.place)) {
+            fail(`${path}.place must be a non-empty string`)
+          }
+          if (!Array.isArray(holder.abilities) || holder.abilities.length === 0) {
+            fail(`${path}.abilities must be a non-empty array of ability names`)
+          } else {
+            for (const [abilityIndex, ability] of holder.abilities.entries()) {
+              if (!isNonEmptyString(ability)) {
+                fail(
+                  `${path}.abilities[${abilityIndex}] must be a non-empty string`,
+                )
+              }
+            }
+          }
+          if ('external' in holder && holder.external !== true) {
+            fail(`${path}.external must be true when set`)
+          }
+          const inCatalog =
+            isNonEmptyString(holder.species) && knownNames.has(holder.species)
+          if (inCatalog && holder.external === true) {
+            fail(
+              `${path}: "${holder.species}" is in this game's species catalog or eggGroups — do not set external`,
+            )
+          }
+          if (!inCatalog && holder.external !== true) {
+            fail(
+              `${path}: "${holder.species}" is not in this game's species catalog or eggGroups — set external: true`,
             )
           }
         }

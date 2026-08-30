@@ -1,4 +1,4 @@
-import type { GameData } from '../../data/schema'
+import type { AbilityHolder, GameData } from '../../data/schema'
 import { buildHatchEfficiency } from '../../engine/hatchRouter'
 import { withNums } from '../../lib/withNums'
 import HatchModifierExplainer from './HatchModifierExplainer'
@@ -10,36 +10,31 @@ type HatchRouteCardProps = {
 type HolderEntry = { name: string; where: string }
 type HolderGroup = { ability: string; entries: HolderEntry[] }
 
-/** Split "Species — place (Ability or Other)" into ability groups. */
-function groupHoldersByAbility(holders: string[]): HolderGroup[] {
+/**
+ * Group holders by each listed ability. A species with two abilities
+ * (Carkol: Steam Engine and Flame Body) appears under both headings —
+ * deliberate, not a parse of "or".
+ */
+function groupHoldersByAbility(holders: AbilityHolder[]): HolderGroup[] {
   const order: string[] = []
   const groups = new Map<string, HolderEntry[]>()
 
   for (const holder of holders) {
-    const match = holder.match(/^(.*)\s+\(([^)]+)\)\s*$/)
-    const abilities = match
-      ? match[2].split(/\s+or\s+/).map((name) => name.trim()).filter(Boolean)
-      : ['']
-    const body = match ? match[1] : holder
-    const dash = body.indexOf(' — ')
-    const name = dash === -1 ? body : body.slice(0, dash)
-    const where = dash === -1 ? '' : body.slice(dash + 3)
-
-    for (const ability of abilities) {
+    for (const ability of holder.abilities) {
       let entries = groups.get(ability)
       if (!entries) {
         entries = []
         groups.set(ability, entries)
         order.push(ability)
       }
-      entries.push({ name, where })
+      entries.push({ name: holder.species, where: holder.place })
     }
   }
 
   return order.map((ability) => ({ ability, entries: groups.get(ability)! }))
 }
 
-function HolderLocations({ holders }: { holders: string[] }) {
+function HolderLocations({ holders }: { holders: AbilityHolder[] }) {
   const groups = groupHoldersByAbility(holders)
 
   return (

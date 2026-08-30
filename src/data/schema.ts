@@ -70,6 +70,18 @@ export interface FeatureGate {
   unlockedAfter: string
 }
 
+/**
+ * Ability holder listed on an egg-efficiency modifier.
+ * `external: true` when the species is not in this game's species or
+ * eggGroups catalog — hunt-only examples, not breeding targets.
+ */
+export type AbilityHolder = {
+  species: string
+  place: string
+  abilities: string[]
+  external?: true
+}
+
 /** Egg-rate and/or hatch-speed modifiers — one item may pull both levers. */
 export interface EggEfficiencyModifier {
   name: string
@@ -78,10 +90,10 @@ export interface EggEfficiencyModifier {
   effect: string
   availability: string
   /**
-   * Required whenever type is "ability": obtainable-in-this-game species
-   * (and where to find them). Never name an ability class alone.
+   * Required whenever type is "ability": obtainable species and where
+   * to find them. Never name an ability class alone.
    */
-  exampleHolders?: string[]
+  exampleHolders?: AbilityHolder[]
   recipeId?: string
 }
 

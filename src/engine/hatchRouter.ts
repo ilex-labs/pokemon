@@ -4,6 +4,7 @@
  */
 
 import type {
+  AbilityHolder,
   EggEfficiencyModifier,
   GameData,
   HatchRoute,
@@ -14,7 +15,7 @@ export type EfficiencyLine = {
   effect: string
   availability?: string
   /** Concrete ability holders (species + where) — required for ability modifiers. */
-  exampleHolders?: string[]
+  exampleHolders?: AbilityHolder[]
   kind: 'modifier' | 'route'
   /** Human-readable hatch pace for routes. */
   paceLabel?: string
@@ -65,7 +66,10 @@ function lineFromModifier(
     availability: modifier.availability,
     exampleHolders:
       modifier.exampleHolders && modifier.exampleHolders.length > 0
-        ? [...modifier.exampleHolders]
+        ? modifier.exampleHolders.map((holder) => ({
+            ...holder,
+            abilities: [...holder.abilities],
+          }))
         : undefined,
     kind: 'modifier',
   }
