@@ -8,6 +8,8 @@ import gen3Json from '../data/rulesets/gen3.json'
 import gen9Json from '../data/rulesets/gen9.json'
 import frlgJson from '../data/games/firered-leafgreen.json'
 import scarletVioletJson from '../data/games/scarlet-violet.json'
+import naturesJson from '../data/shared/natures.json'
+import { formatReasons } from '../lib/reason'
 import {
   planDaycare,
   type DaycareTarget,
@@ -219,5 +221,83 @@ describe('cost line rules on live shipped plans', () => {
         /\bfemale\b/.test(phrase) && /origin language differs/.test(phrase),
     )
     expect(attached.length).toBeGreaterThan(0)
+  })
+})
+
+function abilitiesFor(spec: SpeciesEggData): string[] {
+  const names = ['any', ...(spec.abilities.standard ?? [])]
+  if (spec.abilities.hidden) names.push(spec.abilities.hidden)
+  return names
+}
+
+function eggMoveOptions(game: GameData, species: string): string[][] {
+  const move = game.eggMoves?.[species]?.[0]?.move
+  return move ? [[], [move]] : [[]]
+}
+
+function shippedPlans(): Array<{
+  game: GameData
+  ruleset: Ruleset
+  target: DaycareTarget
+}> {
+  const natures = ['any', ...Object.keys(naturesJson)]
+  const out: Array<{
+    game: GameData
+    ruleset: Ruleset
+    target: DaycareTarget
+  }> = []
+  for (const [game, ruleset] of [
+    [scarletViolet, gen9],
+    [frlg, gen3],
+  ] as const) {
+    for (const species of Object.keys(game.species)) {
+      const spec = game.species[species]!
+      for (const nature of natures) {
+        for (const ability of abilitiesFor(spec)) {
+          for (const eggMoves of eggMoveOptions(game, species)) {
+            for (const wantsShiny of [false, true]) {
+              out.push({
+                game,
+                ruleset,
+                target: {
+                  species,
+                  nature,
+                  ability,
+                  eggMoves,
+                  ivs: { ...ANY_IVS },
+                  wantsShiny,
+                },
+              })
+            }
+          }
+        }
+      }
+    }
+  }
+  return out
+}
+
+describe('composed gender reasons on live shipped parents', () => {
+  it('joins stacked genderReasons into one conclusion, never repeated sentences', () => {
+    let stacked = 0
+    for (const entry of shippedPlans()) {
+      const plan = planDaycare(entry.game, entry.ruleset, entry.target)
+      for (const strategy of plan.strategies) {
+        for (const parent of strategy.parents) {
+          const reasons = parent.genderReason ?? []
+          if (reasons.length < 2) continue
+          stacked++
+          const sentence = formatReasons(reasons)
+          expect((sentence.match(/Male because/g) ?? []).length).toBeLessThanOrEqual(
+            1,
+          )
+          expect((sentence.match(/Female because/g) ?? []).length).toBeLessThanOrEqual(
+            1,
+          )
+          expect(sentence).not.toMatch(/\.\s+(?:Male|Female) because/)
+        }
+      }
+    }
+    expect(stacked).toBeGreaterThan(0)
   })
 })
