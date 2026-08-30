@@ -419,7 +419,7 @@ describe('daycareEngine acceptance cases', () => {
       (strategy) => strategy.id === 'species-pair',
     )
     expect(speciesPair?.acquisitionCost).toMatch(
-      /two Charmander, one with the target nature/i,
+      /two Charmander, one female with the target nature/i,
     )
     const parentB = speciesPair?.parents.find((parent) => parent.role === 'B')
     expect(parentB?.species).toEqual(['Charmander'])

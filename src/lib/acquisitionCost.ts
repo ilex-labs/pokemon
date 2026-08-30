@@ -17,6 +17,12 @@ export type ParentAcquisitionFact = {
   species: string[]
   genderConstrained: boolean
   gender?: 'male' | 'female'
+  /**
+   * Gender reason codes from the engine. `pair-opposite-genders` is an
+   * allocation — named only when that gender is scarce. Every other code
+   * is a mechanical requirement and is always named.
+   */
+  genderReasonCodes: string[]
   /** Only names present in game.species. */
   cataloguedGenderRatio: Array<{
     species: string
@@ -39,6 +45,7 @@ export type AcquisitionCost = {
 type ParentSnapshot = {
   species: string[]
   gender?: 'male' | 'female'
+  genderReason?: Array<{ code: string }>
   mustKnow?: string[]
   mustHaveNature?: string
   mustOriginateFromDifferentLanguage?: boolean
@@ -94,6 +101,9 @@ export function deriveAcquisitionCost(
         species: [...parent.species],
         genderConstrained: parent.gender != null,
         gender: parent.gender,
+        genderReasonCodes: (parent.genderReason ?? []).map(
+          (reason) => reason.code,
+        ),
         cataloguedGenderRatio,
         mustKnowMoves: moves.length > 0,
         moves,
@@ -112,6 +122,70 @@ function joinMoves(moves: string[]): string {
   return moves.join('/')
 }
 
+const ALLOCATION_GENDER = 'pair-opposite-genders'
+
+function genderIsAllocation(parent: ParentAcquisitionFact): boolean {
+  const codes = parent.genderReasonCodes
+  if (codes.length === 0) return true
+  return codes.every((code) => code === ALLOCATION_GENDER)
+}
+
+/**
+ * Gender to put in the chooser sentence. Forced genders are always named.
+ * Allocation (`pair-opposite-genders`) names only a scarce side — strictly
+ * below half of catalogued encounters. Uncatalogued allocation stays unnamed
+ * (external carriers keep the existing "male carrier" wording).
+ */
+function namedGender(
+  parent: ParentAcquisitionFact,
+): 'male' | 'female' | null {
+  if (!parent.genderConstrained || parent.gender == null) return null
+  if (!genderIsAllocation(parent)) return parent.gender
+  if (parent.cataloguedGenderRatio.length === 0) return null
+  const fractions = parent.cataloguedGenderRatio.map((entry) =>
+    genderEncounterFraction(parent.gender!, entry.ratio),
+  )
+  const easiest = Math.max(...fractions)
+  if (easiest >= 0.5) return null
+  return parent.gender
+}
+
+function namedSpecies(parent: ParentAcquisitionFact): string {
+  const name = parent.species[0] ?? 'parent'
+  const gender = namedGender(parent)
+  return gender ? `${gender} ${name}` : name
+}
+
+function parentAttributeTail(
+  parent: ParentAcquisitionFact,
+  knows?: 'that knows',
+): string {
+  let tail = ''
+  if (parent.hasTargetNature) tail += ' with the target nature'
+  if (knows === 'that knows' && parent.moves.length > 0) {
+    tail += ` that knows ${joinMoves(parent.moves)}`
+  }
+  if (parent.mustOriginateFromDifferentLanguage) {
+    tail += ' whose origin language differs from its partner'
+  }
+  return tail
+}
+
+/** One "one …" clause per parent: gender, nature, moves, Masuda together. */
+function sameSpeciesParentPhrase(
+  parent: ParentAcquisitionFact,
+): string | null {
+  if (parent.isDitto) return null
+  const gender = namedGender(parent)
+  const knows =
+    parent.eggMoveRole === 'same-species' && parent.moves.length > 0
+      ? 'that knows'
+      : undefined
+  const tail = parentAttributeTail(parent, knows)
+  if (!gender && tail === '') return null
+  return gender ? `one ${gender}${tail}` : `one${tail}`
+}
+
 /**
  * Chooser sentence. Masuda is read from mustOriginateFromDifferentLanguage
  * on a parent — never from a half-built string.
@@ -120,19 +194,14 @@ export function formatAcquisitionCost(cost: AcquisitionCost): string {
   const facts = cost.parents
   const ditto = facts.find((parent) => parent.isDitto)
   const hasNature = facts.some((parent) => parent.hasTargetNature)
-  const foreign = facts.find(
-    (parent) => parent.mustOriginateFromDifferentLanguage,
-  )
 
   if (ditto) {
     const line = facts.find((parent) => !parent.isDitto)
-    const name = line?.species[0] ?? 'parent'
+    const name = line ? namedSpecies(line) : 'parent'
     const dittoClause = ditto.mustOriginateFromDifferentLanguage
       ? 'plus a Ditto whose origin language differs from its partner'
       : 'plus a Ditto'
     const moves = line?.moves ?? []
-    const malePrefix =
-      line?.genderConstrained && line.gender === 'male' ? 'male ' : ''
 
     if (line?.eggMoveRole === 'consolidated' && moves.length > 0) {
       const moveList = joinMoves(moves)
@@ -143,8 +212,8 @@ export function formatAcquisitionCost(cost: AcquisitionCost): string {
     if (line?.eggMoveRole === 'already-knows' && moves.length > 0) {
       const moveList = joinMoves(moves)
       return hasNature
-        ? `one ${malePrefix}${name} with the target nature that already knows ${moveList}, ${dittoClause}`
-        : `one ${malePrefix}${name} that already knows ${moveList}, ${dittoClause}`
+        ? `one ${name} with the target nature that already knows ${moveList}, ${dittoClause}`
+        : `one ${name} that already knows ${moveList}, ${dittoClause}`
     }
     return hasNature
       ? `one ${name} with the target nature, ${dittoClause}`
@@ -154,11 +223,18 @@ export function formatAcquisitionCost(cost: AcquisitionCost): string {
   const carrier = facts.find((parent) => parent.eggMoveRole === 'carrier')
   if (carrier && carrier.moves.length > 0) {
     const line = facts.find((parent) => parent !== carrier)
-    const name = line?.species[0] ?? 'parent'
+    const name = line ? namedSpecies(line) : 'parent'
     const moveList = joinMoves(carrier.moves)
-    const body = hasNature
-      ? `one ${name} with the target nature, plus a male ${moveList} carrier`
-      : `one ${name}, plus a male ${moveList} carrier`
+    const lineTail = line
+      ? parentAttributeTail({
+          ...line,
+          mustOriginateFromDifferentLanguage: false,
+        })
+      : ''
+    const body = `one ${name}${lineTail}, plus a male ${moveList} carrier`
+    const foreign = facts.find(
+      (parent) => parent.mustOriginateFromDifferentLanguage,
+    )
     if (foreign) {
       const foreignName = foreign.species[0] ?? 'parent'
       return `${body}; the ${foreignName} whose origin language differs from its partner`
@@ -166,28 +242,13 @@ export function formatAcquisitionCost(cost: AcquisitionCost): string {
     return body
   }
 
-  const sameSpecies = facts.find(
-    (parent) => parent.eggMoveRole === 'same-species',
-  )
   const name = facts[0]?.species[0] ?? 'parent'
-  if (sameSpecies && sameSpecies.moves.length > 0) {
-    const moveList = joinMoves(sameSpecies.moves)
-    const body = hasNature
-      ? `two ${name}, one with the target nature; one that knows ${moveList}`
-      : `two ${name}, one that knows ${moveList}`
-    if (foreign) {
-      return `${body}; one whose origin language differs from its partner`
-    }
-    return body
-  }
-
-  const body = hasNature
-    ? `two ${name}, one with the target nature`
+  const phrases = facts
+    .map((parent) => sameSpeciesParentPhrase(parent))
+    .filter((phrase): phrase is string => phrase != null)
+  return phrases.length > 0
+    ? `two ${name}, ${phrases.join('; ')}`
     : `two ${name}`
-  if (foreign) {
-    return `${body}; one whose origin language differs from its partner`
-  }
-  return body
 }
 
 function genderEncounterFraction(

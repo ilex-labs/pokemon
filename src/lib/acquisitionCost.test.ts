@@ -17,6 +17,7 @@ function parent(
 ): ParentAcquisitionFact {
   return {
     genderConstrained: false,
+    genderReasonCodes: [],
     cataloguedGenderRatio: [],
     mustKnowMoves: false,
     moves: [],
@@ -37,6 +38,7 @@ const speciesPairNature: AcquisitionCost = cost([
     species: ['Charmander'],
     genderConstrained: true,
     gender: 'female',
+    genderReasonCodes: ['pair-opposite-genders'],
     cataloguedGenderRatio: [
       { species: 'Charmander', ratio: CHARMANDER_RATIO },
     ],
@@ -46,6 +48,7 @@ const speciesPairNature: AcquisitionCost = cost([
     species: ['Charmander'],
     genderConstrained: true,
     gender: 'male',
+    genderReasonCodes: ['pair-opposite-genders'],
     cataloguedGenderRatio: [
       { species: 'Charmander', ratio: CHARMANDER_RATIO },
     ],
@@ -275,5 +278,168 @@ describe('deriveAcquisitionCost egg-move roles', () => {
       fixtureGame,
     )
     expect(derived.parents[1]?.eggMoveRole).toBe('carrier')
+  })
+})
+
+describe('formatAcquisitionCost named gender', () => {
+  it('combines scarce allocation gender and nature on the same parent', () => {
+    expect(formatAcquisitionCost(speciesPairNature)).toBe(
+      'two Charmander, one female with the target nature',
+    )
+  })
+
+  it('does not name either gender on a 50/50 allocation', () => {
+    const gyarados = cost([
+      parent({
+        species: ['Gyarados'],
+        genderConstrained: true,
+        gender: 'female',
+        genderReasonCodes: ['pair-opposite-genders'],
+        cataloguedGenderRatio: [
+          { species: 'Gyarados', ratio: { malePercent: 50 } },
+        ],
+      }),
+      parent({
+        species: ['Gyarados'],
+        genderConstrained: true,
+        gender: 'male',
+        genderReasonCodes: ['pair-opposite-genders'],
+        cataloguedGenderRatio: [
+          { species: 'Gyarados', ratio: { malePercent: 50 } },
+        ],
+      }),
+    ])
+    expect(formatAcquisitionCost(gyarados)).toBe('two Gyarados')
+  })
+
+  it('always names a mechanically required gender, even when it is the majority', () => {
+    const dittoAlreadyKnows = cost([
+      parent({
+        species: ['Charmander'],
+        genderConstrained: true,
+        gender: 'male',
+        genderReasonCodes: ['male-egg-move-eligible'],
+        cataloguedGenderRatio: [
+          { species: 'Charmander', ratio: CHARMANDER_RATIO },
+        ],
+        mustKnowMoves: true,
+        moves: ['Dragon Dance'],
+        eggMoveRole: 'already-knows',
+      }),
+      parent({ species: ['Ditto'], isDitto: true }),
+    ])
+    expect(formatAcquisitionCost(dittoAlreadyKnows)).toBe(
+      'one male Charmander that already knows Dragon Dance, plus a Ditto',
+    )
+  })
+
+  it('names a forced line parent on the carrier route and leaves male carrier as-is', () => {
+    const pairCarrier = cost([
+      parent({
+        species: ['Charmander'],
+        genderConstrained: true,
+        gender: 'female',
+        genderReasonCodes: ['female-species-holder'],
+        cataloguedGenderRatio: [
+          { species: 'Charmander', ratio: CHARMANDER_RATIO },
+        ],
+      }),
+      parent({
+        species: ['Salamence'],
+        genderConstrained: true,
+        gender: 'male',
+        genderReasonCodes: ['male-external-carrier'],
+        mustKnowMoves: true,
+        moves: ['Dragon Dance'],
+        eggMoveRole: 'carrier',
+      }),
+    ])
+    expect(formatAcquisitionCost(pairCarrier)).toBe(
+      'one female Charmander, plus a male Dragon Dance carrier',
+    )
+  })
+
+  it('keeps Masuda trailing on a two-parent carrier line so partner is not the carrier', () => {
+    const pairCarrier = cost([
+      parent({
+        species: ['Charmander'],
+        genderConstrained: true,
+        gender: 'female',
+        genderReasonCodes: ['female-species-holder'],
+        cataloguedGenderRatio: [
+          { species: 'Charmander', ratio: CHARMANDER_RATIO },
+        ],
+        hasTargetNature: true,
+        mustOriginateFromDifferentLanguage: true,
+      }),
+      parent({
+        species: ['Salamence'],
+        genderConstrained: true,
+        gender: 'male',
+        genderReasonCodes: ['male-external-carrier'],
+        mustKnowMoves: true,
+        moves: ['Dragon Dance'],
+        eggMoveRole: 'carrier',
+      }),
+    ])
+    expect(formatAcquisitionCost(pairCarrier)).toBe(
+      'one female Charmander with the target nature, plus a male Dragon Dance carrier; the Charmander whose origin language differs from its partner',
+    )
+  })
+
+  it('combines scarce allocation gender and Masuda on the same parent', () => {
+    const pair = cost([
+      parent({
+        species: ['Charmander'],
+        genderConstrained: true,
+        gender: 'female',
+        genderReasonCodes: ['pair-opposite-genders'],
+        cataloguedGenderRatio: [
+          { species: 'Charmander', ratio: CHARMANDER_RATIO },
+        ],
+        mustOriginateFromDifferentLanguage: true,
+      }),
+      parent({
+        species: ['Charmander'],
+        genderConstrained: true,
+        gender: 'male',
+        genderReasonCodes: ['pair-opposite-genders'],
+        cataloguedGenderRatio: [
+          { species: 'Charmander', ratio: CHARMANDER_RATIO },
+        ],
+      }),
+    ])
+    expect(formatAcquisitionCost(pair)).toBe(
+      'two Charmander, one female whose origin language differs from its partner',
+    )
+  })
+
+  it('keeps attributes on different parents as separate clauses', () => {
+    const pair = cost([
+      parent({
+        species: ['Charmander'],
+        genderConstrained: true,
+        gender: 'female',
+        genderReasonCodes: ['pair-opposite-genders'],
+        cataloguedGenderRatio: [
+          { species: 'Charmander', ratio: CHARMANDER_RATIO },
+        ],
+      }),
+      parent({
+        species: ['Charmander'],
+        genderConstrained: true,
+        gender: 'male',
+        genderReasonCodes: ['pair-opposite-genders'],
+        cataloguedGenderRatio: [
+          { species: 'Charmander', ratio: CHARMANDER_RATIO },
+        ],
+        mustKnowMoves: true,
+        moves: ['Dragon Dance'],
+        eggMoveRole: 'same-species',
+      }),
+    ])
+    expect(formatAcquisitionCost(pair)).toBe(
+      'two Charmander, one female; one that knows Dragon Dance',
+    )
   })
 })
