@@ -177,6 +177,10 @@ function formatOddsPercent(odds: number): string {
   return `${Math.round(odds * 100)}%`
 }
 
+/** Structural: Ditto is never the mustKnow parent. Not a movepool fact. */
+export const DITTO_NOT_EGG_MOVE_CARRIER =
+  'The Ditto parent is not the egg-move carrier — the other parent must know the moves.'
+
 const HYPER_IV_TRADEOFF =
   "Hyper Training doesn't change the IVs a Pokémon passes down, so it suits a finished battler while hatching suits a parent you'll pair from again."
 
@@ -314,12 +318,12 @@ export function formatReason(reason: Reason): string {
       const picnicPartner = list
         ? ` Picnic with a partner that already knows the move — in this game that includes ${list}.`
         : ''
-      return `Consolidate ${reason.moves.join(', ')} onto ${reason.species} first using ${reason.alternativeName}: ${reason.alternativeHow}${picnicPartner} Ditto only knows Transform and cannot pass egg moves.`
+      return `Consolidate ${reason.moves.join(', ')} onto ${reason.species} first using ${reason.alternativeName}: ${reason.alternativeHow}${picnicPartner} ${DITTO_NOT_EGG_MOVE_CARRIER}`
     }
     case 'acquire-egg-move-ditto-father-only':
-      return `This route needs a male ${reason.species} that already knows ${reason.moves.join(', ')}. In this game that usually means hatching one from the species-pair route first (only the father passes egg moves); there is no separate teach-onto-the-line mechanic. Ditto only knows Transform and cannot pass egg moves.`
+      return `This route needs a male ${reason.species} that already knows ${reason.moves.join(', ')}. In this game that usually means hatching one from the species-pair route first (only the father passes egg moves); there is no separate teach-onto-the-line mechanic. ${DITTO_NOT_EGG_MOVE_CARRIER}`
     case 'acquire-egg-move-ditto-bootstrap':
-      return `This route needs a ${reason.species} that already knows ${reason.moves.join(', ')}. In this game that usually means getting the moves via the species-pair route first; there is no separate teach-onto-the-line mechanic. Ditto only knows Transform and cannot pass egg moves.`
+      return `This route needs a ${reason.species} that already knows ${reason.moves.join(', ')}. In this game that usually means getting the moves via the species-pair route first; there is no separate teach-onto-the-line mechanic. ${DITTO_NOT_EGG_MOVE_CARRIER}`
     case 'acquire-ditto':
       return `Obtain Ditto: ${reason.obtainedAt.replace(/\.+$/, '')}.`
     case 'acquire-masuda':

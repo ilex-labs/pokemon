@@ -14,7 +14,7 @@ import type {
   Ruleset,
   SpeciesEggData,
 } from '../data/schema'
-import type { Reason } from '../lib/reason'
+import { DITTO_NOT_EGG_MOVE_CARRIER, type Reason } from '../lib/reason.ts'
 import {
   compareRouteCosts,
   deriveAcquisitionCost,
@@ -968,7 +968,10 @@ function buildDittoPairStrategy(
     label: 'Ditto pair',
     parents,
     acquisitionCost: routeAcquisitionCost(parents, game),
-    tradeoff: `${moveNote} Ditto cannot carry egg moves itself.`,
+    tradeoff:
+      target.eggMoves.length > 0
+        ? `${moveNote} ${DITTO_NOT_EGG_MOVE_CARRIER}`
+        : moveNote,
   }
 }
 

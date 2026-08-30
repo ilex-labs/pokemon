@@ -389,7 +389,9 @@ describe('daycareEngine acceptance cases', () => {
     expect(ditto).toBeDefined()
     expect(ditto?.acquisitionCost).toMatch(/Ditto/i)
     expect(ditto?.tradeoff).toMatch(/Mirror Herb|consolidat/i)
-    expect(ditto?.tradeoff).toMatch(/Ditto cannot carry egg moves/i)
+    expect(ditto?.tradeoff).toMatch(
+      /The Ditto parent is not the egg-move carrier/,
+    )
 
     const charmander = ditto?.parents.find((parent) =>
       parent.species.includes('Charmander'),
@@ -405,7 +407,7 @@ describe('daycareEngine acceptance cases', () => {
     expect(dittoParent).toBeDefined()
     expect(
       charmander?.acquisition?.some((flag) =>
-        /Mirror Herb|Transform|consolidat/i.test(flagProse(flag)),
+        /Mirror Herb|consolidat|egg-move carrier/i.test(flagProse(flag)),
       ),
     ).toBe(true)
   })

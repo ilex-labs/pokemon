@@ -220,7 +220,7 @@ describe('formatReason acquisition', () => {
         passers: ['Salamence', 'Dragapult', 'Gyarados'],
       }),
     ).toBe(
-      'Consolidate Dragon Dance onto Charmander first using Mirror Herb: Held during a picnic, it copies egg moves from a partner that already knows them. Picnic with a partner that already knows the move — in this game that includes Salamence, Dragapult, Gyarados. Ditto only knows Transform and cannot pass egg moves.',
+      'Consolidate Dragon Dance onto Charmander first using Mirror Herb: Held during a picnic, it copies egg moves from a partner that already knows them. Picnic with a partner that already knows the move — in this game that includes Salamence, Dragapult, Gyarados. The Ditto parent is not the egg-move carrier — the other parent must know the moves.',
     )
   })
 
@@ -232,7 +232,7 @@ describe('formatReason acquisition', () => {
         moves: ['Dragon Dance'],
       }),
     ).toBe(
-      'This route needs a male Charmander that already knows Dragon Dance. In this game that usually means hatching one from the species-pair route first (only the father passes egg moves); there is no separate teach-onto-the-line mechanic. Ditto only knows Transform and cannot pass egg moves.',
+      'This route needs a male Charmander that already knows Dragon Dance. In this game that usually means hatching one from the species-pair route first (only the father passes egg moves); there is no separate teach-onto-the-line mechanic. The Ditto parent is not the egg-move carrier — the other parent must know the moves.',
     )
   })
 
@@ -244,7 +244,7 @@ describe('formatReason acquisition', () => {
         moves: ['Dragon Dance'],
       }),
     ).toBe(
-      'This route needs a Charmander that already knows Dragon Dance. In this game that usually means getting the moves via the species-pair route first; there is no separate teach-onto-the-line mechanic. Ditto only knows Transform and cannot pass egg moves.',
+      'This route needs a Charmander that already knows Dragon Dance. In this game that usually means getting the moves via the species-pair route first; there is no separate teach-onto-the-line mechanic. The Ditto parent is not the egg-move carrier — the other parent must know the moves.',
     )
   })
 
