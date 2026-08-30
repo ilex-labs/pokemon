@@ -26,6 +26,7 @@ import PlanStepList from '../components/daycare/PlanStepList'
 import ShinyOddsPanel from '../components/daycare/ShinyOddsPanel'
 import TargetSpreadForm from '../components/daycare/TargetSpreadForm'
 import { formatHatchOutcome } from '../lib/hatchOutcome'
+import { parentOwnershipKey, pruneOwnedParentKeys } from '../lib/parentOwnership'
 import { formatReason } from '../lib/reason'
 import { getJson, removeJson, setJson } from '../lib/storage'
 
@@ -36,7 +37,7 @@ const GATES_KEY = 'pokemon:gates:v1'
 type StoredDaycare = {
   gameId: string
   targetSpread: DaycareTarget
-  ownedParentRoles: Array<'A' | 'B'>
+  ownedParentKeys: string[]
   completedStepIds: string[]
   selectedStrategyId?: string
 }
@@ -86,11 +87,11 @@ function isStoredDaycare(value: unknown): value is StoredDaycare {
   if (!isDaycareTarget(stored.targetSpread)) return false
   if (!Array.isArray(stored.completedStepIds)) return false
   if (!stored.completedStepIds.every((id) => typeof id === 'string')) return false
-  if (!Array.isArray(stored.ownedParentRoles)) return false
-  if (
-    !stored.ownedParentRoles.every((role) => role === 'A' || role === 'B')
-  ) {
-    return false
+  if ('ownedParentKeys' in stored) {
+    if (!Array.isArray(stored.ownedParentKeys)) return false
+    if (!stored.ownedParentKeys.every((key) => typeof key === 'string')) {
+      return false
+    }
   }
   if (
     stored.selectedStrategyId !== undefined &&
@@ -102,13 +103,24 @@ function isStoredDaycare(value: unknown): value is StoredDaycare {
   return true
 }
 
+function readOwnedParentKeys(stored: Record<string, unknown>): string[] {
+  if (!Array.isArray(stored.ownedParentKeys)) return []
+  return stored.ownedParentKeys.filter((key) => typeof key === 'string')
+}
+
 function readStoredDaycare(): StoredDaycare | null {
   const raw = getJson<unknown>(STORAGE_KEY)
   if (!isStoredDaycare(raw)) {
     if (raw !== null) removeJson(STORAGE_KEY)
     return null
   }
-  return raw
+  return {
+    gameId: raw.gameId,
+    targetSpread: raw.targetSpread,
+    ownedParentKeys: readOwnedParentKeys(raw),
+    completedStepIds: raw.completedStepIds,
+    selectedStrategyId: raw.selectedStrategyId,
+  }
 }
 
 function createDefaultTarget(option: GameOption): DaycareTarget {
@@ -141,7 +153,7 @@ export default function Daycare() {
   const [target, setTarget] = useState<DaycareTarget>(() =>
     createDefaultTarget(initialOption),
   )
-  const [ownedParentRoles, setOwnedParentRoles] = useState<Array<'A' | 'B'>>([])
+  const [ownedParentKeys, setOwnedParentKeys] = useState<string[]>([])
   const [completedStepIds, setCompletedStepIds] = useState<string[]>([])
   const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(
     null,
@@ -153,7 +165,7 @@ export default function Daycare() {
   const [mobilePane, setMobilePane] = useState<'target' | 'plan'>('target')
   const [gateDismissals, setGateDismissals] = useState<GateDismissals>({})
 
-  const ownedSet = useMemo(() => new Set(ownedParentRoles), [ownedParentRoles])
+  const ownedSet = useMemo(() => new Set(ownedParentKeys), [ownedParentKeys])
 
   const ivPresets = useMemo(
     () => filterIvPresets(game.ivPresets ?? sharedIvPresets, game.generation),
@@ -223,9 +235,19 @@ export default function Daycare() {
     })
   }, [steps])
 
-  // Clear ownership when the target changes enough that parents reshuffle —
-  // strategy selection already resets ownership; target edits keep owned roles
-  // when the same roles still exist.
+  const currentParentKeyList = (activeStrategy?.parents ?? [])
+    .map(parentOwnershipKey)
+    .join('\n')
+
+  // Drop owned keys whose parent identity is no longer on the shown pair.
+  useEffect(() => {
+    const parents = activeStrategy?.parents ?? []
+    setOwnedParentKeys((current) => {
+      const next = pruneOwnedParentKeys(current, parents)
+      return next.length === current.length ? current : next
+    })
+    // currentParentKeyList is the identity of the shown parents.
+  }, [currentParentKeyList])
 
   useEffect(() => {
     const saved = readStoredDaycare()
@@ -234,7 +256,7 @@ export default function Daycare() {
       if (restored) {
         setGameId(restored.id)
         setTarget(saved.targetSpread)
-        setOwnedParentRoles(saved.ownedParentRoles)
+        setOwnedParentKeys(saved.ownedParentKeys)
         setCompletedStepIds(saved.completedStepIds)
         setSelectedStrategyId(saved.selectedStrategyId ?? null)
       } else {
@@ -251,7 +273,7 @@ export default function Daycare() {
     const payload: StoredDaycare = {
       gameId,
       targetSpread: target,
-      ownedParentRoles,
+      ownedParentKeys,
       completedStepIds,
       selectedStrategyId: selectedStrategyId ?? undefined,
     }
@@ -260,7 +282,7 @@ export default function Daycare() {
     hydrated,
     gameId,
     target,
-    ownedParentRoles,
+    ownedParentKeys,
     completedStepIds,
     selectedStrategyId,
   ])
@@ -276,7 +298,7 @@ export default function Daycare() {
     userPickedStrategy.current = false
     setGameId(next.id)
     setTarget(createDefaultTarget(next))
-    setOwnedParentRoles([])
+    setOwnedParentKeys([])
     setCompletedStepIds([])
     setSelectedStrategyId(null)
     removeJson(STORAGE_KEY)
@@ -285,15 +307,14 @@ export default function Daycare() {
   function selectStrategy(id: string) {
     userPickedStrategy.current = true
     setSelectedStrategyId(id)
-    setOwnedParentRoles([])
     setCompletedStepIds([])
   }
 
-  function toggleOwned(role: 'A' | 'B') {
-    setOwnedParentRoles((current) =>
-      current.includes(role)
-        ? current.filter((item) => role !== item)
-        : [...current, role],
+  function toggleOwned(key: string) {
+    setOwnedParentKeys((current) =>
+      current.includes(key)
+        ? current.filter((item) => item !== key)
+        : [...current, key],
     )
   }
 
@@ -423,7 +444,7 @@ export default function Daycare() {
                   excludedStrategies={plan.excludedStrategies}
                   ruleset={ruleset}
                   onSelectStrategy={selectStrategy}
-                  ownedRoles={ownedSet}
+                  ownedKeys={ownedSet}
                   onToggleOwned={toggleOwned}
                   hatchOutcome={hatchOutcome}
                 />

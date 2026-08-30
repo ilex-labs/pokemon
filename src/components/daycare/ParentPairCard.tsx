@@ -6,6 +6,7 @@ import {
   type ParentRequirement,
   type RoutePairComparison,
 } from '../../engine/daycareEngine'
+import { parentOwnershipKey } from '../../lib/parentOwnership'
 import { withNums } from '../../lib/withNums'
 import { formatReason, formatReasons, type Reason } from '../../lib/reason'
 import RuleFlag from './RuleFlag'
@@ -17,8 +18,8 @@ type ParentPairCardProps = {
   excludedStrategies?: Array<{ id: string; label: string; reason: Reason }>
   ruleset: Ruleset
   onSelectStrategy: (id: string) => void
-  ownedRoles: Set<string>
-  onToggleOwned: (role: 'A' | 'B') => void
+  ownedKeys: Set<string>
+  onToggleOwned: (key: string) => void
   hatchOutcome?: string | null
 }
 
@@ -60,9 +61,11 @@ function ParentBlock({
         </label>
       </div>
 
-      {!owned && acquisition.length > 0 ? (
+      {acquisition.length > 0 ? (
         <div className="mt-[var(--spacing-within)] space-y-2">
-          <p className="label-caps">Get this parent first</p>
+          <p className={owned ? 'label-caps text-muted line-through' : 'label-caps'}>
+            Get this parent first
+          </p>
           {acquisition.map((flag, index) => (
             <RuleFlag
               key={`${parent.role}-acq-${flag.severity}-${index}`}
@@ -113,7 +116,7 @@ export default function ParentPairCard({
   excludedStrategies = [],
   ruleset,
   onSelectStrategy,
-  ownedRoles,
+  ownedKeys,
   onToggleOwned,
   hatchOutcome,
 }: ParentPairCardProps) {
@@ -239,19 +242,22 @@ export default function ParentPairCard({
             </p>
           ) : null}
           <div className="divide-y divide-edge">
-            {selected.parents.map((parent) => (
-              <div
-                key={`${selected.id}-${parent.role}`}
-                className="py-[var(--spacing-within)]"
-              >
-                <ParentBlock
-                  parent={parent}
-                  owned={ownedRoles.has(parent.role)}
-                  showHeldItems={showHeldItems}
-                  onToggleOwned={() => onToggleOwned(parent.role)}
-                />
-              </div>
-            ))}
+            {selected.parents.map((parent) => {
+              const ownershipKey = parentOwnershipKey(parent)
+              return (
+                <div
+                  key={`${selected.id}-${parent.role}`}
+                  className="py-[var(--spacing-within)]"
+                >
+                  <ParentBlock
+                    parent={parent}
+                    owned={ownedKeys.has(ownershipKey)}
+                    showHeldItems={showHeldItems}
+                    onToggleOwned={() => onToggleOwned(ownershipKey)}
+                  />
+                </div>
+              )
+            })}
           </div>
           {hatchOutcome ? (
             <p className="text-sm text-body">{withNums(hatchOutcome)}</p>
