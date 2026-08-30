@@ -166,6 +166,8 @@ export interface PostgameItem {
 
 export type RuleFlag = Reason & {
   severity: 'info' | 'warning' | 'blocking'
+  /** Player claim met this flag — keep the line, render it satisfied. */
+  satisfied?: boolean
 }
 
 export interface PlanStep {

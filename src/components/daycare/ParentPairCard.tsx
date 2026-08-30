@@ -20,6 +20,8 @@ type ParentPairCardProps = {
   onSelectStrategy: (id: string) => void
   ownedKeys: Set<string>
   onToggleOwned: (key: string) => void
+  ownsDitto?: boolean
+  onToggleOwnsDitto?: () => void
   hatchOutcome?: string | null
 }
 
@@ -27,12 +29,16 @@ function ParentBlock({
   parent,
   owned,
   showHeldItems,
+  ownsDitto,
   onToggleOwned,
+  onToggleOwnsDitto,
 }: {
   parent: ParentRequirement
   owned: boolean
   showHeldItems: boolean
+  ownsDitto: boolean
   onToggleOwned: () => void
+  onToggleOwnsDitto?: () => void
 }) {
   const acquisition = parent.acquisition ?? []
 
@@ -66,12 +72,35 @@ function ParentBlock({
           <p className={owned ? 'label-caps text-muted line-through' : 'label-caps'}>
             Get this parent first
           </p>
-          {acquisition.map((flag, index) => (
-            <RuleFlag
-              key={`${parent.role}-acq-${flag.severity}-${index}`}
-              flag={flag}
-            />
-          ))}
+          {acquisition.map((flag, index) => {
+            const flagNode = (
+              <RuleFlag
+                key={`${parent.role}-acq-${flag.severity}-${index}`}
+                flag={flag}
+              />
+            )
+            if (flag.code !== 'acquire-ditto' || !onToggleOwnsDitto) {
+              return flagNode
+            }
+            return (
+              <div
+                key={`${parent.role}-acq-${flag.severity}-${index}`}
+                className="flex items-start justify-between gap-3"
+              >
+                <div className="min-w-0 flex-1">
+                  <RuleFlag flag={flag} />
+                </div>
+                <label className="mt-2 flex shrink-0 cursor-pointer items-center gap-2 text-meta text-body">
+                  <input
+                    type="checkbox"
+                    checked={ownsDitto}
+                    onChange={onToggleOwnsDitto}
+                  />
+                  I already have Ditto
+                </label>
+              </div>
+            )
+          })}
         </div>
       ) : null}
 
@@ -118,6 +147,8 @@ export default function ParentPairCard({
   onSelectStrategy,
   ownedKeys,
   onToggleOwned,
+  ownsDitto = false,
+  onToggleOwnsDitto,
   hatchOutcome,
 }: ParentPairCardProps) {
   if (strategies.length === 0) return null
@@ -253,7 +284,9 @@ export default function ParentPairCard({
                     parent={parent}
                     owned={ownedKeys.has(ownershipKey)}
                     showHeldItems={showHeldItems}
+                    ownsDitto={ownsDitto}
                     onToggleOwned={() => onToggleOwned(ownershipKey)}
+                    onToggleOwnsDitto={onToggleOwnsDitto}
                   />
                 </div>
               )

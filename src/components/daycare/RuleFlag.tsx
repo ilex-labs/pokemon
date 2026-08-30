@@ -12,45 +12,60 @@ type RuleFlagProps = {
   flag: RuleFlagData
 }
 
+function flagChrome(flag: RuleFlagData): {
+  border: string
+  labelClass: string
+  bodyClass: string
+} {
+  if (flag.satisfied) {
+    return {
+      border: 'border-edge',
+      labelClass: 'text-muted',
+      bodyClass: 'text-muted line-through',
+    }
+  }
+  if (flag.severity === 'blocking') {
+    return {
+      border: 'border-oxide',
+      labelClass: 'text-oxide',
+      bodyClass: 'text-bright',
+    }
+  }
+  if (flag.severity === 'warning') {
+    return {
+      border: 'border-brass',
+      labelClass: 'text-brass',
+      bodyClass: 'text-body',
+    }
+  }
+  return {
+    border: 'border-edge',
+    labelClass: 'text-muted',
+    bodyClass: 'text-body',
+  }
+}
+
 /**
  * Severity as a left rule + label — not a filled card.
  * Colour is never the only signal. Blocking keeps a stronger treatment.
+ * Satisfied flags stay in the document, struck through and muted.
  */
 export default function RuleFlag({ flag }: RuleFlagProps) {
-  if (flag.severity === 'blocking') {
-    return (
-      <div
-        role="status"
-        className="mt-2 border-l-2 border-oxide bg-page py-2 pl-3 text-sm text-bright"
-      >
-        <span className="mr-2 font-medium text-oxide">
-          {SEVERITY_LABEL.blocking}
-        </span>
-        {withNums(formatReason(flag))}
-      </div>
-    )
-  }
-
-  if (flag.severity === 'warning') {
-    return (
-      <div
-        role="status"
-        className="mt-2 border-l-2 border-brass py-1.5 pl-3 text-sm text-body"
-      >
-        <span className="mr-2 font-medium text-brass">
-          {SEVERITY_LABEL.warning}
-        </span>
-        {withNums(formatReason(flag))}
-      </div>
-    )
-  }
+  const chrome = flagChrome(flag)
+  const blocking = flag.severity === 'blocking' && !flag.satisfied
 
   return (
     <div
       role="status"
-      className="mt-2 border-l-2 border-edge py-1.5 pl-3 text-sm text-body"
+      className={
+        blocking
+          ? `mt-2 border-l-2 ${chrome.border} bg-page py-2 pl-3 text-sm ${chrome.bodyClass}`
+          : `mt-2 border-l-2 ${chrome.border} py-1.5 pl-3 text-sm ${chrome.bodyClass}`
+      }
     >
-      <span className="mr-2 font-medium text-muted">{SEVERITY_LABEL.info}</span>
+      <span className={`mr-2 font-medium ${chrome.labelClass}`}>
+        {SEVERITY_LABEL[flag.severity]}
+      </span>
       {withNums(formatReason(flag))}
     </div>
   )

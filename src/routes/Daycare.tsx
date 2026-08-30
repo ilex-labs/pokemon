@@ -14,6 +14,7 @@ import {
   planDaycare,
   stepsForStrategy,
   type DaycareTarget,
+  type PlayerFact,
 } from '../engine/daycareEngine'
 import GamePicker from '../components/daycare/GamePicker'
 import GateBanner, {
@@ -27,6 +28,7 @@ import ShinyOddsPanel from '../components/daycare/ShinyOddsPanel'
 import TargetSpreadForm from '../components/daycare/TargetSpreadForm'
 import { formatHatchOutcome } from '../lib/hatchOutcome'
 import { parentOwnershipKey, pruneOwnedParentKeys } from '../lib/parentOwnership'
+import { readPlayerFacts, writePlayerFacts } from '../lib/playerFactsStorage'
 import { formatReason } from '../lib/reason'
 import { getJson, removeJson, setJson } from '../lib/storage'
 
@@ -154,6 +156,7 @@ export default function Daycare() {
     createDefaultTarget(initialOption),
   )
   const [ownedParentKeys, setOwnedParentKeys] = useState<string[]>([])
+  const [playerFacts, setPlayerFacts] = useState<PlayerFact[]>([])
   const [completedStepIds, setCompletedStepIds] = useState<string[]>([])
   const [selectedStrategyId, setSelectedStrategyId] = useState<string | null>(
     null,
@@ -177,10 +180,10 @@ export default function Daycare() {
     (entry) => entry.move,
   )
 
-  // Live plan — pure function of game + ruleset + target; no generate mode.
+  // Live plan — pure function of game + ruleset + target + player facts.
   const plan = useMemo(
-    () => planDaycare(game, ruleset, target),
-    [game, ruleset, target],
+    () => planDaycare(game, ruleset, target, playerFacts),
+    [game, ruleset, target, playerFacts],
   )
 
   const strategies = plan.strategies
@@ -257,11 +260,15 @@ export default function Daycare() {
         setGameId(restored.id)
         setTarget(saved.targetSpread)
         setOwnedParentKeys(saved.ownedParentKeys)
+        setPlayerFacts(readPlayerFacts(restored.id))
         setCompletedStepIds(saved.completedStepIds)
         setSelectedStrategyId(saved.selectedStrategyId ?? null)
       } else {
         removeJson(STORAGE_KEY)
+        setPlayerFacts(readPlayerFacts(initialOption.id))
       }
+    } else {
+      setPlayerFacts(readPlayerFacts(initialOption.id))
     }
     setGateDismissals(getJson<GateDismissals>(GATES_KEY) ?? {})
     setHydrated(true)
@@ -299,6 +306,7 @@ export default function Daycare() {
     setGameId(next.id)
     setTarget(createDefaultTarget(next))
     setOwnedParentKeys([])
+    setPlayerFacts(readPlayerFacts(next.id))
     setCompletedStepIds([])
     setSelectedStrategyId(null)
     removeJson(STORAGE_KEY)
@@ -308,6 +316,17 @@ export default function Daycare() {
     userPickedStrategy.current = true
     setSelectedStrategyId(id)
     setCompletedStepIds([])
+  }
+
+  function toggleOwnsDitto() {
+    setPlayerFacts((current) => {
+      const has = current.some((item) => item.fact === 'owns-ditto')
+      const next: PlayerFact[] = has
+        ? current.filter((item) => item.fact !== 'owns-ditto')
+        : [...current, { fact: 'owns-ditto' }]
+      writePlayerFacts(gameId, next)
+      return next
+    })
   }
 
   function toggleOwned(key: string) {
@@ -446,6 +465,8 @@ export default function Daycare() {
                   onSelectStrategy={selectStrategy}
                   ownedKeys={ownedSet}
                   onToggleOwned={toggleOwned}
+                  ownsDitto={playerFacts.some((item) => item.fact === 'owns-ditto')}
+                  onToggleOwnsDitto={toggleOwnsDitto}
                   hatchOutcome={hatchOutcome}
                 />
 

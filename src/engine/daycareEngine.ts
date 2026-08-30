@@ -22,6 +22,13 @@ import {
   workKindsFromQualitativeKeys,
   type AcquisitionCost,
 } from '../lib/acquisitionCost.ts'
+import {
+  unknownPlayer,
+  type PlayerState,
+} from './playerState.ts'
+
+export type { PlayerFact, PlayerState } from './playerState.ts'
+export { unknownPlayer } from './playerState.ts'
 
 export type DaycareTarget = {
   species: string
@@ -1743,10 +1750,57 @@ export function stepsForStrategy(
   return buildStepsForStrategy(game, ruleset, target, species, strategy)
 }
 
+function markAcquireDittoSatisfied(
+  strategies: PairingStrategy[],
+): PairingStrategy[] {
+  return strategies.map((strategy) => ({
+    ...strategy,
+    parents: strategy.parents.map((parent) => ({
+      ...parent,
+      acquisition: parent.acquisition?.map((flag) =>
+        flag.code === 'acquire-ditto' ? { ...flag, satisfied: true } : flag,
+      ),
+    })),
+  }))
+}
+
+function omitDittoGate(
+  featureGates: FeatureGate[],
+  game: GameData,
+): FeatureGate[] {
+  const gateId = game.ditto.gate
+  if (!gateId) return featureGates
+  return featureGates.filter((gate) => gate.id !== gateId)
+}
+
+function applyPlayerState(
+  player: PlayerState,
+  strategies: PairingStrategy[],
+  featureGates: FeatureGate[],
+  game: GameData,
+): { strategies: PairingStrategy[]; featureGates: FeatureGate[] } {
+  let nextStrategies = strategies
+  let nextGates = featureGates
+  for (const item of player) {
+    switch (item.fact) {
+      case 'owns-ditto':
+        nextStrategies = markAcquireDittoSatisfied(nextStrategies)
+        nextGates = omitDittoGate(nextGates, game)
+        break
+      default: {
+        const _exhaustive: never = item
+        return _exhaustive
+      }
+    }
+  }
+  return { strategies: nextStrategies, featureGates: nextGates }
+}
+
 export function planDaycare(
   game: GameData,
   ruleset: Ruleset,
   target: DaycareTarget,
+  player: PlayerState = unknownPlayer,
 ): DaycarePlan {
   const featureGates = game.featureGates ? [...game.featureGates] : []
 
@@ -1783,8 +1837,19 @@ export function planDaycare(
     }
   }
 
-  const { strategies, routeComparisons, excludedStrategies } =
-    resolveStrategies(game, ruleset, target, species, dittoOnly)
+  const resolved = resolveStrategies(
+    game,
+    ruleset,
+    target,
+    species,
+    dittoOnly,
+  )
+  const { strategies, featureGates: gated } = applyPlayerState(
+    player,
+    resolved.strategies,
+    featureGates,
+    game,
+  )
   const recommended =
     strategies.find((strategy) => strategy.recommended) ?? strategies[0]
 
@@ -1796,10 +1861,12 @@ export function planDaycare(
 
   return {
     strategies,
-    routeComparisons,
+    routeComparisons: resolved.routeComparisons,
     excludedStrategies:
-      excludedStrategies.length > 0 ? excludedStrategies : undefined,
-    featureGates,
+      resolved.excludedStrategies.length > 0
+        ? resolved.excludedStrategies
+        : undefined,
+    featureGates: gated,
     blocked: false,
     steps: recommended
       ? buildStepsForStrategy(game, ruleset, target, species, recommended)
