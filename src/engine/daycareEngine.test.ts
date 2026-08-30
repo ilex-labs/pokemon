@@ -662,15 +662,30 @@ describe('daycareEngine acceptance cases', () => {
       {
         a: 'species-pair',
         b: 'ditto-pair',
-        outcome: 'equivalent',
+        outcome: 'cheaper',
+        winner: 'ditto-pair',
       },
     ])
-    expect(chooserComparisonCopy(plan.routeComparisons, plan.strategies)).toEqual({
-      kind: 'equivalent',
-    })
-    expect(plan.strategies.every((strategy) => !strategy.recommended)).toBe(
-      true,
+    expect(chooserComparisonCopy(plan.routeComparisons, plan.strategies)).toBe(
+      null,
     )
+    const dittoPair = plan.strategies.find(
+      (strategy) => strategy.id === 'ditto-pair',
+    )
+    expect(dittoPair?.recommended).toBe(true)
+    expect(dittoPair?.recommendReason).toEqual({
+      code: 'recommend-easier-gender',
+    })
+
+    const speciesPair = plan.strategies.find(
+      (strategy) => strategy.id === 'species-pair',
+    )
+    const speciesA = speciesPair?.parents.find((parent) => parent.role === 'A')
+    const speciesB = speciesPair?.parents.find((parent) => parent.role === 'B')
+    expect(speciesA?.gender).toBe('female')
+    expect(speciesA?.genderReason).toEqual([{ code: 'pair-opposite-genders' }])
+    expect(speciesB?.gender).toBe('male')
+    expect(speciesB?.genderReason).toEqual([{ code: 'pair-opposite-genders' }])
 
     for (const strategy of plan.strategies) {
       for (const parent of strategy.parents) {
@@ -679,9 +694,12 @@ describe('daycareEngine acceptance cases', () => {
         expect(parent.mustHaveNature).toBeUndefined()
         expect(parent.mustHaveAbility).toBeUndefined()
         expect(parent.mustOriginateFromDifferentLanguage).toBeUndefined()
-        expect(parent.gender).toBeUndefined()
-        expect(parent.genderReason).toBeUndefined()
       }
+    }
+
+    for (const parent of dittoPair?.parents ?? []) {
+      expect(parent.gender).toBeUndefined()
+      expect(parent.genderReason).toBeUndefined()
     }
 
     expect(plan.steps).toEqual([])
@@ -710,12 +728,13 @@ describe('daycareEngine acceptance cases', () => {
       {
         a: 'species-pair',
         b: 'ditto-pair',
-        outcome: 'equivalent',
+        outcome: 'cheaper',
+        winner: 'ditto-pair',
       },
     ])
-    expect(chooserComparisonCopy(plan.routeComparisons, plan.strategies)).toEqual({
-      kind: 'equivalent',
-    })
+    expect(chooserComparisonCopy(plan.routeComparisons, plan.strategies)).toBe(
+      null,
+    )
 
     const dittoPair = plan.strategies.find(
       (strategy) => strategy.id === 'ditto-pair',
@@ -780,7 +799,7 @@ describe('daycareEngine acceptance cases', () => {
     expect(plan.steps.some((step) => step.id === 'nature')).toBe(false)
   })
 
-  it('nature Any with no egg moves drops gender constraints entirely', () => {
+  it('nature Any with no egg moves still needs opposite genders on a same-species pair', () => {
     const plan = planDaycare(scarletViolet, gen9, {
       ...baseTarget,
       nature: 'any',
@@ -790,10 +809,14 @@ describe('daycareEngine acceptance cases', () => {
     const speciesPair = plan.strategies.find(
       (strategy) => strategy.id === 'species-pair',
     )
-    for (const parent of speciesPair?.parents ?? []) {
-      expect(parent.gender).toBeUndefined()
-      expect(parent.genderReason).toBeUndefined()
-    }
+    const parentA = speciesPair?.parents.find((parent) => parent.role === 'A')
+    const parentB = speciesPair?.parents.find((parent) => parent.role === 'B')
+    expect(parentA?.gender).toBe('female')
+    expect(parentB?.gender).toBe('male')
+    expect(parentA?.genderReason).toEqual([{ code: 'pair-opposite-genders' }])
+    expect(parentB?.genderReason).toEqual([{ code: 'pair-opposite-genders' }])
+    expect(parentA?.mustHaveNature).toBeUndefined()
+    expect(parentA?.heldItem).not.toBe('Everstone')
   })
 
   it('hidden-ability target excludes species-pair when the carrier must be male', () => {
@@ -873,7 +896,7 @@ describe('daycareEngine acceptance cases', () => {
     ).toBe(true)
   })
 
-  it('sole standard ability is automatic — no parent requirement, gender, or rate', () => {
+  it('sole standard ability is automatic — no parent requirement, ability gender, or rate', () => {
     const plan = planDaycare(scarletViolet, gen9, {
       ...baseTarget,
       nature: 'any',
@@ -890,7 +913,12 @@ describe('daycareEngine acceptance cases', () => {
     const speciesPair = plan.strategies.find(
       (strategy) => strategy.id === 'species-pair',
     )
-    expect(speciesPair?.parents.every((parent) => !parent.gender)).toBe(true)
+    expect(speciesPair?.parents.find((parent) => parent.role === 'A')?.gender).toBe(
+      'female',
+    )
+    expect(speciesPair?.parents.find((parent) => parent.role === 'B')?.gender).toBe(
+      'male',
+    )
     expect(plan.steps.some((step) => step.id === 'ability')).toBe(false)
     expect(JSON.stringify(plan.steps)).not.toMatch(/80%/)
   })

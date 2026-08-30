@@ -494,6 +494,30 @@ function pairOppositeGenders(): Reason {
   return { code: 'pair-opposite-genders' }
 }
 
+function isDittoParent(parent: ParentRequirement): boolean {
+  return parent.species.length === 1 && parent.species[0] === 'Ditto'
+}
+
+/** Same-species pair always needs one of each gender. Fill only what is missing. */
+function fillSameSpeciesPairGenders(parents: ParentRequirement[]) {
+  if (parents.length !== 2) return
+  const parentA = parents.find((parent) => parent.role === 'A')
+  const parentB = parents.find((parent) => parent.role === 'B')
+  if (!parentA || !parentB) return
+  if (isDittoParent(parentA) || isDittoParent(parentB)) return
+  if (parentA.species.length !== 1 || parentB.species.length !== 1) return
+  if (parentA.species[0] !== parentB.species[0]) return
+
+  if (!parentA.gender) {
+    parentA.gender = 'female'
+    parentA.genderReason = [pairOppositeGenders()]
+  }
+  if (!parentB.gender) {
+    parentB.gender = 'male'
+    parentB.genderReason = [pairOppositeGenders()]
+  }
+}
+
 function femaleSpeciesHolder(offspringSpecies: string): Reason {
   return { code: 'female-species-holder', offspringSpecies }
 }
@@ -765,6 +789,7 @@ function buildSpeciesPairStrategy(
   const parents = [parentA, parentB]
   allocateHeldItems(parents, collectHeldItemDemands(ruleset, target), false)
   applyMasudaConstraint(parents, game, target, ruleset)
+  fillSameSpeciesPairGenders(parents)
 
   const tradeoff = useExternalCarrier
     ? 'No consolidation prerequisite, but the egg-move carrier must be male or eggs hatch as that species.'

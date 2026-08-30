@@ -317,10 +317,13 @@ describe('same-species egg-move carrier slot', () => {
       code: 'acquire-egg-move-pair',
       passers: [],
     })
-    expect(sameA?.gender).toBeUndefined()
+    expect(sameA?.gender).toBe('female')
+    expect(sameA?.genderReason).toEqual([{ code: 'pair-opposite-genders' }])
     expect(sameA?.genderReason?.some((reason) => reason.code === 'female-species-holder')).not.toBe(
       true,
     )
+    expect(sameB?.gender).toBe('male')
+    expect(sameB?.genderReason).toEqual([{ code: 'pair-opposite-genders' }])
 
     expect(externalB?.species).toEqual(['FixtureCarrier'])
     expect(externalB?.mustKnow).toEqual(['FixtureMove'])
@@ -393,7 +396,7 @@ describe('same-species egg-move carrier slot', () => {
         a: 'species-pair-same',
         b: 'species-pair-external',
         outcome: 'incomparable',
-        gDiffers: true,
+        gDiffers: false,
         qOnlyA: ['moves:same-species:FixtureMove'],
         qOnlyB: ['moves:carrier:FixtureMove'],
       },
@@ -401,7 +404,7 @@ describe('same-species egg-move carrier slot', () => {
         a: 'species-pair-same',
         b: 'ditto-pair',
         outcome: 'incomparable',
-        gDiffers: false,
+        gDiffers: true,
         qOnlyA: ['moves:same-species:FixtureMove'],
         qOnlyB: ['moves:already-knows:FixtureMove'],
       },
