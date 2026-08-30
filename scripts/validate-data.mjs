@@ -53,6 +53,56 @@ const ALLOWED_SOURCES = new Set([
   'dittobase',
 ])
 
+function containsDigit(value) {
+  return typeof value === 'string' && /\d/.test(value)
+}
+
+/**
+ * One-source carve-out on an egg-efficiency modifier.
+ * Empty if the row is under the category bar or a valid observation exception.
+ */
+export function modifierSingleSourceErrors(label, index, modifier) {
+  const path = `${label}: eggEfficiencyModifiers[${index}]`
+  const named = `"${modifier.name ?? 'unnamed'}"`
+  const source = modifier.singleSource
+  const hasSource = source !== undefined && source !== null && source !== ''
+  const hasReason = isNonEmptyString(modifier.singleSourceReason)
+  const found = []
+
+  if (hasSource && !hasReason) {
+    found.push(
+      `${path} (${named}) singleSource requires singleSourceReason (why the two-source bar does not apply)`,
+    )
+  }
+  if (hasReason && !hasSource) {
+    found.push(
+      `${path} (${named}) singleSourceReason is only for a one-source row — this row is already under the two-source bar`,
+    )
+  }
+  if (!hasSource) return found
+
+  if (Array.isArray(source) || typeof source !== 'string') {
+    found.push(
+      `${path} (${named}) singleSource must be one lineage, not ${JSON.stringify(source)}`,
+    )
+    return found
+  }
+  if (!ALLOWED_SOURCES.has(source)) {
+    found.push(
+      `${path} (${named}) singleSource "${source}" is not an allowed independent lineage (use pokeapi|bulbapedia|serebii|smogon|game|dittobase)`,
+    )
+  }
+  if (
+    hasReason &&
+    (containsDigit(modifier.effect) || containsDigit(modifier.availability))
+  ) {
+    found.push(
+      `${path} (${named}) one-source carve-out cannot contain a number in effect or availability — that bar is for observations, not rates`,
+    )
+  }
+  return found
+}
+
 function validateNatures(natures) {
   if (!natures || typeof natures !== 'object') {
     fail('natures.json: expected an object catalog')
@@ -367,6 +417,9 @@ function validateGame(filePath, game, natures) {
       fail(`${label}: eggEfficiencyModifiers[${index}] must be an object`)
       continue
     }
+    for (const message of modifierSingleSourceErrors(label, index, modifier)) {
+      fail(message)
+    }
     if (!Array.isArray(modifier.affects) || modifier.affects.length === 0) {
       fail(
         `${label}: eggEfficiencyModifiers[${index}] ("${modifier.name ?? 'unnamed'}") affects must be a non-empty array`,
@@ -563,4 +616,9 @@ function main() {
   )
 }
 
-main()
+const isDirectRun =
+  process.argv[1] != null &&
+  fileURLToPath(import.meta.url) === path.resolve(process.argv[1])
+if (isDirectRun) {
+  main()
+}

@@ -63,7 +63,10 @@ describe('hatchRouter', () => {
     expect(view.hatchSpeed.some((line) => /Overworld/i.test(line.name))).toBe(
       true,
     )
-    expect(view.stepPace).toEqual([])
+    expect(view.stepPace.map((line) => line.name)).toEqual(['Bicycle'])
+    expect(view.stepPace[0]?.effect).toMatch(/same steps/i)
+    expect(view.stepPace[0]?.effect).toMatch(/less real time/i)
+    expect(view.stepPace[0]?.effect).not.toMatch(/\d/)
   })
 
   it('SV ride legendary is step-pace: same steps, less time — not fewer hatch steps', () => {

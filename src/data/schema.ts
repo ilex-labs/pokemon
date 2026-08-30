@@ -113,6 +113,14 @@ export interface EggEfficiencyModifier {
    */
   exampleHolders?: AbilityHolder[]
   recipeId?: string
+  /**
+   * Per-row carve-out from the two-source bar. Both fields required
+   * together: one allowed lineage, and why that bar does not apply.
+   * Forbidden when the row is already two-sourced. Effect and
+   * availability must not contain a number — observations, not rates.
+   */
+  singleSource?: string
+  singleSourceReason?: string
 }
 
 export interface SandwichRecipe {

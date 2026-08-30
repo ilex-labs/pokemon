@@ -37,7 +37,17 @@
   "eggMoveAcquisition": {
     "how": "The father must already know the move — catch or hatch a male that has it, then pair him at the Day Care."
   },
-  "eggEfficiencyModifiers": [],
+  "eggEfficiencyModifiers": [
+    {
+      "name": "Bicycle",
+      "affects": ["step-pace"],
+      "type": "other",
+      "effect": "Eggs hatch from steps taken. Covering those same steps on a bicycle takes less real time than walking.",
+      "availability": "",
+      "singleSource": "bulbapedia",
+      "singleSourceReason": "Self-evident in play: a bicycle covers the same step count in less wall-clock time. Not a rate, so a second source is not a measurement."
+    }
+  ],
   "noEggRateBoostsReason": "This game has no item or charm that raises how often eggs appear — Day Care compatibility alone sets the rate.",
   "noEggShinyBoostsReason": "The Masuda Method doesn't exist in this game — it was introduced in Generation IV — and the Shiny Charm came later still, in Generation V. Base odds are the only egg shiny odds here.",
   "hatchMechanicExplainer": "Leave two compatible Pokémon at the Four Island Day Care (the Route 5 Day Care only holds one, so it cannot produce eggs). After enough steps the Day-Care Man offers an Egg; how often that happens depends only on whether the parents share a species and Original Trainer — there is no Oval Charm or other rate boost here. Carry the Egg in your party and walk: it hatches at level 5. Flame Body does not shorten hatch steps in FireRed/LeafGreen (that starts in Emerald).",
