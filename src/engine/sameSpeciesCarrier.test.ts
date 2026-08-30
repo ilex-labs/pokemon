@@ -329,13 +329,13 @@ describe('same-species egg-move carrier slot', () => {
       code: 'acquire-egg-move-pair',
       passers: ['FixtureCarrier'],
     })
-    expect(externalB?.gender).toBeUndefined()
+    expect(externalB?.gender).toBe('male')
+    expect(externalB?.genderKind).toBe('forced')
     expect(externalB?.genderReason).toBeUndefined()
-    expect(
-      external?.parents
-        .find((parent) => parent.role === 'A')
-        ?.genderReason?.some((reason) => reason.code === 'female-species-holder'),
-    ).not.toBe(true)
+    const externalA = external?.parents.find((parent) => parent.role === 'A')
+    expect(externalA?.gender).toBe('female')
+    expect(externalA?.genderKind).toBe('forced')
+    expect(externalA?.genderReason).toBeUndefined()
   })
 
   it('union catalog on male-only keeps egg-move eligibility on both pair routes', () => {
@@ -383,7 +383,7 @@ describe('same-species egg-move carrier slot', () => {
         a: 'species-pair-same',
         b: 'species-pair-external',
         outcome: 'incomparable',
-        gDiffers: true,
+        gDiffers: false,
         qOnlyA: ['moves:same-species:FixtureMove'],
         qOnlyB: ['moves:carrier:FixtureMove'],
       },
@@ -399,7 +399,7 @@ describe('same-species egg-move carrier slot', () => {
         a: 'species-pair-external',
         b: 'ditto-pair',
         outcome: 'incomparable',
-        gDiffers: false,
+        gDiffers: true,
         qOnlyA: ['moves:carrier:FixtureMove'],
         qOnlyB: ['moves:already-knows:FixtureMove'],
       },

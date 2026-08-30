@@ -4,6 +4,7 @@ import type { GameData, Ruleset } from '../../data/schema'
 import gen3Json from '../../data/rulesets/gen3.json'
 import gen9Json from '../../data/rulesets/gen9.json'
 import frlgJson from '../../data/games/firered-leafgreen.json'
+import scarletVioletJson from '../../data/games/scarlet-violet.json'
 import {
   planDaycare,
   type PairingStrategy,
@@ -14,8 +15,11 @@ import ParentPairCard from './ParentPairCard'
 
 const gen3 = gen3Json as Ruleset
 const frlg = frlgJson as GameData
+const scarletViolet = scarletVioletJson as GameData
 
 const gen9 = gen9Json as Ruleset
+
+const GENDER_REASON_GAP = 'Not recorded yet. No reason for this gender.'
 
 afterEach(() => {
   cleanup()
@@ -154,5 +158,123 @@ describe('ParentPairCard owns-ditto', () => {
     )
     expect(struck).toHaveLength(1)
     expect(struck[0]?.textContent).toMatch(/Obtain Ditto:/)
+  })
+})
+
+function renderPair(parents: ParentRequirement[]) {
+  const pair: PairingStrategy = {
+    id: 'species-pair',
+    label: 'Species pair',
+    parents,
+    acquisitionCost: 'two Charmander',
+    tradeoff: 'Fixture tradeoff.',
+  }
+  render(
+    <ParentPairCard
+      strategies={[pair]}
+      selectedStrategyId="species-pair"
+      ruleset={gen9}
+      onSelectStrategy={() => {}}
+      ownedKeys={new Set()}
+      onToggleOwned={() => {}}
+    />,
+  )
+}
+
+describe('ParentPairCard gender reason gap', () => {
+  it('renders a muted gap for a forced gender with no reason', () => {
+    renderPair([
+      {
+        role: 'A',
+        species: ['Charmander'],
+        gender: 'female',
+        genderKind: 'forced',
+      },
+      { role: 'B', species: ['Charmander'] },
+    ])
+    const gap = screen.getByText(GENDER_REASON_GAP)
+    expect(gap.className).toMatch(/text-muted/)
+  })
+
+  it('does not render the gap when a reason is present', () => {
+    renderPair([
+      {
+        role: 'A',
+        species: ['Charmander'],
+        gender: 'female',
+        genderKind: 'forced',
+        genderReason: [
+          {
+            code: 'female-species-holder',
+            offspringSpecies: 'Charmander',
+            determinationFact: 'The female parent determines the offspring species.',
+          },
+        ],
+      },
+      { role: 'B', species: ['Charmander'] },
+    ])
+    expect(screen.queryByText(GENDER_REASON_GAP)).toBeNull()
+    expect(screen.getByText(/female parent determines/i)).toBeTruthy()
+  })
+
+  it('does not render the gap for allocation without a reason', () => {
+    renderPair([
+      {
+        role: 'A',
+        species: ['Charmander'],
+        gender: 'female',
+        genderKind: 'allocation',
+      },
+      { role: 'B', species: ['Charmander'] },
+    ])
+    expect(screen.queryByText(GENDER_REASON_GAP)).toBeNull()
+  })
+
+  it('fires on an omit-speciesDetermination plan and not on a sourced game', () => {
+    const { speciesDetermination: _omit, ...omitSv } = scarletViolet
+    const target = {
+      species: 'Charmander',
+      nature: 'any' as const,
+      ability: 'any' as const,
+      eggMoves: ['Dragon Dance'],
+      ivs: {
+        hp: 'any' as const,
+        atk: 'any' as const,
+        def: 'any' as const,
+        spa: 'any' as const,
+        spd: 'any' as const,
+        spe: 'any' as const,
+      },
+    }
+    const omitPlan = planDaycare(omitSv, gen9, target)
+    const omitPair = omitPlan.strategies.find(
+      (strategy) => strategy.id === 'species-pair',
+    )
+    expect(omitPair).toBeDefined()
+    render(
+      <ParentPairCard
+        strategies={omitPlan.strategies}
+        selectedStrategyId="species-pair"
+        ruleset={gen9}
+        onSelectStrategy={() => {}}
+        ownedKeys={new Set()}
+        onToggleOwned={() => {}}
+      />,
+    )
+    expect(screen.getAllByText(GENDER_REASON_GAP).length).toBe(2)
+    cleanup()
+
+    const sourced = planDaycare(scarletViolet, gen9, target)
+    render(
+      <ParentPairCard
+        strategies={sourced.strategies}
+        selectedStrategyId="species-pair"
+        ruleset={gen9}
+        onSelectStrategy={() => {}}
+        ownedKeys={new Set()}
+        onToggleOwned={() => {}}
+      />,
+    )
+    expect(screen.queryByText(GENDER_REASON_GAP)).toBeNull()
   })
 })

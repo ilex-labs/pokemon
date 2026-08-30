@@ -30,19 +30,12 @@ const ANY_IVS: DaycareTarget['ivs'] = {
   spe: 'any',
 }
 
-const ALLOCATION = 'pair-opposite-genders'
-
-function genderCodes(parent: ParentRequirement): string[] {
-  return (parent.genderReason ?? []).map((reason) => reason.code)
-}
-
 function isAllocation(parent: ParentRequirement): boolean {
-  const codes = genderCodes(parent)
-  return codes.length > 0 && codes.every((code) => code === ALLOCATION)
+  return parent.genderKind === 'allocation'
 }
 
 function isRequiredGender(parent: ParentRequirement): boolean {
-  return genderCodes(parent).some((code) => code !== ALLOCATION)
+  return parent.gender != null && parent.genderKind === 'forced'
 }
 
 function encounterFraction(

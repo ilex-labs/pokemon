@@ -38,6 +38,7 @@ const speciesPairNature: AcquisitionCost = cost([
     species: ['Charmander'],
     genderConstrained: true,
     gender: 'female',
+    genderKind: 'allocation',
     genderReasonCodes: ['pair-opposite-genders'],
     cataloguedGenderRatio: [
       { species: 'Charmander', ratio: CHARMANDER_RATIO },
@@ -48,6 +49,7 @@ const speciesPairNature: AcquisitionCost = cost([
     species: ['Charmander'],
     genderConstrained: true,
     gender: 'male',
+    genderKind: 'allocation',
     genderReasonCodes: ['pair-opposite-genders'],
     cataloguedGenderRatio: [
       { species: 'Charmander', ratio: CHARMANDER_RATIO },
@@ -294,6 +296,7 @@ describe('formatAcquisitionCost named gender', () => {
         species: ['Gyarados'],
         genderConstrained: true,
         gender: 'female',
+        genderKind: 'allocation',
         genderReasonCodes: ['pair-opposite-genders'],
         cataloguedGenderRatio: [
           { species: 'Gyarados', ratio: { malePercent: 50 } },
@@ -303,6 +306,7 @@ describe('formatAcquisitionCost named gender', () => {
         species: ['Gyarados'],
         genderConstrained: true,
         gender: 'male',
+        genderKind: 'allocation',
         genderReasonCodes: ['pair-opposite-genders'],
         cataloguedGenderRatio: [
           { species: 'Gyarados', ratio: { malePercent: 50 } },
@@ -312,12 +316,41 @@ describe('formatAcquisitionCost named gender', () => {
     expect(formatAcquisitionCost(gyarados)).toBe('two Gyarados')
   })
 
+  it('names a catalogued 50/50 required gender', () => {
+    const pairCarrier = cost([
+      parent({
+        species: ['Gyarados'],
+        genderConstrained: true,
+        gender: 'female',
+        genderKind: 'forced',
+        genderReasonCodes: [],
+        cataloguedGenderRatio: [
+          { species: 'Gyarados', ratio: { malePercent: 50 } },
+        ],
+      }),
+      parent({
+        species: ['Salamence'],
+        genderConstrained: true,
+        gender: 'male',
+        genderKind: 'forced',
+        genderReasonCodes: [],
+        mustKnowMoves: true,
+        moves: ['Dragon Dance'],
+        eggMoveRole: 'carrier',
+      }),
+    ])
+    expect(formatAcquisitionCost(pairCarrier)).toBe(
+      'one female Gyarados, plus a male Dragon Dance carrier',
+    )
+  })
+
   it('always names a mechanically required gender, even when it is the majority', () => {
     const dittoAlreadyKnows = cost([
       parent({
         species: ['Charmander'],
         genderConstrained: true,
         gender: 'male',
+        genderKind: 'forced',
         genderReasonCodes: ['male-egg-move-eligible'],
         cataloguedGenderRatio: [
           { species: 'Charmander', ratio: CHARMANDER_RATIO },
@@ -339,6 +372,7 @@ describe('formatAcquisitionCost named gender', () => {
         species: ['Charmander'],
         genderConstrained: true,
         gender: 'female',
+        genderKind: 'forced',
         genderReasonCodes: ['female-species-holder'],
         cataloguedGenderRatio: [
           { species: 'Charmander', ratio: CHARMANDER_RATIO },
@@ -348,6 +382,7 @@ describe('formatAcquisitionCost named gender', () => {
         species: ['Salamence'],
         genderConstrained: true,
         gender: 'male',
+        genderKind: 'forced',
         genderReasonCodes: ['male-external-carrier'],
         mustKnowMoves: true,
         moves: ['Dragon Dance'],
@@ -365,6 +400,7 @@ describe('formatAcquisitionCost named gender', () => {
         species: ['Charmander'],
         genderConstrained: true,
         gender: 'female',
+        genderKind: 'forced',
         genderReasonCodes: ['female-species-holder'],
         cataloguedGenderRatio: [
           { species: 'Charmander', ratio: CHARMANDER_RATIO },
@@ -376,6 +412,7 @@ describe('formatAcquisitionCost named gender', () => {
         species: ['Salamence'],
         genderConstrained: true,
         gender: 'male',
+        genderKind: 'forced',
         genderReasonCodes: ['male-external-carrier'],
         mustKnowMoves: true,
         moves: ['Dragon Dance'],
@@ -393,6 +430,7 @@ describe('formatAcquisitionCost named gender', () => {
         species: ['Charmander'],
         genderConstrained: true,
         gender: 'female',
+        genderKind: 'allocation',
         genderReasonCodes: ['pair-opposite-genders'],
         cataloguedGenderRatio: [
           { species: 'Charmander', ratio: CHARMANDER_RATIO },
@@ -403,6 +441,7 @@ describe('formatAcquisitionCost named gender', () => {
         species: ['Charmander'],
         genderConstrained: true,
         gender: 'male',
+        genderKind: 'allocation',
         genderReasonCodes: ['pair-opposite-genders'],
         cataloguedGenderRatio: [
           { species: 'Charmander', ratio: CHARMANDER_RATIO },
@@ -420,6 +459,7 @@ describe('formatAcquisitionCost named gender', () => {
         species: ['Charmander'],
         genderConstrained: true,
         gender: 'female',
+        genderKind: 'allocation',
         genderReasonCodes: ['pair-opposite-genders'],
         cataloguedGenderRatio: [
           { species: 'Charmander', ratio: CHARMANDER_RATIO },
@@ -429,6 +469,7 @@ describe('formatAcquisitionCost named gender', () => {
         species: ['Charmander'],
         genderConstrained: true,
         gender: 'male',
+        genderKind: 'allocation',
         genderReasonCodes: ['pair-opposite-genders'],
         cataloguedGenderRatio: [
           { species: 'Charmander', ratio: CHARMANDER_RATIO },

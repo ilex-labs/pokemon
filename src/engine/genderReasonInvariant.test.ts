@@ -1,6 +1,9 @@
 /**
- * Schema invariant: gender set ⇒ genderReason non-empty.
- * Walks every strategy of every existing engine fixture.
+ * Schema invariants:
+ * - gender set ⇒ genderReason non-empty, unless the gender is forced by
+ *   species determination on a game that omits speciesDetermination.
+ * - A non-Ditto parent whose species differs from the offspring HAS a gender.
+ * - The offspring-species parent on an external-carrier route HAS a gender.
  */
 import { describe, expect, it } from 'vitest'
 import type { GameData, Ruleset } from '../data/schema'
@@ -8,7 +11,13 @@ import gen3Json from '../data/rulesets/gen3.json'
 import gen9Json from '../data/rulesets/gen9.json'
 import frlgJson from '../data/games/firered-leafgreen.json'
 import scarletVioletJson from '../data/games/scarlet-violet.json'
-import { planDaycare, type DaycarePlan, type DaycareTarget } from './daycareEngine'
+import {
+  planDaycare,
+  type DaycarePlan,
+  type DaycareTarget,
+  type PairingStrategy,
+  type ParentRequirement,
+} from './daycareEngine'
 
 const gen3 = gen3Json as Ruleset
 const gen9 = gen9Json as Ruleset
@@ -220,6 +229,11 @@ const genderlessNoDitto: GameData = {
 
 const noHyperAccess: GameData = (() => {
   const { hyperTrainingAccess: _omit, ...rest } = scarletViolet
+  return rest
+})()
+
+const omitSpeciesDetermination: GameData = (() => {
+  const { speciesDetermination: _omit, ...rest } = scarletViolet
   return rest
 })()
 
@@ -473,12 +487,21 @@ const cases: Case[] = [
   { name: 'FRLG base', game: frlg, ruleset: gen3, target: frlgBase },
   {
     name: 'SV omitting speciesDetermination',
-    game: (() => {
-      const { speciesDetermination: _omit, ...rest } = scarletViolet
-      return rest
-    })(),
+    game: omitSpeciesDetermination,
     ruleset: gen9,
     target: svBase,
+  },
+  {
+    name: 'SV omitting speciesDetermination unconstrained external',
+    game: omitSpeciesDetermination,
+    ruleset: gen9,
+    target: {
+      species: 'Charmander',
+      nature: 'any',
+      ability: 'any',
+      eggMoves: ['Dragon Dance'],
+      ivs: anyIvs,
+    },
   },
   {
     name: 'FRLG unconstrained',
@@ -516,6 +539,12 @@ const cases: Case[] = [
     target: fixtureMoveTarget,
   },
   {
+    name: 'external carrier gen9',
+    game: fixtureGameExternalCarrier,
+    ruleset: gen9,
+    target: fixtureMoveTarget,
+  },
+  {
     name: 'external carrier male-only',
     game: fixtureGameExternalCarrier,
     ruleset: maleOnlyRuleset,
@@ -541,13 +570,73 @@ const cases: Case[] = [
   },
 ]
 
-function violations(label: string, plan: DaycarePlan): string[] {
+function isDittoParent(parent: { species: string[] }): boolean {
+  return parent.species.length === 1 && parent.species[0] === 'Ditto'
+}
+
+function isOtherSpeciesParent(
+  parent: { species: string[] },
+  offspringSpecies: string,
+): boolean {
+  return (
+    parent.species.length > 0 &&
+    parent.species.every((name) => name !== offspringSpecies)
+  )
+}
+
+function strategyUsesExternalCarrier(
+  strategy: PairingStrategy,
+  offspringSpecies: string,
+): boolean {
+  return strategy.parents.some(
+    (parent) =>
+      !isDittoParent(parent) && isOtherSpeciesParent(parent, offspringSpecies),
+  )
+}
+
+/**
+ * Species-determination genders on a game that omits speciesDetermination:
+ * female offspring-species parent and male external carrier.
+ */
+function omittedSpeciesDeterminationForcesGender(
+  game: GameData,
+  strategy: PairingStrategy,
+  parent: ParentRequirement,
+  offspringSpecies: string,
+): boolean {
+  if (game.speciesDetermination) return false
+  if (parent.genderKind !== 'forced') return false
+  if (!strategyUsesExternalCarrier(strategy, offspringSpecies)) return false
+  if (isDittoParent(parent) || parent.gender == null) return false
+
+  const isOffspringSpeciesParent =
+    parent.species.length === 1 && parent.species[0] === offspringSpecies
+
+  if (isOffspringSpeciesParent && parent.gender === 'female') return true
+  if (isOtherSpeciesParent(parent, offspringSpecies) && parent.gender === 'male') {
+    return true
+  }
+  return false
+}
+
+function violations(
+  label: string,
+  plan: DaycarePlan,
+  game: GameData,
+  offspringSpecies: string,
+): string[] {
   const found: string[] = []
   for (const strategy of plan.strategies) {
     for (const parent of strategy.parents) {
       if (
         parent.gender != null &&
-        !(parent.genderReason && parent.genderReason.length > 0)
+        !(parent.genderReason && parent.genderReason.length > 0) &&
+        !omittedSpeciesDeterminationForcesGender(
+          game,
+          strategy,
+          parent,
+          offspringSpecies,
+        )
       ) {
         found.push(
           `${label} / ${strategy.id} / parent ${parent.role} gender=${parent.gender}`,
@@ -558,13 +647,212 @@ function violations(label: string, plan: DaycarePlan): string[] {
   return found
 }
 
+/** A non-Ditto parent whose species is not the offspring must have a gender. */
+function missingDifferingSpeciesGender(
+  label: string,
+  plan: DaycarePlan,
+  offspringSpecies: string,
+): string[] {
+  const found: string[] = []
+  for (const strategy of plan.strategies) {
+    for (const parent of strategy.parents) {
+      if (isDittoParent(parent) || parent.species.length === 0) continue
+      if (
+        isOtherSpeciesParent(parent, offspringSpecies) &&
+        parent.gender == null
+      ) {
+        found.push(
+          `${label} / ${strategy.id} / parent ${parent.role} species=${parent.species.join(',')} has no gender`,
+        )
+      }
+    }
+  }
+  return found
+}
+
+function missingOffspringSpeciesGenderOnExternalCarrier(
+  label: string,
+  plan: DaycarePlan,
+  offspringSpecies: string,
+): string[] {
+  const found: string[] = []
+  for (const strategy of plan.strategies) {
+    if (!strategyUsesExternalCarrier(strategy, offspringSpecies)) continue
+    for (const parent of strategy.parents) {
+      if (isDittoParent(parent)) continue
+      const isOffspringSpeciesParent =
+        parent.species.length === 1 && parent.species[0] === offspringSpecies
+      if (isOffspringSpeciesParent && parent.gender == null) {
+        found.push(
+          `${label} / ${strategy.id} / parent ${parent.role} has no gender`,
+        )
+      }
+    }
+  }
+  return found
+}
+
+function lookupWarnings(parent: ParentRequirement | undefined) {
+  return (
+    parent?.acquisition
+      ?.filter(
+        (flag) =>
+          flag.code === 'egg-group-unknown' ||
+          flag.code === 'egg-group-catalogued-empty',
+      )
+      .map((flag) => flag.code) ?? []
+  )
+}
+
 describe('gender set implies genderReason', () => {
-  it('holds on every strategy of every existing fixture', () => {
+  it('holds unless omitted speciesDetermination forces the gender', () => {
     const found: string[] = []
     for (const entry of cases) {
       const plan = planDaycare(entry.game, entry.ruleset, entry.target)
-      found.push(...violations(entry.name, plan))
+      found.push(
+        ...violations(entry.name, plan, entry.game, entry.target.species),
+      )
     }
     expect(found).toEqual([])
+  })
+
+  it('never emits forced gender without a reason when speciesDetermination is present', () => {
+    const found: string[] = []
+    for (const entry of cases) {
+      if (!entry.game.speciesDetermination) continue
+      const plan = planDaycare(entry.game, entry.ruleset, entry.target)
+      for (const strategy of plan.strategies) {
+        for (const parent of strategy.parents) {
+          if (
+            parent.gender != null &&
+            parent.genderKind === 'forced' &&
+            !(parent.genderReason && parent.genderReason.length > 0)
+          ) {
+            found.push(
+              `${entry.name} / ${strategy.id} / parent ${parent.role}`,
+            )
+          }
+        }
+      }
+    }
+    expect(found).toEqual([])
+  })
+})
+
+describe('parent of a different species has a gender', () => {
+  it('holds on every strategy of every fixture', () => {
+    const found: string[] = []
+    for (const entry of cases) {
+      const plan = planDaycare(entry.game, entry.ruleset, entry.target)
+      found.push(
+        ...missingDifferingSpeciesGender(
+          entry.name,
+          plan,
+          entry.target.species,
+        ),
+      )
+    }
+    expect(found).toEqual([])
+  })
+})
+
+describe('offspring-species parent on an external-carrier route has a gender', () => {
+  it('holds on every strategy of every fixture', () => {
+    const found: string[] = []
+    for (const entry of cases) {
+      const plan = planDaycare(entry.game, entry.ruleset, entry.target)
+      found.push(
+        ...missingOffspringSpeciesGenderOnExternalCarrier(
+          entry.name,
+          plan,
+          entry.target.species,
+        ),
+      )
+    }
+    expect(found).toEqual([])
+  })
+})
+
+describe('loud-lookups gender without reason', () => {
+  const loudCases = [
+    {
+      name: 'unknown passer',
+      game: fixtureGameUnknownPasser,
+    },
+    {
+      name: 'catalogued empty',
+      game: fixtureGameCataloguedNoGroups,
+    },
+    {
+      name: 'shared group',
+      game: fixtureGameSharedGroupPasser,
+    },
+  ] as const
+
+  it('is the omitted-speciesDetermination hole, not the lookup warning', () => {
+    const report = loudCases.map((entry) => {
+      const plan = planDaycare(entry.game, gen9, fixtureMoveTarget)
+      const strategy = plan.strategies.find((item) => item.id === 'species-pair')
+      const parentA = strategy?.parents.find((parent) => parent.role === 'A')
+      const parentB = strategy?.parents.find((parent) => parent.role === 'B')
+      return {
+        name: entry.name,
+        hasSpeciesDetermination: Boolean(entry.game.speciesDetermination),
+        parentA: {
+          gender: parentA?.gender,
+          genderReason: parentA?.genderReason,
+          lookupWarnings: lookupWarnings(parentA),
+        },
+        parentB: {
+          gender: parentB?.gender,
+          genderReason: parentB?.genderReason,
+          lookupWarnings: lookupWarnings(parentB),
+        },
+      }
+    })
+    expect(report).toEqual([
+      {
+        name: 'unknown passer',
+        hasSpeciesDetermination: false,
+        parentA: {
+          gender: 'female',
+          genderReason: undefined,
+          lookupWarnings: [],
+        },
+        parentB: {
+          gender: 'male',
+          genderReason: undefined,
+          lookupWarnings: ['egg-group-unknown'],
+        },
+      },
+      {
+        name: 'catalogued empty',
+        hasSpeciesDetermination: false,
+        parentA: {
+          gender: 'female',
+          genderReason: undefined,
+          lookupWarnings: [],
+        },
+        parentB: {
+          gender: 'male',
+          genderReason: undefined,
+          lookupWarnings: ['egg-group-catalogued-empty'],
+        },
+      },
+      {
+        name: 'shared group',
+        hasSpeciesDetermination: false,
+        parentA: {
+          gender: 'female',
+          genderReason: undefined,
+          lookupWarnings: [],
+        },
+        parentB: {
+          gender: 'male',
+          genderReason: undefined,
+          lookupWarnings: [],
+        },
+      },
+    ])
   })
 })

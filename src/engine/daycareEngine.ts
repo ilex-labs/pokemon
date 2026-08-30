@@ -41,11 +41,21 @@ export type DaycareTarget = {
   wantsPowerItem?: boolean
 }
 
+export type GenderKind = 'forced' | 'allocation'
+
 export type ParentRequirement = {
   role: 'A' | 'B'
   species: string[]
   gender?: 'male' | 'female'
-  /** Why this gender is forced — required whenever gender is set. */
+  /**
+   * Whether this gender is a mechanical requirement (`forced`) or an
+   * opposite-sex allocation (`allocation`). Required whenever gender is set.
+   */
+  genderKind?: GenderKind
+  /**
+   * Why this gender is forced — required whenever gender is set, except
+   * species-determination genders on a game that omits speciesDetermination.
+   */
   genderReason?: Reason[]
   mustKnow?: string[]
   mustHaveAbility?: string
@@ -510,6 +520,19 @@ function isDittoParent(parent: ParentRequirement): boolean {
   return parent.species.length === 1 && parent.species[0] === 'Ditto'
 }
 
+function setParentGender(
+  parent: ParentRequirement,
+  gender: 'male' | 'female',
+  kind: GenderKind,
+  reasons?: Reason[],
+) {
+  parent.gender = gender
+  parent.genderKind = kind
+  if (reasons && reasons.length > 0) {
+    parent.genderReason = reasons
+  }
+}
+
 /** Same-species pair always needs one of each gender. Fill only what is missing. */
 function fillSameSpeciesPairGenders(parents: ParentRequirement[]) {
   if (parents.length !== 2) return
@@ -521,12 +544,10 @@ function fillSameSpeciesPairGenders(parents: ParentRequirement[]) {
   if (parentA.species[0] !== parentB.species[0]) return
 
   if (!parentA.gender) {
-    parentA.gender = 'female'
-    parentA.genderReason = [pairOppositeGenders()]
+    setParentGender(parentA, 'female', 'allocation', [pairOppositeGenders()])
   }
   if (!parentB.gender) {
-    parentB.gender = 'male'
-    parentB.genderReason = [pairOppositeGenders()]
+    setParentGender(parentB, 'male', 'allocation', [pairOppositeGenders()])
   }
 }
 
@@ -664,10 +685,9 @@ function allocateHeldItems(
           parents.find((parent) => parent.mustHaveNature) ?? parents[0]
         if (natureParent) {
           if (!natureParent.gender) {
-            natureParent.gender = 'female'
-            if (!natureParent.genderReason?.length) {
-              natureParent.genderReason = [{ code: 'holder-female-or-ditto' }]
-            }
+            setParentGender(natureParent, 'female', 'forced', [
+              { code: 'holder-female-or-ditto' },
+            ])
           }
           assignTo(natureParent, everstone)
         }
@@ -764,16 +784,15 @@ function buildSpeciesPairStrategy(
 
   // Recompute gender from what the target actually forces — do not assert.
   if (useExternalCarrier && determinationFact) {
-    parentA.gender = 'female'
-    parentA.genderReason = [
+    setParentGender(parentA, 'female', 'forced', [
       femaleSpeciesHolder(target.species, determinationFact),
-    ]
+    ])
   } else if (natureWanted) {
-    parentA.gender = 'female'
-    parentA.genderReason = [pairOppositeGenders()]
+    setParentGender(parentA, 'female', 'allocation', [pairOppositeGenders()])
   } else if (abilityNeedsFemale) {
-    parentA.gender = 'female'
-    parentA.genderReason = [femaleAbilityNeedsDitto()]
+    setParentGender(parentA, 'female', 'forced', [femaleAbilityNeedsDitto()])
+  } else if (useExternalCarrier) {
+    setParentGender(parentA, 'female', 'forced')
   }
 
   const parentB: ParentRequirement = {
@@ -808,11 +827,11 @@ function buildSpeciesPairStrategy(
     carrierGenderReasons.push(maleEggMoveEligible())
   }
   if (carrierGenderReasons.length > 0) {
-    parentB.gender = 'male'
-    parentB.genderReason = carrierGenderReasons
+    setParentGender(parentB, 'male', 'forced', carrierGenderReasons)
   } else if (natureWanted || abilityNeedsFemale) {
-    parentB.gender = 'male'
-    parentB.genderReason = [pairOppositeGenders()]
+    setParentGender(parentB, 'male', 'allocation', [pairOppositeGenders()])
+  } else if (useExternalCarrier) {
+    setParentGender(parentB, 'male', 'forced')
   }
 
   const parents = [parentA, parentB]
@@ -908,8 +927,7 @@ function buildDittoPairStrategy(
   applyNatureAbility(parentA, game, ruleset, species, target)
 
   if (fatherOnlyMoves) {
-    parentA.gender = 'male'
-    parentA.genderReason = [maleEggMoveEligible()]
+    setParentGender(parentA, 'male', 'forced', [maleEggMoveEligible()])
   }
 
   if (target.eggMoves.length > 0) {

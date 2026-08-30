@@ -17,11 +17,7 @@ export type ParentAcquisitionFact = {
   species: string[]
   genderConstrained: boolean
   gender?: 'male' | 'female'
-  /**
-   * Gender reason codes from the engine. `pair-opposite-genders` is an
-   * allocation — named only when that gender is scarce. Every other code
-   * is a mechanical requirement and is always named.
-   */
+  genderKind?: 'forced' | 'allocation'
   genderReasonCodes: string[]
   /** Only names present in game.species. */
   cataloguedGenderRatio: Array<{
@@ -45,6 +41,7 @@ export type AcquisitionCost = {
 type ParentSnapshot = {
   species: string[]
   gender?: 'male' | 'female'
+  genderKind?: 'forced' | 'allocation'
   genderReason?: Array<{ code: string }>
   mustKnow?: string[]
   mustHaveNature?: string
@@ -101,6 +98,7 @@ export function deriveAcquisitionCost(
         species: [...parent.species],
         genderConstrained: parent.gender != null,
         gender: parent.gender,
+        genderKind: parent.genderKind,
         genderReasonCodes: (parent.genderReason ?? []).map(
           (reason) => reason.code,
         ),
@@ -122,19 +120,15 @@ function joinMoves(moves: string[]): string {
   return moves.join('/')
 }
 
-const ALLOCATION_GENDER = 'pair-opposite-genders'
-
 function genderIsAllocation(parent: ParentAcquisitionFact): boolean {
-  const codes = parent.genderReasonCodes
-  if (codes.length === 0) return true
-  return codes.every((code) => code === ALLOCATION_GENDER)
+  return parent.genderKind === 'allocation'
 }
 
 /**
  * Gender to put in the chooser sentence. Forced genders are always named.
- * Allocation (`pair-opposite-genders`) names only a scarce side — strictly
- * below half of catalogued encounters. Uncatalogued allocation stays unnamed
- * (external carriers keep the existing "male carrier" wording).
+ * Allocation names only a scarce side — strictly below half of catalogued
+ * encounters. Uncatalogued allocation stays unnamed (external carriers keep
+ * the existing "male carrier" wording).
  */
 function namedGender(
   parent: ParentAcquisitionFact,

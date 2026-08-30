@@ -55,6 +55,10 @@ function ParentBlock({
             <p className="mt-1 text-meta text-muted">
               {withNums(formatReasons(parent.genderReason))}
             </p>
+          ) : parent.gender != null && parent.genderKind === 'forced' ? (
+            <p className="mt-1 text-meta text-muted">
+              Not recorded yet. No reason for this gender.
+            </p>
           ) : null}
         </div>
         <label className="flex shrink-0 cursor-pointer items-center gap-2 text-meta text-body">
