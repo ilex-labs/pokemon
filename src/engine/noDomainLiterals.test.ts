@@ -3,7 +3,6 @@
  * Domain names live in src/data/. Mechanic numerics live on the ruleset.
  * Neither may appear as literals in production engine or src/lib/ prose.
  */
-import { execFileSync } from 'node:child_process'
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -593,13 +592,6 @@ function findNumericViolations(
   return violations
 }
 
-function gitShow(spec: string): string {
-  return execFileSync('git', ['show', spec], {
-    encoding: 'utf8',
-    cwd: ROOT,
-  })
-}
-
 function reportViolations(header: string, violations: Violation[]): void {
   if (violations.length === 0) return
   const report = violations
@@ -667,9 +659,13 @@ describe('architecture: no ruleset numeric literals in prose', () => {
     )
   })
 
-  it("flags 6155387's parent's hardcoded 50% everstone chance", () => {
+  it('flags a hardcoded 50% everstone chance', () => {
     const forms = collectMechanicNumericForms(DATA_DIR)
-    const source = gitShow('6155387^:src/lib/reason.ts')
+    const source = [
+      'export function formatEverstone() {',
+      '  return `Gives a 50% chance the hatch inherits ${reason.nature}.`',
+      '}',
+    ].join('\n')
     const violations = findNumericViolationsInSource(
       'src/lib/reason.ts',
       source,
@@ -678,9 +674,13 @@ describe('architecture: no ruleset numeric literals in prose', () => {
     expect(violations.some((entry) => entry.literal === '50%')).toBe(true)
   })
 
-  it('flags the pre-860de95 hardcoded five IVs', () => {
+  it('flags a hardcoded five IVs', () => {
     const forms = collectMechanicNumericForms(DATA_DIR)
-    const source = gitShow('6155387:src/lib/reason.ts')
+    const source = [
+      'export function formatKnotConflict() {',
+      "  return ' Destiny Knot spreads five IVs while a power item guarantees one specific stat — which matters more depends on whether you need the spread or a locked stat.'",
+      '}',
+    ].join('\n')
     const violations = findNumericViolationsInSource(
       'src/lib/reason.ts',
       source,
