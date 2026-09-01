@@ -3,101 +3,100 @@
   "displayName": "Pokémon FireRed / LeafGreen",
   "generation": 3,
   "eggGroups": {
-    "monster": ["Charmander"],
-    "dragon": ["Charmander", "Gyarados", "Magikarp"],
-    "water-2": ["Gyarados", "Magikarp"]
+    "monster": [
+      { "value": "Charmander", "src": ["pokeapi", "bulbapedia"] }
+    ],
+    "dragon": [
+      { "value": "Charmander", "src": ["pokeapi", "bulbapedia"] },
+      { "value": "Gyarados", "src": ["pokeapi", "bulbapedia"] },
+      { "value": "Magikarp", "src": ["pokeapi", "bulbapedia"] }
+    ],
+    "water-2": [
+      { "value": "Gyarados", "src": ["pokeapi", "bulbapedia"] },
+      { "value": "Magikarp", "src": ["pokeapi", "bulbapedia"] }
+    ]
   },
   "species": {
     "Charmander": {
       "abilities": {
-        "standard": ["Blaze"]
+        "standard": [
+          { "value": "Blaze", "src": ["pokeapi", "bulbapedia"] }
+        ]
       },
-      "genderRatio": { "malePercent": 87.5 },
-      "hatchesInto": "Charmander",
-      "eggCycles": 20
+      "genderRatio": {
+        "malePercent": { "value": 87.5, "src": ["pokeapi", "bulbapedia"] }
+      },
+      "hatchesInto": { "value": "Charmander", "src": ["pokeapi", "bulbapedia"] },
+      "eggCycles": { "value": 20, "src": ["pokeapi", "bulbapedia"] }
     },
     "Gyarados": {
       "abilities": {
-        "standard": ["Intimidate"]
+        "standard": [
+          { "value": "Intimidate", "src": ["pokeapi", "bulbapedia"] }
+        ]
       },
-      "genderRatio": { "malePercent": 50 },
-      "hatchesInto": "Magikarp",
-      "eggCycles": 5
+      "genderRatio": {
+        "malePercent": { "value": 50, "src": ["pokeapi", "bulbapedia"] }
+      },
+      "hatchesInto": { "value": "Magikarp", "src": ["pokeapi", "bulbapedia"] },
+      "eggCycles": { "value": 5, "src": ["pokeapi", "bulbapedia"] }
     }
   },
   "ditto": {
-    "available": true,
-    "obtainedAt": "Wild encounters in the Pokémon Mansion on Cinnabar Island.",
-    "universalParent": true
+    "available": { "value": true, "src": ["bulbapedia", "serebii"] },
+    "obtainedAt": { "value": "Wild encounters in the Pokémon Mansion on Cinnabar Island.", "src": ["bulbapedia", "serebii"] },
+    "universalParent": { "value": true, "src": ["bulbapedia", "serebii"] }
   },
   "speciesDetermination": {
-    "femaleDeterminesSpecies": "The female parent determines the offspring's species.",
-    "withDitto": "With a Ditto pair, the non-Ditto parent determines the offspring's species."
+    "femaleDeterminesSpecies": { "value": "The female parent determines the offspring's species.", "src": ["bulbapedia", "serebii"] },
+    "withDitto": { "value": "With a Ditto pair, the non-Ditto parent determines the offspring's species.", "src": ["bulbapedia", "serebii"] }
   },
   "eggMoveAcquisition": {
-    "how": "The father must already know the move — catch or hatch a male that has it, then pair him at the Day Care."
+    "how": { "value": "The father must already know the move — catch or hatch a male that has it, then pair him at the Day Care.", "src": ["bulbapedia", "serebii"] }
   },
   "eggEfficiencyModifiers": [
     {
       "name": "Bicycle",
-      "affects": ["step-pace"],
+      "affects": [
+        { "value": "step-pace", "src": ["bulbapedia", "serebii"] }
+      ],
       "type": "other",
-      "effect": "Eggs hatch from steps taken. Covering those same steps on a bicycle takes less real time than walking.",
-      "availability": "",
-      "singleSource": "bulbapedia",
-      "singleSourceReason": "Self-evident in play: a bicycle covers the same step count in less wall-clock time. Not a rate, so a second source is not a measurement."
+      "effect": { "value": "Eggs hatch from steps taken. Covering those same steps on a bicycle takes less real time than walking.", "src": ["bulbapedia"], "note": "Self-evident in play: a bicycle covers the same step count in less wall-clock time. Not a rate, so a second source is not a measurement." }
     }
   ],
   "noEggRateBoostsReason": "This game has no item or charm that raises how often eggs appear — Day Care compatibility alone sets the rate.",
-  "noEggShinyBoostsReason": "The Masuda Method doesn't exist in this game — it was introduced in Generation IV — and the Shiny Charm came later still, in Generation V. Base odds are the only egg shiny odds here.",
-  "hatchMechanicExplainer": "Leave two compatible Pokémon at the Four Island Day Care (the Route 5 Day Care only holds one, so it cannot produce eggs). After enough steps the Day-Care Man offers an Egg; how often that happens depends only on whether the parents share a species and Original Trainer — there is no Oval Charm or other rate boost here. Carry the Egg in your party and walk: it hatches at level 5. Flame Body does not shorten hatch steps in FireRed/LeafGreen (that starts in Emerald).",
+  "noEggShinyBoostsReason": { "value": "The Masuda Method doesn't exist in this game — it was introduced in Generation IV — and the Shiny Charm came later still, in Generation V. Base odds are the only egg shiny odds here.", "src": ["bulbapedia", "serebii"] },
+  "hatchMechanicExplainer": { "value": "Leave two compatible Pokémon at the Four Island Day Care (the Route 5 Day Care only holds one, so it cannot produce eggs). After enough steps the Day-Care Man offers an Egg; how often that happens depends only on whether the parents share a species and Original Trainer — there is no Oval Charm or other rate boost here. Carry the Egg in your party and walk: it hatches at level 5. Flame Body does not shorten hatch steps in FireRed/LeafGreen (that starts in Emerald).", "src": ["bulbapedia", "serebii"] },
   "eggMoves": {
     "Charmander": [
       {
-        "move": "Dragon Dance",
-        "parentSpecies": ["Gyarados"]
+        "move": { "value": "Dragon Dance", "src": ["bulbapedia", "serebii"] },
+        "parentSpecies": [
+          { "value": "Gyarados", "src": ["bulbapedia", "serebii"] }
+        ]
       }
     ]
   },
   "moveDescriptions": {
-    "Dragon Dance": "Raises the user's Attack and Speed by one stage each."
+    "Dragon Dance": { "value": "Raises the user's Attack and Speed by one stage each.", "src": ["pokeapi", "bulbapedia"] }
   },
   "abilityDescriptions": {
-    "Blaze": "When this Pokémon's HP is at or below one-third, the power of its Fire-type moves is boosted.",
-    "Intimidate": "Lowers the Attack of opposing Pokémon when this Pokémon enters battle."
+    "Blaze": { "value": "When this Pokémon's HP is at or below one-third, the power of its Fire-type moves is boosted.", "src": ["pokeapi", "bulbapedia"] },
+    "Intimidate": { "value": "Lowers the Attack of opposing Pokémon when this Pokémon enters battle.", "src": ["pokeapi", "bulbapedia"] }
   },
   "hatchRoutes": [
     {
       "routeName": "Overworld walking",
-      "cycleCount": "medium",
-      "method": "Eggs hatch from steps taken in the overworld."
+      "cycleCount": { "value": "medium", "src": ["bulbapedia", "serebii"] },
+      "method": { "value": "Eggs hatch from steps taken in the overworld.", "src": ["bulbapedia", "serebii"] }
     }
   ],
   "featureGates": [
     {
       "id": "daycare",
       "noun": "Day Care",
-      "unlockedAfter": "the Elite Four, then Rainbow Pass access to Four Island (deliver the Ruby and Sapphire to Celio on One Island)"
+      "unlockedAfter": { "value": "the Elite Four, then Rainbow Pass access to Four Island (deliver the Ruby and Sapphire to Celio on One Island)", "src": ["bulbapedia", "serebii"] }
     }
   ],
-  "postgame": [],
-  "provenance": {
-    "eggGroups": ["pokeapi", "bulbapedia"],
-    "species": ["pokeapi", "bulbapedia"],
-    "dittoAvailability": ["bulbapedia", "serebii"],
-    "speciesDetermination": ["bulbapedia", "serebii"],
-    "eggMoveAcquisition": ["bulbapedia", "serebii"],
-    "eggMoves": ["bulbapedia", "serebii"],
-    "moveDescriptions": ["pokeapi", "bulbapedia"],
-    "abilityDescriptions": ["pokeapi", "bulbapedia"],
-    "hatchRoutes": ["bulbapedia", "serebii"],
-    "eggEfficiencyModifiers": ["bulbapedia", "serebii"],
-    "hatchMechanicExplainer": ["bulbapedia", "serebii"],
-    "featureGates": ["bulbapedia", "serebii"],
-    "natureLock": ["bulbapedia", "serebii"],
-    "hatchLevel": ["bulbapedia", "serebii"],
-    "baseShinyOdds": ["bulbapedia", "serebii"],
-    "masudaMethod": ["bulbapedia", "serebii"],
-    "noEggShinyBoostsReason": ["bulbapedia", "serebii"]
-  }
+  "postgame": []
 }

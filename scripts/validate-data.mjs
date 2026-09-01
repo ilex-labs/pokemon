@@ -54,15 +54,74 @@ const ALLOWED_SOURCES = new Set([
 
 const ALLOWED_SOURCES_HINT = 'pokeapi|bulbapedia|serebii|smogon|game'
 
-/**
- * One-lineage provenance is allowed only with a note.
- * Empty if the entry meets the two-source bar, or is a single allowlisted
- * source with a non-empty provenanceNotes entry.
- */
-export function provenanceEntryErrors(label, category, sources, note) {
-  const path = `${label}: provenance.${category}`
-  const found = []
+/** Claims with no governing category at migration — report, do not invent. */
+export const KNOWN_UNSOURCED = new Set([
+  'firered-leafgreen:generation',
+  'firered-leafgreen:noEggRateBoostsReason',
+  'scarlet-violet:generation',
+])
 
+const GEN3_REQUIRED_SOURCED = [
+  'natureLock.method',
+  'hatchLevel',
+  'baseShinyOdds.odds',
+  'baseShinyOdds.approximateEggs',
+  'masudaMethod',
+]
+
+const GEN9_REQUIRED_SOURCED = [
+  'abilityInheritance.inheritanceExists',
+  'abilityInheritance.hiddenAbilityViaEggs',
+  'abilityInheritance.abilityCapsuleAvailable',
+  'abilityInheritance.abilityPatchAvailable',
+  'abilityInheritance.standardOdds',
+  'abilityInheritance.hiddenOdds',
+  'abilityInheritance.maleOrGenderlessNeedsDitto',
+  'hatchLevel',
+  'baseShinyOdds.odds',
+  'baseShinyOdds.approximateEggs',
+  'masudaMethod.odds',
+  'masudaMethod.approximateEggs',
+]
+
+export function isSourcedLeaf(node) {
+  if (!node || typeof node !== 'object' || Array.isArray(node)) return false
+  const keys = Object.keys(node)
+  if (!keys.includes('value') || !keys.includes('src')) return false
+  if (!keys.every((key) => key === 'value' || key === 'src' || key === 'note')) {
+    return false
+  }
+  if (!Array.isArray(node.src)) return false
+  if (node.note !== undefined && typeof node.note !== 'string') return false
+  return true
+}
+
+export function unwrapSourced(node) {
+  if (Array.isArray(node)) return node.map(unwrapSourced)
+  if (isSourcedLeaf(node)) return unwrapSourced(node.value)
+  if (node && typeof node === 'object') {
+    const out = {}
+    for (const [key, child] of Object.entries(node)) {
+      const value = unwrapSourced(child)
+      if (key === 'masudaMethod' && value === null) continue
+      out[key] = value
+    }
+    return out
+  }
+  return node
+}
+
+export function sourcedLeafErrors(label, jsonPath, leaf) {
+  const path = `${label}: ${jsonPath}`
+  const found = []
+  if (!isSourcedLeaf(leaf)) {
+    found.push(
+      `${path} is a claim and must carry provenance (src: two lineages, or one plus note)`,
+    )
+    return found
+  }
+
+  const sources = leaf.src
   if (!Array.isArray(sources) || sources.length === 0) {
     found.push(
       `${path} must list at least two independent sources (got ${JSON.stringify(sources)})`,
@@ -71,18 +130,13 @@ export function provenanceEntryErrors(label, category, sources, note) {
   }
 
   if (sources.length === 1) {
-    if (!isNonEmptyString(note)) {
-      found.push(
-        `${path} has a single source and requires provenanceNotes.${category}`,
-      )
+    if (!isNonEmptyString(leaf.note)) {
+      found.push(`${path} has a single source and requires a note`)
     }
-  } else {
-    const unique = new Set(sources)
-    if (unique.size < 2) {
-      found.push(
-        `${path} must list at least two distinct sources (got ${JSON.stringify(sources)})`,
-      )
-    }
+  } else if (new Set(sources).size < 2) {
+    found.push(
+      `${path} must list at least two distinct sources (got ${JSON.stringify(sources)})`,
+    )
   }
 
   for (const source of sources) {
@@ -95,54 +149,145 @@ export function provenanceEntryErrors(label, category, sources, note) {
   return found
 }
 
-function containsDigit(value) {
-  return typeof value === 'string' && /\d/.test(value)
+function lastKey(jsonPath) {
+  const match = jsonPath.match(/\.([^.[\]]+)$/)
+  return match ? match[1] : jsonPath
+}
+
+function isExemptPath(jsonPath, value) {
+  if (jsonPath === 'id' || jsonPath === 'displayName') return true
+  if (jsonPath === 'postgame' && Array.isArray(value) && value.length === 0) {
+    return true
+  }
+  if (jsonPath === 'hatchRoutes' && Array.isArray(value) && value.length === 0) {
+    return true
+  }
+  const key = lastKey(jsonPath)
+  if (key === 'id' || key === 'type' || key === 'external') return true
+  if (key === 'singleSource' || key === 'singleSourceReason') return true
+  if (key === 'noun' || key === 'routeName') return true
+  if (
+    key === 'name' &&
+    /eggEfficiencyModifiers\[\d+\]\.name$/.test(jsonPath)
+  ) {
+    return true
+  }
+  return false
+}
+
+function readPath(obj, jsonPath) {
+  let current = obj
+  for (const part of jsonPath.split('.')) {
+    if (current == null || typeof current !== 'object') return undefined
+    current = current[part]
+  }
+  return current
+}
+
+function missingClaimError(label, jsonPath) {
+  return `${label}: ${jsonPath} is a claim and must carry provenance (src: two lineages, or one plus note)`
 }
 
 /**
- * One-source carve-out on an egg-efficiency modifier.
- * Empty if the row is under the category bar or a valid observation exception.
+ * Walk game JSON. Every non-exempt leaf must be a sourced claim, except
+ * KNOWN_UNSOURCED (listed in the review report, not invented here).
  */
-export function modifierSingleSourceErrors(label, index, modifier) {
-  const path = `${label}: eggEfficiencyModifiers[${index}]`
-  const named = `"${modifier.name ?? 'unnamed'}"`
-  const source = modifier.singleSource
-  const hasSource = source !== undefined && source !== null && source !== ''
-  const hasReason = isNonEmptyString(modifier.singleSourceReason)
+export function gameProvenanceErrors(label, game) {
   const found = []
+  const unsourced = []
+  let sourcedCount = 0
 
-  if (hasSource && !hasReason) {
+  if (game?.provenance !== undefined) {
     found.push(
-      `${path} (${named}) singleSource requires singleSourceReason (why the two-source bar does not apply)`,
+      `${label}: provenance block must be removed — provenance lives on each claim leaf`,
     )
   }
-  if (hasReason && !hasSource) {
+  if (game?.provenanceNotes !== undefined) {
     found.push(
-      `${path} (${named}) singleSourceReason is only for a one-source row — this row is already under the two-source bar`,
+      `${label}: provenanceNotes must be removed — notes live on the sourced leaf`,
     )
   }
-  if (!hasSource) return found
 
-  if (Array.isArray(source) || typeof source !== 'string') {
-    found.push(
-      `${path} (${named}) singleSource must be one lineage, not ${JSON.stringify(source)}`,
-    )
-    return found
+  function visit(node, jsonPath) {
+    if (jsonPath === 'provenance' || jsonPath === 'provenanceNotes') return
+    if (isSourcedLeaf(node)) {
+      sourcedCount += 1
+      found.push(...sourcedLeafErrors(label, jsonPath, node))
+      return
+    }
+    if (jsonPath && isExemptPath(jsonPath, node)) return
+
+    if (Array.isArray(node)) {
+      for (const [index, item] of node.entries()) {
+        visit(item, `${jsonPath}[${index}]`)
+      }
+      return
+    }
+    if (node && typeof node === 'object') {
+      for (const [key, child] of Object.entries(node)) {
+        const next = jsonPath ? `${jsonPath}.${key}` : key
+        visit(child, next)
+      }
+      return
+    }
+
+    if (!jsonPath) return
+    const id = `${label}:${jsonPath}`
+    if (KNOWN_UNSOURCED.has(id)) {
+      unsourced.push(jsonPath)
+      return
+    }
+    found.push(missingClaimError(label, jsonPath))
   }
-  if (!ALLOWED_SOURCES.has(source)) {
-    found.push(
-      `${path} (${named}) singleSource "${source}" is not an allowed independent lineage (use ${ALLOWED_SOURCES_HINT})`,
-    )
+
+  visit(game, '')
+  return { errors: found, unsourced, sourcedCount }
+}
+
+function walkSourcedLeaves(node, jsonPath, visitLeaf) {
+  if (isSourcedLeaf(node)) {
+    visitLeaf(jsonPath, node)
+    return
   }
-  if (
-    hasReason &&
-    (containsDigit(modifier.effect) || containsDigit(modifier.availability))
-  ) {
-    found.push(
-      `${path} (${named}) one-source carve-out cannot contain a number in effect or availability — that bar is for observations, not rates`,
-    )
+  if (Array.isArray(node)) {
+    for (const [index, item] of node.entries()) {
+      walkSourcedLeaves(item, `${jsonPath}[${index}]`, visitLeaf)
+    }
+    return
   }
-  return found
+  if (node && typeof node === 'object') {
+    for (const [key, child] of Object.entries(node)) {
+      const next = jsonPath ? `${jsonPath}.${key}` : key
+      walkSourcedLeaves(child, next, visitLeaf)
+    }
+  }
+}
+
+export function rulesetProvenanceErrors(rel, ruleset) {
+  const found = []
+  let sourcedCount = 0
+
+  walkSourcedLeaves(ruleset, '', (jsonPath, leaf) => {
+    sourcedCount += 1
+    found.push(...sourcedLeafErrors(rel, jsonPath, leaf))
+  })
+
+  const generation = isSourcedLeaf(ruleset?.generation)
+    ? ruleset.generation.value
+    : ruleset?.generation
+  const required =
+    typeof generation === 'number' && generation >= 4
+      ? GEN9_REQUIRED_SOURCED
+      : GEN3_REQUIRED_SOURCED
+
+  for (const jsonPath of required) {
+    const node = readPath(ruleset, jsonPath)
+    if (!isSourcedLeaf(node)) {
+      found.push(missingClaimError(rel, jsonPath))
+    }
+  }
+
+  return { errors: found, sourcedCount }
 }
 
 function validateNatures(natures) {
@@ -193,9 +338,13 @@ function validateIvPresets(presets) {
   }
 }
 
-function validateRuleset(filePath, ruleset) {
-  if (!ruleset) return
+function validateRuleset(filePath, raw) {
+  if (!raw) return
   const rel = path.relative(root, filePath)
+  const provenance = rulesetProvenanceErrors(rel, raw)
+  for (const error of provenance.errors) fail(error)
+
+  const ruleset = unwrapSourced(raw)
   if (typeof ruleset.generation !== 'number') {
     fail(`${rel}: generation must be a number`)
   }
@@ -277,34 +426,14 @@ function validateRuleset(filePath, ruleset) {
   })
 }
 
-function validateGame(filePath, game, natures) {
-  if (!game) return
-  const rel = path.relative(root, filePath)
-  const label = game.id ?? path.basename(filePath, '.json')
+function validateGame(filePath, raw, natures) {
+  if (!raw) return
+  const label = raw.id ?? path.basename(filePath, '.json')
 
-  if (!game.provenance || typeof game.provenance !== 'object') {
-    fail(`${label}: provenance block is required`)
-  } else {
-    const categories = Object.keys(game.provenance)
-    if (categories.length === 0) {
-      fail(`${label}: provenance block is empty`)
-    }
-    const notes =
-      game.provenanceNotes && typeof game.provenanceNotes === 'object'
-        ? game.provenanceNotes
-        : {}
-    for (const [category, sources] of Object.entries(game.provenance)) {
-      for (const error of provenanceEntryErrors(
-        label,
-        category,
-        sources,
-        notes[category],
-      )) {
-        fail(error)
-      }
-    }
-  }
+  const provenance = gameProvenanceErrors(label, raw)
+  for (const error of provenance.errors) fail(error)
 
+  const game = unwrapSourced(raw)
   if (!game.ditto || typeof game.ditto !== 'object') {
     fail(`${label}: ditto is required`)
   } else if (typeof game.ditto.available !== 'boolean') {
@@ -451,9 +580,6 @@ function validateGame(filePath, game, natures) {
     if (!modifier || typeof modifier !== 'object') {
       fail(`${label}: eggEfficiencyModifiers[${index}] must be an object`)
       continue
-    }
-    for (const message of modifierSingleSourceErrors(label, index, modifier)) {
-      fail(message)
     }
     if (!Array.isArray(modifier.affects) || modifier.affects.length === 0) {
       fail(
@@ -632,6 +758,30 @@ function main() {
     validateGame(filePath, readJson(filePath), natures)
   }
 
+  const rulesetFiles = fs
+    .readdirSync(rulesetsDir)
+    .filter((f) => f.endsWith('.json'))
+  const gameFiles = fs.readdirSync(gamesDir).filter((f) => f.endsWith('.json'))
+
+  let sourcedLeaves = 0
+  const unsourcedReview = []
+  for (const name of rulesetFiles) {
+    const filePath = path.join(rulesetsDir, name)
+    sourcedLeaves += rulesetProvenanceErrors(
+      path.relative(root, filePath),
+      readJson(filePath),
+    ).sourcedCount
+  }
+  for (const name of gameFiles) {
+    const filePath = path.join(gamesDir, name)
+    const game = readJson(filePath)
+    const result = gameProvenanceErrors(game?.id ?? name, game)
+    sourcedLeaves += result.sourcedCount
+    for (const jsonPath of result.unsourced) {
+      unsourcedReview.push(`${game?.id ?? name}:${jsonPath}`)
+    }
+  }
+
   if (errors.length > 0) {
     console.error('validate: FAILED')
     for (const error of errors) {
@@ -643,12 +793,12 @@ function main() {
   console.log('validate: ok')
   console.log(`  natures: ${Object.keys(natures).length}`)
   console.log(`  iv-presets: ${presets.length}`)
-  console.log(
-    `  rulesets: ${fs.readdirSync(rulesetsDir).filter((f) => f.endsWith('.json')).length}`,
-  )
-  console.log(
-    `  games: ${fs.readdirSync(gamesDir).filter((f) => f.endsWith('.json')).length}`,
-  )
+  console.log(`  rulesets: ${rulesetFiles.length}`)
+  console.log(`  games: ${gameFiles.length}`)
+  console.log(`  sourced leaves: ${sourcedLeaves}`)
+  if (unsourcedReview.length > 0) {
+    console.log(`  unsourced (review): ${unsourcedReview.join(', ')}`)
+  }
 }
 
 const isDirectRun =

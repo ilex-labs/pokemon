@@ -1,9 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { GameData, Ruleset } from '../data/schema'
-import gen9Json from '../data/rulesets/gen9.json'
+import { gen9 } from '../data/unwrapped'
 import { planDaycare, type DaycareTarget } from './daycareEngine'
-
-const gen9 = gen9Json as Ruleset
 
 const fixtureTarget: DaycareTarget = {
   species: 'FixtureMon',

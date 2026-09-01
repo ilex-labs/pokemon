@@ -7,15 +7,13 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import type { IvPreset, Ruleset } from './schema'
-import gen9Json from './rulesets/gen9.json'
+import { gen9 } from './unwrapped'
 import { filterIvPresets, gamesCatalog, resolvePresetValues } from './loadGame'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../..')
 const sharedPresets = JSON.parse(
   readFileSync(join(ROOT, 'src/data/shared/iv-presets.json'), 'utf8'),
 ) as IvPreset[]
-
-const gen9 = gen9Json as Ruleset
 
 /** Ceiling that neither shipped ruleset uses — 31 would not distinguish a hardcoded max. */
 const fixtureRulesetMaxIv15: Ruleset = {

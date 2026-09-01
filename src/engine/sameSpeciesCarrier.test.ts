@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { GameData, Ruleset } from '../data/schema'
-import gen9Json from '../data/rulesets/gen9.json'
+import { gen9 } from '../data/unwrapped'
 import { formatReason } from '../lib/reason'
 import {
   applyRouteRecommendations,
@@ -10,7 +10,6 @@ import {
   type PairingStrategy,
 } from './daycareEngine'
 
-const gen9 = gen9Json as Ruleset
 const maleOnly = {
   ...gen9,
   eggMoveEligibleParents: 'male-only',

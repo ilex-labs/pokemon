@@ -6,16 +6,25 @@ import type {
 } from './schema'
 import naturesJson from './shared/natures.json'
 import presetsJson from './shared/iv-presets.json'
+import { unwrapSourced } from './unwrapSourced'
 
-const gameModules = import.meta.glob('./games/*.json', {
-  eager: true,
-  import: 'default',
-}) as Record<string, GameData>
+const gameModules = Object.fromEntries(
+  Object.entries(
+    import.meta.glob('./games/*.json', {
+      eager: true,
+      import: 'default',
+    }) as Record<string, unknown>,
+  ).map(([key, raw]) => [key, unwrapSourced(raw) as GameData]),
+)
 
-const rulesetModules = import.meta.glob('./rulesets/*.json', {
-  eager: true,
-  import: 'default',
-}) as Record<string, Ruleset>
+const rulesetModules = Object.fromEntries(
+  Object.entries(
+    import.meta.glob('./rulesets/*.json', {
+      eager: true,
+      import: 'default',
+    }) as Record<string, unknown>,
+  ).map(([key, raw]) => [key, unwrapSourced(raw) as Ruleset]),
+)
 
 export const natures = naturesJson as NaturesCatalog
 export const sharedIvPresets = presetsJson as IvPreset[]

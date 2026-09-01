@@ -4,10 +4,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import type { GameData, Ruleset, SpeciesEggData } from '../data/schema'
-import gen3Json from '../data/rulesets/gen3.json'
-import gen9Json from '../data/rulesets/gen9.json'
-import frlgJson from '../data/games/firered-leafgreen.json'
-import scarletVioletJson from '../data/games/scarlet-violet.json'
+import { frlg, gen3, gen9, scarletViolet } from '../data/unwrapped'
 import naturesJson from '../data/shared/natures.json'
 import { formatReasons } from '../lib/reason'
 import {
@@ -15,11 +12,6 @@ import {
   type DaycareTarget,
   type ParentRequirement,
 } from './daycareEngine'
-
-const gen3 = gen3Json as Ruleset
-const gen9 = gen9Json as Ruleset
-const frlg = frlgJson as GameData
-const scarletViolet = scarletVioletJson as GameData
 
 const ANY_IVS: DaycareTarget['ivs'] = {
   hp: 'any',

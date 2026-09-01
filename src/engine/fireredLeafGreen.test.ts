@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { GameData, Ruleset } from '../data/schema'
-import gen3Json from '../data/rulesets/gen3.json'
-import frlgJson from '../data/games/firered-leafgreen.json'
+import { frlg, gen3 } from '../data/unwrapped'
 import { speciesAbilityGroups } from '../data/loadGame'
 import { formatReason, formatReasons, type Reason } from '../lib/reason'
 import {
@@ -10,9 +9,6 @@ import {
   planDaycare,
   type DaycareTarget,
 } from './daycareEngine'
-
-const gen3 = gen3Json as Ruleset
-const frlg = frlgJson as GameData
 
 function genderProse(parent: { genderReason?: Reason[] } | undefined): string {
   return formatReasons(parent?.genderReason ?? [])

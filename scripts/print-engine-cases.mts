@@ -10,6 +10,7 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { GameData, Ruleset } from '../src/data/schema.ts'
+import { unwrapSourced } from '../src/data/unwrapSourced.ts'
 import {
   chooserComparisonCopy,
   planDaycare,
@@ -43,12 +44,14 @@ function jsonFiles(dir: string): string[] {
 
 function loadGames(): GameData[] {
   return jsonFiles(gamesDir)
-    .map((filePath) => loadJson(filePath) as GameData)
+    .map((filePath) => unwrapSourced(loadJson(filePath)) as GameData)
     .sort((a, b) => a.displayName.localeCompare(b.displayName))
 }
 
 function loadRulesets(): Ruleset[] {
-  return jsonFiles(rulesetsDir).map((filePath) => loadJson(filePath) as Ruleset)
+  return jsonFiles(rulesetsDir).map(
+    (filePath) => unwrapSourced(loadJson(filePath)) as Ruleset,
+  )
 }
 
 function mergeRuleset(base: Ruleset, overrides?: Partial<Ruleset>): Ruleset {

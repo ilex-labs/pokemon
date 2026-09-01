@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { GameData } from '../data/schema'
-import frlgJson from '../data/games/firered-leafgreen.json'
-import scarletVioletJson from '../data/games/scarlet-violet.json'
+import { frlg, scarletViolet } from '../data/unwrapped'
 import { buildHatchEfficiency } from './hatchRouter'
-
-const scarletViolet = scarletVioletJson as GameData
-const frlg = frlgJson as GameData
 
 describe('hatchRouter', () => {
   it('surfaces exampleHolders for ability modifiers on the hatch-speed lever', () => {

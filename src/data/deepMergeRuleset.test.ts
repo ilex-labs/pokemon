@@ -5,10 +5,8 @@
  */
 import { describe, expect, it } from 'vitest'
 import type { Ruleset } from './schema'
-import gen9Json from './rulesets/gen9.json'
+import { gen9 } from './unwrapped'
 import { deepMergeRuleset } from './loadGame'
-
-const gen9 = gen9Json as Ruleset
 
 describe('deepMergeRuleset nested partials', () => {
   it('ivInheritance: { maxIv: 15 } merges into gen 9, it does not replace the object', () => {

@@ -106,21 +106,13 @@ export interface EggEfficiencyModifier {
   affects: EggEfficiencyAffect[]
   type: 'sandwich' | 'item' | 'ability' | 'other'
   effect: string
-  availability: string
+  availability?: string
   /**
    * Required whenever type is "ability": obtainable species and where
    * to find them. Never name an ability class alone.
    */
   exampleHolders?: AbilityHolder[]
   recipeId?: string
-  /**
-   * Per-row carve-out from the two-source bar. Both fields required
-   * together: one allowed lineage, and why that bar does not apply.
-   * Forbidden when the row is already two-sourced. Effect and
-   * availability must not contain a number — observations, not rates.
-   */
-  singleSource?: string
-  singleSourceReason?: string
 }
 
 export interface SandwichRecipe {
@@ -136,6 +128,8 @@ export interface SandwichRecipe {
 export type ShinyOddsTierData = {
   odds: string
   approximateEggs: number
+  /** Copied from the sourced leaf note at unwrap — Charm-alone single-lineage. */
+  sourceNote?: string
 }
 
 export interface ShinyEggModifiers {
@@ -160,7 +154,7 @@ export interface ShinyEggModifiers {
   shinyCharmUnlock?: string
   /**
    * Extra Charm-alone copy. Omit rather than explain roll-count trivia —
-   * provenance already records why the figure is what it is.
+   * the sourced odds leaf's note records why the figure is what it is.
    */
   shinyCharmAloneNote?: string
   notes?: string
@@ -340,12 +334,6 @@ export interface GameData {
   marks?: Mark[]
   postgame: PostgameItem[]
   uniqueMechanics?: string[]
-  provenance: Record<string, string[]>
-  /**
-   * Required when the matching provenance category lists a single source.
-   * Player-facing — one short confidence line, not a policy explanation.
-   */
-  provenanceNotes?: Record<string, string>
 }
 
 export interface DaycareProject {

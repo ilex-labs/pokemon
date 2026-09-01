@@ -12,13 +12,13 @@
     "holder": "either-parent"
   },
   "abilityInheritance": {
-    "inheritanceExists": true,
-    "hiddenAbilityViaEggs": true,
-    "abilityCapsuleAvailable": true,
-    "abilityPatchAvailable": true,
-    "standardOdds": 0.8,
-    "hiddenOdds": 0.6,
-    "maleOrGenderlessNeedsDitto": true
+    "inheritanceExists": { "value": true, "src": ["bulbapedia", "serebii"] },
+    "hiddenAbilityViaEggs": { "value": true, "src": ["bulbapedia", "serebii"] },
+    "abilityCapsuleAvailable": { "value": true, "src": ["bulbapedia", "serebii"] },
+    "abilityPatchAvailable": { "value": true, "src": ["bulbapedia", "serebii"] },
+    "standardOdds": { "value": 0.8, "src": ["bulbapedia", "serebii"] },
+    "hiddenOdds": { "value": 0.6, "src": ["bulbapedia", "serebii"] },
+    "maleOrGenderlessNeedsDitto": { "value": true, "src": ["bulbapedia", "serebii"] }
   },
   "ivInheritance": {
     "maxIv": 31,
@@ -31,8 +31,14 @@
     "available": true,
     "levelRequired": 50
   },
-  "hatchLevel": 1,
+  "hatchLevel": { "value": 1, "src": ["bulbapedia", "serebii"] },
   "eggMoveMethod": "eggs-or-alternative",
-  "baseShinyOdds": { "odds": "1/4096", "approximateEggs": 4096 },
-  "masudaMethod": { "odds": "6/4096", "approximateEggs": 683 }
+  "baseShinyOdds": {
+    "odds": { "value": "1/4096", "src": ["bulbapedia", "serebii"] },
+    "approximateEggs": { "value": 4096, "src": ["bulbapedia", "serebii"] }
+  },
+  "masudaMethod": {
+    "odds": { "value": "6/4096", "src": ["bulbapedia", "serebii"] },
+    "approximateEggs": { "value": 683, "src": ["bulbapedia", "serebii"] }
+  }
 }

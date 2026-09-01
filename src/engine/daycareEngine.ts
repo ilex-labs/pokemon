@@ -1759,7 +1759,7 @@ function buildShinyPayload(game: GameData, ruleset: Ruleset): ShinyOdds {
       odds: modifiers.shinyCharmOdds.odds,
       approximateEggs: modifiers.shinyCharmOdds.approximateEggs,
       context,
-      sourceNote: game.provenanceNotes?.shinyCharmOdds,
+      sourceNote: modifiers.shinyCharmOdds.sourceNote,
     })
   }
 

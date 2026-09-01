@@ -1,16 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { Ruleset } from '../data/schema'
-import gen3Json from '../data/rulesets/gen3.json'
-import gen9Json from '../data/rulesets/gen9.json'
-import frlgJson from '../data/games/firered-leafgreen.json'
-import scarletVioletJson from '../data/games/scarlet-violet.json'
+import { frlg, gen3, gen9, scarletViolet } from '../data/unwrapped'
 import { formatHatchOutcome } from './hatchOutcome'
 import type { GameData } from '../data/schema'
-
-const gen3 = gen3Json as Ruleset
-const gen9 = gen9Json as Ruleset
-const frlg = frlgJson as GameData
-const scarletViolet = scarletVioletJson as GameData
 
 const EVOLVE_GYARADOS =
   'If you need Gyarados specifically, hatch Magikarp and evolve it.'

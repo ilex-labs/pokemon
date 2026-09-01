@@ -1,10 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it } from 'vitest'
 import type { GameData, Ruleset } from '../../data/schema'
-import gen3Json from '../../data/rulesets/gen3.json'
-import gen9Json from '../../data/rulesets/gen9.json'
-import frlgJson from '../../data/games/firered-leafgreen.json'
-import scarletVioletJson from '../../data/games/scarlet-violet.json'
+import { frlg, gen3, gen9, scarletViolet } from '../../data/unwrapped'
 import {
   planDaycare,
   type PairingStrategy,
@@ -12,12 +9,6 @@ import {
 } from '../../engine/daycareEngine'
 import { parentOwnershipKey } from '../../lib/parentOwnership'
 import ParentPairCard from './ParentPairCard'
-
-const gen3 = gen3Json as Ruleset
-const frlg = frlgJson as GameData
-const scarletViolet = scarletVioletJson as GameData
-
-const gen9 = gen9Json as Ruleset
 
 const GENDER_REASON_GAP = 'Not recorded yet. No reason for this gender.'
 

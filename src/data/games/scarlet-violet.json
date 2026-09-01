@@ -3,153 +3,166 @@
   "displayName": "Pokémon Scarlet / Violet",
   "generation": 9,
   "eggGroups": {
-    "monster": ["Charmander"],
-    "dragon": ["Charmander", "Gyarados", "Salamence", "Dragapult"],
-    "water-2": ["Gyarados"],
-    "amorphous": ["Dragapult"]
+    "monster": [
+      { "value": "Charmander", "src": ["pokeapi", "bulbapedia"] }
+    ],
+    "dragon": [
+      { "value": "Charmander", "src": ["pokeapi", "bulbapedia"] },
+      { "value": "Gyarados", "src": ["pokeapi", "bulbapedia"] },
+      { "value": "Salamence", "src": ["pokeapi", "bulbapedia"] },
+      { "value": "Dragapult", "src": ["pokeapi", "bulbapedia"] }
+    ],
+    "water-2": [
+      { "value": "Gyarados", "src": ["pokeapi", "bulbapedia"] }
+    ],
+    "amorphous": [
+      { "value": "Dragapult", "src": ["pokeapi", "bulbapedia"] }
+    ]
   },
   "species": {
     "Charmander": {
       "abilities": {
-        "standard": ["Blaze"],
-        "hidden": "Solar Power"
+        "standard": [
+          { "value": "Blaze", "src": ["pokeapi", "bulbapedia"] }
+        ],
+        "hidden": { "value": "Solar Power", "src": ["pokeapi", "bulbapedia"] }
       },
-      "genderRatio": { "malePercent": 87.5 },
-      "hatchesInto": "Charmander",
-      "eggCycles": 20
+      "genderRatio": {
+        "malePercent": { "value": 87.5, "src": ["pokeapi", "bulbapedia"] }
+      },
+      "hatchesInto": { "value": "Charmander", "src": ["pokeapi", "bulbapedia"] },
+      "eggCycles": { "value": 20, "src": ["pokeapi", "bulbapedia"] }
     }
   },
   "ditto": {
-    "available": true,
-    "obtainedAt": "Wild encounters across Paldea (including outbreaks); also available via picnic eggs from a Ditto parent pair.",
-    "universalParent": true
+    "available": { "value": true, "src": ["bulbapedia", "serebii"] },
+    "obtainedAt": { "value": "Wild encounters across Paldea (including outbreaks); also available via picnic eggs from a Ditto parent pair.", "src": ["bulbapedia", "serebii"] },
+    "universalParent": { "value": true, "src": ["bulbapedia", "serebii"] }
   },
   "hyperTrainingAccess": {
-    "bottleCap": "Tera Raids and Porto Marinada auctions once you are deep into postgame progression",
-    "goldBottleCap": "Accumulators auction listings and rare special rewards",
-    "effort": "rare"
+    "bottleCap": { "value": "Tera Raids and Porto Marinada auctions once you are deep into postgame progression", "src": ["bulbapedia", "serebii"] },
+    "goldBottleCap": { "value": "Accumulators auction listings and rare special rewards", "src": ["bulbapedia", "serebii"] },
+    "effort": { "value": "rare", "src": ["bulbapedia", "serebii"] }
   },
   "natureAcquisition": {
-    "how": "Keep hunting wild encounters, Tera Raids, and outbreaks until the target nature appears — Synchronize no longer forces wild natures in Scarlet/Violet. Once you have one parent with that nature, picnic eggs from it (with an Everstone) are the reliable route."
+    "how": { "value": "Keep hunting wild encounters, Tera Raids, and outbreaks until the target nature appears — Synchronize no longer forces wild natures in Scarlet/Violet. Once you have one parent with that nature, picnic eggs from it (with an Everstone) are the reliable route.", "src": ["bulbapedia", "serebii"] }
   },
-  "mintsAvailable": true,
+  "mintsAvailable": { "value": true, "src": ["bulbapedia", "serebii"] },
   "speciesDetermination": {
-    "femaleDeterminesSpecies": "The female parent determines the offspring's species.",
-    "withDitto": "With a Ditto pair, the non-Ditto parent determines the offspring's species."
+    "femaleDeterminesSpecies": { "value": "The female parent determines the offspring's species.", "src": ["bulbapedia", "serebii"] },
+    "withDitto": { "value": "With a Ditto pair, the non-Ditto parent determines the offspring's species.", "src": ["bulbapedia", "serebii"] }
   },
   "abilityAcquisition": {
-    "hidden": "Catch one with the hidden ability (outbreaks, Tera Raids, or random wild encounters), or apply an Ability Patch to a parent that already has a standard ability."
+    "hidden": { "value": "Catch one with the hidden ability (outbreaks, Tera Raids, or random wild encounters), or apply an Ability Patch to a parent that already has a standard ability.", "src": ["bulbapedia", "serebii"] }
   },
   "eggMoveAcquisition": {
-    "how": "Catch or hatch one that already knows the move, or copy it at a picnic with a Mirror Herb."
+    "how": { "value": "Catch or hatch one that already knows the move, or copy it at a picnic with a Mirror Herb.", "src": ["bulbapedia", "serebii"] }
   },
   "masudaAcquisition": {
-    "how": "You may already have one — a Japanese Charmander with an English Ditto would count. Otherwise trade for one, or import from a cartridge saved in another language."
+    "how": { "value": "You may already have one — a Japanese Charmander with an English Ditto would count. Otherwise trade for one, or import from a cartridge saved in another language.", "src": ["bulbapedia", "serebii"] }
   },
   "eggEfficiencyModifiers": [
     {
       "name": "Egg Power Sandwich",
-      "affects": ["egg-rate", "hatch-speed"],
+      "affects": [
+        { "value": "egg-rate", "src": ["bulbapedia", "serebii"] },
+        { "value": "hatch-speed", "src": ["bulbapedia", "serebii"] }
+      ],
       "type": "sandwich",
-      "effect": "Raises how often eggs appear in the picnic basket — Lv. 3 is about 10× egg-find chance; Lv. 2 is the practical everyday target from shop ingredients. · Shortens the steps needed to hatch eggs while active.",
-      "availability": "Cook at a picnic. Lv. 2 recipes use common shop ingredients (for example a Great Peanut Butter Sandwich). Lv. 3 needs Herba Mystica from 5★+ Tera Raids."
+      "effect": { "value": "Raises how often eggs appear in the picnic basket — Lv. 3 is about 10× egg-find chance; Lv. 2 is the practical everyday target from shop ingredients. · Shortens the steps needed to hatch eggs while active.", "src": ["bulbapedia", "serebii"] },
+      "availability": { "value": "Cook at a picnic. Lv. 2 recipes use common shop ingredients (for example a Great Peanut Butter Sandwich). Lv. 3 needs Herba Mystica from 5★+ Tera Raids.", "src": ["bulbapedia", "serebii"] }
     },
     {
       "name": "Flame Body (or Magma Armor / Steam Engine) in party",
-      "affects": ["hatch-speed"],
+      "affects": [
+        { "value": "hatch-speed", "src": ["bulbapedia", "serebii"] }
+      ],
       "type": "ability",
-      "effect": "Halves the steps needed to hatch eggs while that Pokémon is in your party.",
-      "availability": "Any party slot. These abilities do not stack with each other — one holder is enough.",
+      "effect": { "value": "Halves the steps needed to hatch eggs while that Pokémon is in your party.", "src": ["bulbapedia", "serebii"] },
+      "availability": { "value": "Any party slot. These abilities do not stack with each other — one holder is enough.", "src": ["bulbapedia", "serebii"] },
       "exampleHolders": [
         {
-          "species": "Larvesta",
-          "place": "Asado Desert",
-          "abilities": ["Flame Body"],
+          "species": { "value": "Larvesta", "src": ["bulbapedia", "serebii"] },
+          "place": { "value": "Asado Desert", "src": ["bulbapedia", "serebii"] },
+          "abilities": [
+            { "value": "Flame Body", "src": ["bulbapedia", "serebii"] }
+          ],
           "external": true
         },
         {
-          "species": "Fletchinder",
-          "place": "South Province (Areas One, Three–Five) and West Province Area Three",
-          "abilities": ["Flame Body"],
+          "species": { "value": "Fletchinder", "src": ["bulbapedia", "serebii"] },
+          "place": { "value": "South Province (Areas One, Three–Five) and West Province Area Three", "src": ["bulbapedia", "serebii"] },
+          "abilities": [
+            { "value": "Flame Body", "src": ["bulbapedia", "serebii"] }
+          ],
           "external": true
         },
         {
-          "species": "Carkol",
-          "place": "East Province Area Three",
-          "abilities": ["Steam Engine", "Flame Body"],
+          "species": { "value": "Carkol", "src": ["bulbapedia", "serebii"] },
+          "place": { "value": "East Province Area Three", "src": ["bulbapedia", "serebii"] },
+          "abilities": [
+            { "value": "Steam Engine", "src": ["bulbapedia", "serebii"] },
+            { "value": "Flame Body", "src": ["bulbapedia", "serebii"] }
+          ],
           "external": true
         },
         {
-          "species": "Camerupt",
-          "place": "Area Zero and North Province Area Two",
-          "abilities": ["Magma Armor"],
+          "species": { "value": "Camerupt", "src": ["bulbapedia", "serebii"] },
+          "place": { "value": "Area Zero and North Province Area Two", "src": ["bulbapedia", "serebii"] },
+          "abilities": [
+            { "value": "Magma Armor", "src": ["bulbapedia", "serebii"] }
+          ],
           "external": true
         }
       ]
     },
     {
       "name": "Ride Koraidon / Miraidon",
-      "affects": ["step-pace"],
+      "affects": [
+        { "value": "step-pace", "src": ["bulbapedia", "serebii"] }
+      ],
       "type": "other",
-      "effect": "Eggs hatch from steps taken. Cover ground on your ride legendary — that is the fast path.",
-      "availability": "Hatch progress stops while climbing, gliding, or flying, so stay on the ground. Keep at least one non-egg Pokémon in the party."
+      "effect": { "value": "Eggs hatch from steps taken. Cover ground on your ride legendary — that is the fast path.", "src": ["bulbapedia", "serebii"] },
+      "availability": { "value": "Hatch progress stops while climbing, gliding, or flying, so stay on the ground. Keep at least one non-egg Pokémon in the party.", "src": ["bulbapedia", "serebii"] }
     }
   ],
   "eggMoves": {
     "Charmander": [
       {
-        "move": "Dragon Dance",
-        "parentSpecies": ["Salamence", "Dragapult", "Gyarados"]
+        "move": { "value": "Dragon Dance", "src": ["bulbapedia", "serebii"] },
+        "parentSpecies": [
+          { "value": "Salamence", "src": ["bulbapedia", "serebii"] },
+          { "value": "Dragapult", "src": ["bulbapedia", "serebii"] },
+          { "value": "Gyarados", "src": ["bulbapedia", "serebii"] }
+        ]
       }
     ]
   },
   "eggMoveAlternative": {
-    "name": "Mirror Herb",
-    "howItWorks": "Held during a picnic, it copies egg moves from a partner that already knows them."
+    "name": { "value": "Mirror Herb", "src": ["bulbapedia", "serebii"] },
+    "howItWorks": { "value": "Held during a picnic, it copies egg moves from a partner that already knows them.", "src": ["bulbapedia", "serebii"] }
   },
   "moveDescriptions": {
-    "Dragon Dance": "Raises the user's Attack and Speed by one stage each."
+    "Dragon Dance": { "value": "Raises the user's Attack and Speed by one stage each.", "src": ["pokeapi", "bulbapedia"] }
   },
   "abilityDescriptions": {
-    "Blaze": "When this Pokémon's HP is at or below one-third, the power of its Fire-type moves is boosted.",
-    "Solar Power": "In harsh sunlight, Special Attack rises, but the Pokémon loses some HP at the end of each turn."
+    "Blaze": { "value": "When this Pokémon's HP is at or below one-third, the power of its Fire-type moves is boosted.", "src": ["pokeapi", "bulbapedia"] },
+    "Solar Power": { "value": "In harsh sunlight, Special Attack rises, but the Pokémon loses some HP at the end of each turn.", "src": ["pokeapi", "bulbapedia"] }
   },
   "hatchRoutes": [],
-  "hatchMechanicExplainer": "Eggs show up in the picnic basket while two compatible Pokémon are in your party picnic. Egg Power sandwiches raise how often eggs appear and also shorten hatch time — Lv. 2 from shop ingredients is the everyday target; Lv. 3 needs Herba Mystica from 5★+ Tera Raids and is roughly 10× the base find rate. A party Pokémon with Flame Body, Magma Armor, or Steam Engine halves remaining hatch cycles (abilities do not stack with each other). Hatch by covering ground on Koraidon or Miraidon — stay on the ground, and keep at least one non-egg Pokémon in the party.",
+  "hatchMechanicExplainer": { "value": "Eggs show up in the picnic basket while two compatible Pokémon are in your party picnic. Egg Power sandwiches raise how often eggs appear and also shorten hatch time — Lv. 2 from shop ingredients is the everyday target; Lv. 3 needs Herba Mystica from 5★+ Tera Raids and is roughly 10× the base find rate. A party Pokémon with Flame Body, Magma Armor, or Steam Engine halves remaining hatch cycles (abilities do not stack with each other). Hatch by covering ground on Koraidon or Miraidon — stay on the ground, and keep at least one non-egg Pokémon in the party.", "src": ["bulbapedia", "serebii", "smogon"] },
   "shinyEggModifiers": {
-    "shinyCharmAvailable": true,
-    "shinyCharmStacksWithMasuda": true,
-    "shinyCharmOdds": { "odds": "2/4096", "approximateEggs": 2048 },
-    "masudaPlusCharmOdds": { "odds": "8/4096", "approximateEggs": 512 },
-    "shinyCharmUnlock": "completing the Paldea Pokédex"
+    "shinyCharmAvailable": { "value": true, "src": ["bulbapedia", "serebii"] },
+    "shinyCharmStacksWithMasuda": { "value": true, "src": ["bulbapedia", "serebii"] },
+    "shinyCharmOdds": {
+      "odds": { "value": "2/4096", "src": ["bulbapedia"], "note": "Single source: Bulbapedia." },
+      "approximateEggs": { "value": 2048, "src": ["bulbapedia"], "note": "Single source: Bulbapedia." }
+    },
+    "masudaPlusCharmOdds": {
+      "odds": { "value": "8/4096", "src": ["bulbapedia", "serebii"] },
+      "approximateEggs": { "value": 512, "src": ["bulbapedia", "serebii"] }
+    },
+    "shinyCharmUnlock": { "value": "completing the Paldea Pokédex", "src": ["bulbapedia", "serebii"] }
   },
-  "postgame": [],
-  "provenance": {
-    "eggGroups": ["pokeapi", "bulbapedia"],
-    "species": ["pokeapi", "bulbapedia"],
-    "dittoAvailability": ["bulbapedia", "serebii"],
-    "hyperTrainingAccess": ["bulbapedia", "serebii"],
-    "natureAcquisition": ["bulbapedia", "serebii"],
-    "natureMints": ["bulbapedia", "serebii"],
-    "speciesDetermination": ["bulbapedia", "serebii"],
-    "abilityAcquisition": ["bulbapedia", "serebii"],
-    "abilityInheritance": ["bulbapedia", "serebii"],
-    "eggMoveAcquisition": ["bulbapedia", "serebii"],
-    "masudaAcquisition": ["bulbapedia", "serebii"],
-    "baseShinyOdds": ["bulbapedia", "serebii"],
-    "masudaMethod": ["bulbapedia", "serebii"],
-    "eggMoves": ["bulbapedia", "serebii"],
-    "eggMoveAlternative": ["bulbapedia", "serebii"],
-    "moveDescriptions": ["pokeapi", "bulbapedia"],
-    "abilityDescriptions": ["pokeapi", "bulbapedia"],
-    "hatchRoutes": ["bulbapedia", "serebii"],
-    "eggEfficiencyModifiers": ["bulbapedia", "serebii"],
-    "hatchMechanicExplainer": ["bulbapedia", "serebii", "smogon"],
-    "shinyEggModifiers": ["bulbapedia", "serebii"],
-    "shinyCharmOdds": ["bulbapedia"],
-    "hatchLevel": ["bulbapedia", "serebii"]
-  },
-  "provenanceNotes": {
-    "shinyCharmOdds": "Single source: Bulbapedia."
-  }
+  "postgame": []
 }

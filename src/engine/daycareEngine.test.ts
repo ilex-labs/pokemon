@@ -1,12 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { GameData, Ruleset } from '../data/schema'
-import gen9Json from '../data/rulesets/gen9.json'
-import scarletVioletJson from '../data/games/scarlet-violet.json'
+import { gen9, scarletViolet } from '../data/unwrapped'
 import { formatReason, formatReasons, type Reason } from '../lib/reason'
 import { chooserComparisonCopy, planDaycare, type DaycareTarget } from './daycareEngine'
-
-const gen9 = gen9Json as Ruleset
-const scarletViolet = scarletVioletJson as GameData
 
 const baseTarget: DaycareTarget = {
   species: 'Charmander',

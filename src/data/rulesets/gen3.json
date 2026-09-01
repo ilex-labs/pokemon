@@ -8,7 +8,7 @@
   "eggMovesExist": true,
   "eggMoveEligibleParents": "male-only",
   "natureLock": {
-    "method": "none"
+    "method": { "value": "none", "src": ["bulbapedia", "serebii"] }
   },
   "abilityInheritance": {
     "inheritanceExists": false,
@@ -30,7 +30,11 @@
     "available": false,
     "levelRequired": 0
   },
-  "hatchLevel": 5,
+  "hatchLevel": { "value": 5, "src": ["bulbapedia", "serebii"] },
   "eggMoveMethod": "eggs-only",
-  "baseShinyOdds": { "odds": "1/8192", "approximateEggs": 8192 }
+  "baseShinyOdds": {
+    "odds": { "value": "1/8192", "src": ["bulbapedia", "serebii"] },
+    "approximateEggs": { "value": 8192, "src": ["bulbapedia", "serebii"] }
+  },
+  "masudaMethod": { "value": null, "src": ["bulbapedia", "serebii"] }
 }
