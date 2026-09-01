@@ -100,6 +100,8 @@ export type ShinyOddsTier = {
   approximateEggs: number
   /** Shown once per fact — don't repeat Masuda or Charm copy across rows. */
   context?: string
+  /** Single-lineage marker. Low-emphasis, next to the figure. */
+  sourceNote?: string
 }
 
 export type ShinyOdds = {
@@ -1757,6 +1759,7 @@ function buildShinyPayload(game: GameData, ruleset: Ruleset): ShinyOdds {
       odds: modifiers.shinyCharmOdds.odds,
       approximateEggs: modifiers.shinyCharmOdds.approximateEggs,
       context,
+      sourceNote: game.provenanceNotes?.shinyCharmOdds,
     })
   }
 

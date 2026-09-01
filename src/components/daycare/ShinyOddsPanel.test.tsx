@@ -56,6 +56,10 @@ describe('ShinyOddsPanel sourced absence vs data gap', () => {
     render(<ShinyOddsPanel shiny={plan.shiny!} />)
     expect(screen.queryByText(/Not recorded yet/)).toBeNull()
     expect(screen.queryByText(/Nothing in this game improves/)).toBeNull()
+    expect(
+      screen.getByText(/2\/4096/),
+    ).toBeTruthy()
+    expect(screen.getByText(/Single source: Bulbapedia\./)).toBeTruthy()
   })
 
   it('renders a muted gap when noEggShinyBoostsReason is missing', () => {

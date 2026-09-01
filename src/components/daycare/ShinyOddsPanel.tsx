@@ -39,6 +39,9 @@ export default function ShinyOddsPanel({ shiny }: ShinyOddsPanelProps) {
                 </span>{' '}
                 eggs
               </span>
+              {tier.sourceNote ? (
+                <span className="text-muted"> · {tier.sourceNote}</span>
+              ) : null}
             </p>
             {tier.context ? (
               <p className="mt-1 text-muted">{withNums(tier.context)}</p>

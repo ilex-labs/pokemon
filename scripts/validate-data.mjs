@@ -52,6 +52,49 @@ const ALLOWED_SOURCES = new Set([
   'game',
 ])
 
+const ALLOWED_SOURCES_HINT = 'pokeapi|bulbapedia|serebii|smogon|game'
+
+/**
+ * One-lineage provenance is allowed only with a note.
+ * Empty if the entry meets the two-source bar, or is a single allowlisted
+ * source with a non-empty provenanceNotes entry.
+ */
+export function provenanceEntryErrors(label, category, sources, note) {
+  const path = `${label}: provenance.${category}`
+  const found = []
+
+  if (!Array.isArray(sources) || sources.length === 0) {
+    found.push(
+      `${path} must list at least two independent sources (got ${JSON.stringify(sources)})`,
+    )
+    return found
+  }
+
+  if (sources.length === 1) {
+    if (!isNonEmptyString(note)) {
+      found.push(
+        `${path} has a single source and requires provenanceNotes.${category}`,
+      )
+    }
+  } else {
+    const unique = new Set(sources)
+    if (unique.size < 2) {
+      found.push(
+        `${path} must list at least two distinct sources (got ${JSON.stringify(sources)})`,
+      )
+    }
+  }
+
+  for (const source of sources) {
+    if (!ALLOWED_SOURCES.has(source)) {
+      found.push(
+        `${path} source "${source}" is not an allowed independent lineage (use ${ALLOWED_SOURCES_HINT})`,
+      )
+    }
+  }
+  return found
+}
+
 function containsDigit(value) {
   return typeof value === 'string' && /\d/.test(value)
 }
@@ -88,7 +131,7 @@ export function modifierSingleSourceErrors(label, index, modifier) {
   }
   if (!ALLOWED_SOURCES.has(source)) {
     found.push(
-      `${path} (${named}) singleSource "${source}" is not an allowed independent lineage (use pokeapi|bulbapedia|serebii|smogon|game)`,
+      `${path} (${named}) singleSource "${source}" is not an allowed independent lineage (use ${ALLOWED_SOURCES_HINT})`,
     )
   }
   if (
@@ -246,25 +289,18 @@ function validateGame(filePath, game, natures) {
     if (categories.length === 0) {
       fail(`${label}: provenance block is empty`)
     }
+    const notes =
+      game.provenanceNotes && typeof game.provenanceNotes === 'object'
+        ? game.provenanceNotes
+        : {}
     for (const [category, sources] of Object.entries(game.provenance)) {
-      if (!Array.isArray(sources) || sources.length < 2) {
-        fail(
-          `${label}: provenance.${category} must list at least two independent sources (got ${JSON.stringify(sources)})`,
-        )
-        continue
-      }
-      const unique = new Set(sources)
-      if (unique.size < 2) {
-        fail(
-          `${label}: provenance.${category} must list at least two distinct sources (got ${JSON.stringify(sources)})`,
-        )
-      }
-      for (const source of sources) {
-        if (!ALLOWED_SOURCES.has(source)) {
-          fail(
-            `${label}: provenance.${category} source "${source}" is not an allowed independent lineage (use pokeapi|bulbapedia|serebii|smogon|game)`,
-          )
-        }
+      for (const error of provenanceEntryErrors(
+        label,
+        category,
+        sources,
+        notes[category],
+      )) {
+        fail(error)
       }
     }
   }

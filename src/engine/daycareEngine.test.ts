@@ -198,6 +198,7 @@ describe('daycareEngine acceptance cases', () => {
     expect(charmAlone?.context).not.toMatch(/two egg rolls/i)
     expect(charmAlone?.context).not.toMatch(/not 3\/4096/i)
     expect(charmAlone?.context).not.toMatch(/obtain the Shiny Charm/i)
+    expect(charmAlone?.sourceNote).toBe('Single source: Bulbapedia.')
     const masudaTier = plan.shiny?.tiers.find((tier) => tier.id === 'masuda')
     expect(masudaTier?.context).toMatch(/different-language game than its partner/i)
     const stacked = plan.shiny?.tiers.find(

@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import type { GameData } from '../src/data/schema'
 import frlgJson from '../src/data/games/firered-leafgreen.json'
-import { modifierSingleSourceErrors } from './validate-data.mjs'
+import {
+  modifierSingleSourceErrors,
+  provenanceEntryErrors,
+} from './validate-data.mjs'
 
 const frlg = frlgJson as GameData
 const bicycle = frlg.eggEfficiencyModifiers?.[0]
@@ -43,5 +46,31 @@ describe('egg-efficiency one-source carve-out', () => {
     })
     expect(errors).toHaveLength(1)
     expect(errors[0]).toMatch(/already under the two-source bar/)
+  })
+})
+
+describe('provenance single-lineage note', () => {
+  it('accepts one allowlisted source when a note is present', () => {
+    expect(
+      provenanceEntryErrors(
+        'scarlet-violet',
+        'shinyCharmOdds',
+        ['bulbapedia'],
+        'Single source: Bulbapedia.',
+      ),
+    ).toEqual([])
+  })
+
+  it('rejects one source with no note', () => {
+    const errors = provenanceEntryErrors(
+      'scarlet-violet',
+      'shinyCharmOdds',
+      ['bulbapedia'],
+      undefined,
+    )
+    expect(errors).toHaveLength(1)
+    expect(errors[0]).toMatch(
+      /provenance.shinyCharmOdds has a single source and requires provenanceNotes.shinyCharmOdds/,
+    )
   })
 })

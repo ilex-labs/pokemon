@@ -341,6 +341,11 @@ export interface GameData {
   postgame: PostgameItem[]
   uniqueMechanics?: string[]
   provenance: Record<string, string[]>
+  /**
+   * Required when the matching provenance category lists a single source.
+   * Player-facing — one short confidence line, not a policy explanation.
+   */
+  provenanceNotes?: Record<string, string>
 }
 
 export interface DaycareProject {
