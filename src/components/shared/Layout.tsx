@@ -1,4 +1,5 @@
 import { Link, Outlet } from 'react-router-dom'
+import { BUILD_SHA } from '../../lib/buildSha'
 
 export default function Layout() {
   return (
@@ -23,6 +24,7 @@ export default function Layout() {
           Unofficial and unaffiliated with Nintendo, Creatures Inc., Game Freak, or
           The Pokémon Company. Pokémon and Pokémon character names are trademarks of
           Nintendo, Creatures Inc., and Game Freak.
+          <p className="mt-2 font-mono">build {BUILD_SHA}</p>
         </div>
       </footer>
     </div>
