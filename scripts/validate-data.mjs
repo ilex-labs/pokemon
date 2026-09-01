@@ -50,7 +50,6 @@ const ALLOWED_SOURCES = new Set([
   'serebii',
   'smogon',
   'game',
-  'dittobase',
 ])
 
 function containsDigit(value) {
@@ -89,7 +88,7 @@ export function modifierSingleSourceErrors(label, index, modifier) {
   }
   if (!ALLOWED_SOURCES.has(source)) {
     found.push(
-      `${path} (${named}) singleSource "${source}" is not an allowed independent lineage (use pokeapi|bulbapedia|serebii|smogon|game|dittobase)`,
+      `${path} (${named}) singleSource "${source}" is not an allowed independent lineage (use pokeapi|bulbapedia|serebii|smogon|game)`,
     )
   }
   if (
@@ -263,7 +262,7 @@ function validateGame(filePath, game, natures) {
       for (const source of sources) {
         if (!ALLOWED_SOURCES.has(source)) {
           fail(
-            `${label}: provenance.${category} source "${source}" is not an allowed independent lineage (use pokeapi|bulbapedia|serebii|smogon|game|dittobase)`,
+            `${label}: provenance.${category} source "${source}" is not an allowed independent lineage (use pokeapi|bulbapedia|serebii|smogon|game)`,
           )
         }
       }
